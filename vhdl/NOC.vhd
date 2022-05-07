@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity NOC is
     port (
         clk : in std_logic;
-        rst : in std_logic;
+        reset : in std_logic
         -- ..
     );
 end NOC;
@@ -20,28 +20,28 @@ architecture structural of NOC is
     -- COMPONENT DECLARATIONS
     component PE is
         port(clk                : in std_logic;
-             reset              : in std_logic;
+             reset              : in std_logic
              -- ...
             );
     end component;
 
     component MC_TOP is
         port(clk                : in std_logic;
-             reset              : in std_logic;
+             reset              : in std_logic
              -- ...
             );
     end component;
 
     component MC_Y is
         port(clk                : in std_logic;
-             reset              : in std_logic;
+             reset              : in std_logic
              -- ...
             );
     end component;
 
     component MC_X is
         port(clk                : in std_logic;
-             reset              : in std_logic;
+             reset              : in std_logic
              -- ...
             );
     end component;

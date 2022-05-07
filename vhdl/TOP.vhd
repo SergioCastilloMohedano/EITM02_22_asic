@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity TOP is
     port (
         clk : in std_logic;
-        rst : in std_logic;
+        reset : in std_logic
         -- ..
     );
 end TOP;
@@ -20,70 +20,70 @@ architecture structural of TOP is
     -- COMPONENT DECLARATIONS
     component SYSTEM_CONTROLLER is
         port(clk                : in std_logic;
-             reset              : in std_logic;
+             reset              : in std_logic
              -- ...
             );
     end component;
 
     component WEIGHTS_BIASES_SRAM_INTERFACE
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
 
     component ACTIVATIONS_SRAM_INTERFACE
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
 
     component OFMAP_SRAM_INTERFACE
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
 
     component NOC
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
 
     component ADDER_TREE
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
 
     component BIAS_ADDITION
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
 
     component RELU
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
 
     component POOLING
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
 
     component STOCHASTIC_ROUNDING
     port(clk                : in std_logic;
-         reset              : in std_logic;
+         reset              : in std_logic
          -- ...
         );
     end component;
