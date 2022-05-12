@@ -49,47 +49,47 @@ architecture structural of NOC is
 begin
 
     -- PE ARRAY
-    PE_ARRAY_X : for i in 0 to 32 generate
-        PE_ARRAY_Y : for j in 0 to 2 generate
+    PE_ARRAY_X_loop : for i in 0 to 32 generate
+        PE_ARRAY_Y_loop : for j in 0 to 2 generate
             PE_inst : PE
             port map (
                 clk             =>  clk,
                 reset           =>  reset
                 -- ..
             );
-        end generate PE_ARRAY_Y;
-    end generate PE_ARRAY_X;
+        end generate PE_ARRAY_Y_loop;
+    end generate PE_ARRAY_X_loop;
 
     -- MC TOP ROW
-    MC_TOP_ROW : for i in 0 to 31 generate
+    MC_TOP_ROW_loop : for i in 0 to 31 generate
         MC_TOP_inst : MC_TOP
         port map (
             clk             =>  clk,
             reset           =>  reset
             -- ..
         );
-    end generate MC_TOP_ROW;
+    end generate MC_TOP_ROW_loop;
 
     -- MC ARRAY
-    MC_X_ROWS : for i in 0 to 31 generate
-        MC_X_COLUMNS : for j in 0 to 1 generate
+    MC_X_ROWS_loop : for i in 0 to 31 generate
+        MC_X_COLUMNS_loop : for j in 0 to 1 generate
             MC_X_inst : MC_X
             port map (
                 clk             =>  clk,
                 reset           =>  reset
                 -- ..
             );
-        end generate MC_X_COLUMNS;
-    end generate MC_X_ROWS;
+        end generate MC_X_COLUMNS_loop;
+    end generate MC_X_ROWS_loop;
 
     -- MC Y COLUMN
-    MC_Y_COLUMN : for i in 0 to 2 generate
+    MC_Y_COLUMN_loop : for i in 0 to 2 generate
         MC_Y_inst : MC_Y
         port map (
             clk             =>  clk,
             reset           =>  reset
             -- ..
         );
-    end generate MC_Y_COLUMN;
+    end generate MC_Y_COLUMN_loop;
 
 end architecture;
