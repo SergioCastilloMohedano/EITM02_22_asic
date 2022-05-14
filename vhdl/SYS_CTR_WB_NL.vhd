@@ -5,45 +5,169 @@ use ieee.numeric_std.all;
 entity SYS_CTR_WB_NL is
     port (
         clk : in std_logic;
-        reset : in std_logic
-        -- ..
+        reset : in std_logic;
+        WB_NL_start : in std_logic;
+        WB_NL_ready : out std_logic;
+        WB_NL_finished : out std_logic;
+        RS : in std_logic_vector (7 downto 0);
+        p : in std_logic_vector (7 downto 0);
+        m : in std_logic_vector (7 downto 0);
+        r_p : out std_logic_vector (7 downto 0);
+        pm : out std_logic_vector (7 downto 0);
+        s : out std_logic_vector (7 downto 0)
     );
 end SYS_CTR_WB_NL;
 
 architecture rtl of SYS_CTR_WB_NL is
 
-    -- Define enumeration type for the states and state_type signals
-    type state_type is (s_init, s_idle, s_0);
+    -- Enumeration type for the states and state_type signals
+    type state_type is (s_init, s_idle, s_WB_NL, s_finished);
     signal state_next, state_reg: state_type;
 
-    signal WB_NL_ready : std_logic;
+    ------------ CONTROL PATH SIGNALS ------------
+    -------- INPUTS --------
+    ---- Internal Status Signals from the Data Path
+    signal count_done : std_logic;
+
+    ---- External Command Signals to the FSMD
+    signal WB_NL_start_int : std_logic;
+
+    -------- OUTPUTS --------
+    ---- Internal Control Signals used to control Data Path Operation
+    -- ..
+
+    ---- External Status Signals to indicate status of the FSMD
+    signal WB_NL_ready_int : std_logic;
+    signal WB_NL_finished_int : std_logic;
+
+    ------------ DATA PATH SIGNALS ------------
+    ---- Data Registers Signals
+    signal r_p_next, r_p_reg : natural range 0 to 127;
+    signal pm_next, pm_reg : natural range 0 to 127;
+    signal s_next, s_reg : natural range 0 to 127;
+
+    ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
+    signal RS_int : natural range 0 to 127;
+    signal p_int : natural range 0 to 127;
+    signal m_int : natural range 0 to 127;
+
+    ---- Functional Units Intermediate Signals
+    signal s_adder_out : natural range 0 to 127;
+    signal pm_adder_out : natural range 0 to 127;
+    signal pm_adder_out_tmp : natural range 0 to 127;
+    signal r_p_adder_out : natural range 0 to 127;
+    signal r_p_adder_out_tmp : natural range 0 to 127;
+
+    ---- Data Outputs
+    -- Out PORT "r_p", "s" and "pm"
 
 begin
 
     -- control path : state register
-    process(clk, reset)
+    asmd_reg : process(clk, reset)
     begin
-        if reset = '1' then
-            state_reg <= s_init;
-        elsif rising_edge(clk) then
-            state_reg <= state_next;
+        if rising_edge(clk) then
+            if reset = '1' then
+                state_reg <= s_init;
+            else
+                state_reg <= state_next;
+            end if;
         end if;
     end process;
 
     -- control path : next state logic
-    process(state_reg) -- add more signals to sensitivity list...architecture
+    asmd_ctrl : process(state_reg, WB_NL_start_int, count_done)
     begin
         case state_reg is
             when s_init =>
                 state_next <= s_idle;
             when s_idle =>
-                -- ...
+                if WB_NL_start_int = '1' then
+                    state_next <= s_WB_NL;
+                else
+                    state_next <= s_idle;
+                end if;
+            when s_WB_NL =>
+                if count_done = '1' then
+                    state_next <= s_finished;
+                else
+                    state_next <= s_WB_NL;
+                end if;
+            when s_finished =>
+                state_next <= s_idle;
             when others =>
                 state_next <= s_init;
         end case;
     end process;
 
     -- control path : output logic
-    WB_NL_ready <= '1' when state_reg = s_idle else '0';
+    WB_NL_ready_int <= '1' when state_reg = s_idle else '0';
+    WB_NL_finished_int <= '1' when state_reg = s_finished else '0';
+
+    -- data path : data registers
+    data_reg : process(clk, reset)
+    begin
+        if rising_edge(clk) then
+            if reset = '1' then
+                r_p_reg <= 0;
+                pm_reg <= 0;
+                s_reg <= 0;
+            else
+                r_p_reg <= r_p_next;
+                pm_reg <= pm_next;
+                s_reg <= s_next;
+            end if;
+        end if;
+    end process;
+
+    -- data path : functional units (perform necessary arithmetic operations)
+    s_adder_out <= s_reg + 1 when s_reg < (RS_int - 1) else 0;
+
+    pm_adder_out_tmp <= pm_reg + 1 when (pm_reg < (m_int + p_int - 1)) else 0;
+    pm_adder_out <= pm_adder_out_tmp when s_reg = (RS_int - 1) else pm_reg;
+
+    r_p_adder_out_tmp <= r_p_reg + 1 when r_p_reg < (RS_int - 1) else 0;
+    r_p_adder_out <= r_p_adder_out_tmp when ((pm_reg = (m_int + p_int - 1)) AND (s_reg = (RS_int - 1))) else r_p_reg;
+
+    -- data path : status (inputs to control path to modify next state logic)
+    count_done <= '1' when ((s_reg = (RS_int - 1)) AND (pm_reg = (m_int + p_int - 1)) AND (r_p_reg = (RS_int - 1))) else '0';
+
+    -- data path : mux routing
+    data_mux : process(state_reg, s_reg, pm_reg, r_p_reg, s_adder_out, pm_adder_out, r_p_adder_out)
+    begin
+        case state_reg is
+            when s_init =>
+                s_next <= s_reg;
+                pm_next <= pm_reg;
+                r_p_next <= r_p_reg;
+            when s_idle =>
+                s_next <= s_reg;
+                pm_next <= pm_reg;
+                r_p_next <= r_p_reg;
+            when s_WB_NL =>
+                s_next <= s_adder_out;
+                pm_next <= pm_adder_out;
+                r_p_next <= r_p_adder_out;
+            when s_finished =>
+                s_next <= s_reg;
+                pm_next <= pm_reg;
+                r_p_next <= r_p_reg;
+            when others =>
+                s_next <= s_reg;
+                pm_next <= pm_reg;
+                r_p_next <= r_p_reg;
+        end case;
+    end process;
+
+    -- PORT Assignations
+    WB_NL_start_int <= WB_NL_start;
+    WB_NL_ready <= WB_NL_ready_int;
+    WB_NL_finished <= WB_NL_finished_int;
+    r_p <= std_logic_vector(to_unsigned(r_p_reg, r_p'length));
+    pm <= std_logic_vector(to_unsigned(pm_reg, pm'length));
+    s <= std_logic_vector(to_unsigned(s_reg, s'length));
+    RS_int <= to_integer(unsigned(RS));
+    p_int <= to_integer(unsigned(p));
+    m_int <= to_integer(unsigned(m));
 
 end architecture;

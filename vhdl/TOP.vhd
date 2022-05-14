@@ -19,69 +19,69 @@ architecture structural of TOP is
 
     -- COMPONENT DECLARATIONS
     component SYSTEM_CONTROLLER is
-        port(clk                : in std_logic;
-             reset              : in std_logic
-             -- ...
-            );
-    end component;
-
-    component WEIGHTS_BIASES_SRAM_INTERFACE
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
         );
     end component;
 
-    component ACTIVATIONS_SRAM_INTERFACE
+    component WEIGHTS_BIASES_SRAM_INTERFACE is
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
         );
     end component;
 
-    component OFMAP_SRAM_INTERFACE
+    component ACTIVATIONS_SRAM_INTERFACE is
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
         );
     end component;
 
-    component NOC
+    component OFMAP_SRAM_INTERFACE is
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
         );
     end component;
 
-    component ADDER_TREE
+    component NOC is
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
         );
     end component;
 
-    component BIAS_ADDITION
+    component ADDER_TREE  is
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
         );
     end component;
 
-    component RELU
+    component BIAS_ADDITION is
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
         );
     end component;
 
-    component POOLING
+    component RELU is
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
         );
     end component;
 
-    component STOCHASTIC_ROUNDING
+    component POOLING is
+    port(clk                : in std_logic;
+         reset              : in std_logic
+         -- ...
+        );
+    end component;
+
+    component STOCHASTIC_ROUNDING is
     port(clk                : in std_logic;
          reset              : in std_logic
          -- ...
