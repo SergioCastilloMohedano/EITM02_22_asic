@@ -24,7 +24,7 @@ architecture rtl of SYS_CTR_ACT_NL is
     ------------ CONTROL PATH SIGNALS ------------
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
-    signal count_done : std_logic;
+    signal ACT_NL_cnt_done_int : std_logic;
 
     ---- External Command Signals to the FSMD
     signal ACT_NL_start_int : std_logic;
@@ -51,7 +51,7 @@ architecture rtl of SYS_CTR_ACT_NL is
     signal w_p_adder_out_tmp : natural range 0 to 127;
 
     ---- Data Outputs
-    -- Out PORT "h_p" and "w_p"
+    -- Out PORTs "h_p" and "w_p"
 
 begin
 
@@ -68,7 +68,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, ACT_NL_start_int, count_done)
+    asmd_ctrl : process(state_reg, ACT_NL_start_int, ACT_NL_cnt_done_int)
     begin
         case state_reg is
             when s_init =>
@@ -80,7 +80,7 @@ begin
                     state_next <= s_idle;
                 end if;
             when s_ACT_NL =>
-                if count_done = '1' then
+                if ACT_NL_cnt_done_int = '1' then
                     state_next <= s_finished;
                 else
                     state_next <= s_ACT_NL;
@@ -117,7 +117,7 @@ begin
     w_p_adder_out <= w_p_adder_out_tmp when h_p_reg = (HW_p_int - 1) else w_p_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
-    count_done <= '1' when ((h_p_reg = (HW_p_int - 1)) AND (w_p_reg = (HW_p_int - 1))) else '0';
+    ACT_NL_cnt_done_int <= '1' when ((h_p_reg = (HW_p_int - 1)) AND (w_p_reg = (HW_p_int - 1))) else '0';
 
     -- data path : mux routing
     data_mux : process(state_reg, h_p_reg, w_p_reg, h_p_adder_out, w_p_adder_out)

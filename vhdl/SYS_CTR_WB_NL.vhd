@@ -27,7 +27,7 @@ architecture rtl of SYS_CTR_WB_NL is
     ------------ CONTROL PATH SIGNALS ------------
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
-    signal count_done : std_logic;
+    signal WB_NL_cnt_done_int : std_logic;
 
     ---- External Command Signals to the FSMD
     signal WB_NL_start_int : std_logic;
@@ -59,7 +59,7 @@ architecture rtl of SYS_CTR_WB_NL is
     signal r_p_adder_out_tmp : natural range 0 to 127;
 
     ---- Data Outputs
-    -- Out PORT "r_p", "s" and "pm"
+    -- Out PORTs "r_p", "s" and "pm"
 
 begin
 
@@ -76,7 +76,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, WB_NL_start_int, count_done)
+    asmd_ctrl : process(state_reg, WB_NL_start_int, WB_NL_cnt_done_int)
     begin
         case state_reg is
             when s_init =>
@@ -88,7 +88,7 @@ begin
                     state_next <= s_idle;
                 end if;
             when s_WB_NL =>
-                if count_done = '1' then
+                if WB_NL_cnt_done_int = '1' then
                     state_next <= s_finished;
                 else
                     state_next <= s_WB_NL;
@@ -130,7 +130,7 @@ begin
     r_p_adder_out <= r_p_adder_out_tmp when ((pm_reg = (m_int + p_int - 1)) AND (s_reg = (RS_int - 1))) else r_p_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
-    count_done <= '1' when ((s_reg = (RS_int - 1)) AND (pm_reg = (m_int + p_int - 1)) AND (r_p_reg = (RS_int - 1))) else '0';
+    WB_NL_cnt_done_int <= '1' when ((s_reg = (RS_int - 1)) AND (pm_reg = (m_int + p_int - 1)) AND (r_p_reg = (RS_int - 1))) else '0';
 
     -- data path : mux routing
     data_mux : process(state_reg, s_reg, pm_reg, r_p_reg, s_adder_out, pm_adder_out, r_p_adder_out)
