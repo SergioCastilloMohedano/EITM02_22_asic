@@ -52,11 +52,11 @@ architecture rtl of SYS_CTR_WB_NL is
     signal m_int : natural range 0 to 127;
 
     ---- Functional Units Intermediate Signals
-    signal s_adder_out : natural range 0 to 127;
-    signal pm_adder_out : natural range 0 to 127;
-    signal pm_adder_out_tmp : natural range 0 to 127;
-    signal r_p_adder_out : natural range 0 to 127;
-    signal r_p_adder_out_tmp : natural range 0 to 127;
+    signal s_out : natural range 0 to 127;
+    signal pm_out : natural range 0 to 127;
+    signal pm_out_tmp : natural range 0 to 127;
+    signal r_p_out : natural range 0 to 127;
+    signal r_p_out_tmp : natural range 0 to 127;
 
     ---- Data Outputs
     -- Out PORTs "r_p", "s" and "pm"
@@ -121,19 +121,19 @@ begin
     end process;
 
     -- data path : functional units (perform necessary arithmetic operations)
-    s_adder_out <= s_reg + 1 when s_reg < (RS_int - 1) else 0;
+    s_out <= s_reg + 1 when s_reg < (RS_int - 1) else 0;
 
-    pm_adder_out_tmp <= pm_reg + 1 when (pm_reg < (m_int + p_int - 1)) else 0;
-    pm_adder_out <= pm_adder_out_tmp when s_reg = (RS_int - 1) else pm_reg;
+    pm_out_tmp <= pm_reg + 1 when (pm_reg < (m_int + p_int - 1)) else m_int;
+    pm_out <= pm_out_tmp when s_reg = (RS_int - 1) else pm_reg;
 
-    r_p_adder_out_tmp <= r_p_reg + 1 when r_p_reg < (RS_int - 1) else 0;
-    r_p_adder_out <= r_p_adder_out_tmp when ((pm_reg = (m_int + p_int - 1)) AND (s_reg = (RS_int - 1))) else r_p_reg;
+    r_p_out_tmp <= r_p_reg + 1 when r_p_reg < (RS_int - 1) else 0;
+    r_p_out <= r_p_out_tmp when ((pm_reg = (m_int + p_int - 1)) AND (s_reg = (RS_int - 1))) else r_p_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
     WB_NL_cnt_done_int <= '1' when ((s_reg = (RS_int - 1)) AND (pm_reg = (m_int + p_int - 1)) AND (r_p_reg = (RS_int - 1))) else '0';
 
     -- data path : mux routing
-    data_mux : process(state_reg, s_reg, pm_reg, r_p_reg, s_adder_out, pm_adder_out, r_p_adder_out)
+    data_mux : process(state_reg, s_reg, pm_reg, r_p_reg, s_out, pm_out, r_p_out, m_int)
     begin
         case state_reg is
             when s_init =>
@@ -142,12 +142,12 @@ begin
                 r_p_next <= r_p_reg;
             when s_idle =>
                 s_next <= s_reg;
-                pm_next <= pm_reg;
+                pm_next <= m_int;
                 r_p_next <= r_p_reg;
             when s_WB_NL =>
-                s_next <= s_adder_out;
-                pm_next <= pm_adder_out;
-                r_p_next <= r_p_adder_out;
+                s_next <= s_out;
+                pm_next <= pm_out;
+                r_p_next <= r_p_out;
             when s_finished =>
                 s_next <= s_reg;
                 pm_next <= pm_reg;

@@ -46,9 +46,9 @@ architecture rtl of SYS_CTR_ACT_NL is
     signal HW_p_int : natural range 0 to 127;
 
     ---- Functional Units Intermediate Signals
-    signal h_p_adder_out : natural range 0 to 127;
-    signal w_p_adder_out : natural range 0 to 127;
-    signal w_p_adder_out_tmp : natural range 0 to 127;
+    signal h_p_out : natural range 0 to 127;
+    signal w_p_out : natural range 0 to 127;
+    signal w_p_out_tmp : natural range 0 to 127;
 
     ---- Data Outputs
     -- Out PORTs "h_p" and "w_p"
@@ -111,16 +111,16 @@ begin
     end process;
 
     -- data path : functional units (perform necessary arithmetic operations)
-    h_p_adder_out <= h_p_reg + 1 when h_p_reg < (HW_p_int - 1) else 0;
+    h_p_out <= h_p_reg + 1 when h_p_reg < (HW_p_int - 1) else 0;
 
-    w_p_adder_out_tmp <= w_p_reg + 1 when (w_p_reg < (HW_p_int - 1)) else 0;
-    w_p_adder_out <= w_p_adder_out_tmp when h_p_reg = (HW_p_int - 1) else w_p_reg;
+    w_p_out_tmp <= w_p_reg + 1 when (w_p_reg < (HW_p_int - 1)) else 0;
+    w_p_out <= w_p_out_tmp when h_p_reg = (HW_p_int - 1) else w_p_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
     ACT_NL_cnt_done_int <= '1' when ((h_p_reg = (HW_p_int - 1)) AND (w_p_reg = (HW_p_int - 1))) else '0';
 
     -- data path : mux routing
-    data_mux : process(state_reg, h_p_reg, w_p_reg, h_p_adder_out, w_p_adder_out)
+    data_mux : process(state_reg, h_p_reg, w_p_reg, h_p_out, w_p_out)
     begin
         case state_reg is
             when s_init =>
@@ -130,8 +130,8 @@ begin
                 h_p_next <= h_p_reg;
                 w_p_next <= w_p_reg;
             when s_ACT_NL =>
-                h_p_next <= h_p_adder_out;
-                w_p_next <= w_p_adder_out;
+                h_p_next <= h_p_out;
+                w_p_next <= w_p_out;
             when s_finished =>
                 h_p_next <= h_p_reg;
                 w_p_next <= w_p_reg;

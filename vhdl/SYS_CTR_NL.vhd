@@ -88,7 +88,7 @@ architecture rtl of SYS_CTR_NL is
     signal m_next, m_reg : natural range 0 to 127;
     signal c_next, c_reg : natural range 0 to 127;
 
-    ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
+    ---- External Control Signals used to control Data Path Operation
     signal M_cap_int : natural range 0 to 127;
     signal C_cap_int : natural range 0 to 127;
     signal r_int : natural range 0 to 127;
@@ -97,7 +97,11 @@ architecture rtl of SYS_CTR_NL is
     signal HW_p_int : natural range 0 to 127;
 
     ---- Functional Units Intermediate Signals
-    -- ..
+    signal rc_out : natural range 0 to 127;
+    signal m_out : natural range 0 to 127;
+    signal m_out_tmp : natural range 0 to 127;
+    signal c_out : natural range 0 to 127;
+    signal c_out_tmp : natural range 0 to 127;
     -- ******************************************
 
     ---------------- Data Outputs ----------------
@@ -160,7 +164,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, WB_NL_finished_int, ACT_NL_finished_int, WB_NL_ready_int, ACT_NL_ready_int, NL_cnt_done_int)
+    asmd_ctrl : process(state_reg, NL_start_int, WB_NL_finished_int, ACT_NL_finished_int, WB_NL_ready_int, ACT_NL_ready_int, NL_cnt_done_int)
     begin
         case state_reg is
             when s_init =>
@@ -174,19 +178,20 @@ begin
             when s_start =>
                 state_next <= s_wait_1;
             when s_wait_1 =>
-                if (WB_NL_finished_int XOR ACT_NL_finished_int) = '1' then
+                if (WB_NL_finished_int XOR ACT_NL_finished_int) = '0' then
                     if (WB_NL_finished_int AND ACT_NL_finished_int) = '1' then
                         state_next <= s_NL;
                     else
                         state_next <= s_wait_1;
                     end if;
                 else
-                    state_next <= s_wait_1;
+                    state_next <= s_wait_2;
                 end if;
             when s_wait_2 =>
-                if (WB_NL_finished_int XOR ACT_NL_finished_int) = '1' then
+                if (WB_NL_finished_int OR ACT_NL_finished_int) = '1' then
+                    state_next <= s_NL;
                 else
-                    state_next <= s_wait_1;
+                    state_next <= s_wait_2;
                 end if;
             when s_NL =>
                 if (WB_NL_ready_int AND ACT_NL_ready_int) = '0' then
@@ -195,7 +200,7 @@ begin
                     if NL_cnt_done_int = '1' then
                         state_next <= s_finished;
                     else
-                        state_next <= s_NL;
+                        state_next <= s_start;
                     end if;
                 end if;
             when s_finished =>
@@ -206,6 +211,10 @@ begin
     end process;
 
     -- control path : output logic
+    NL_ready_int <= '1' when state_reg = s_idle else '0';
+    WB_NL_start_int <= '1' when state_reg = s_start else '0';
+    ACT_NL_start_int <= '1' when state_reg = s_start else '0';
+    NL_finished_int <= '1' when state_reg = s_finished else '0';
 
     -- data path : data registers
     data_reg : process(clk, reset)
@@ -224,29 +233,62 @@ begin
     end process;
 
     -- data path : functional units (perform necessary arithmetic operations)
+    rc_out <= (rc_reg + 1) when (rc_reg < (c_reg + r_int - 1)) else c_out;
+
+    m_out_tmp <= (m_reg + p_int) when (m_reg < (M_cap_int - p_int)) else 0;
+    m_out <= m_out_tmp when (rc_reg = (c_reg + r_int - 1)) else m_reg;
+
+    c_out_tmp <= (c_reg + r_int) when (c_reg < (C_cap_int - r_int)) else 0;
+    c_out <= c_out_tmp when ((m_reg = (M_cap_int - p_int)) AND (rc_reg = (c_reg + r_int - 1))) else c_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
+    NL_cnt_done_int <= '1' when ((c_reg = (C_cap_int - r_int)) AND
+                                 (m_reg = (M_cap_int - p_int)) AND
+                                 (rc_reg = (c_reg + r_int - 1))) else '0';
 
     -- data path : mux routing
-    data_mux : process(state_reg)
+    data_mux : process(state_reg, rc_reg, m_reg, c_reg, rc_out, m_out, c_out, WB_NL_ready_int, ACT_NL_ready_int)
     begin
         case state_reg is
             when s_init =>
-
+                rc_next <= rc_reg;
+                m_next <= m_reg;
+                c_next <= c_reg;
             when s_idle =>
-
+                rc_next <= rc_reg;
+                m_next <= m_reg;
+                c_next <= c_reg;
             when s_start =>
-
+                rc_next <= rc_reg;
+                m_next <= m_reg;
+                c_next <= c_reg;
             when s_wait_1 =>
-
+                rc_next <= rc_reg;
+                m_next <= m_reg;
+                c_next <= c_reg;
             when s_wait_2 =>
-
+                rc_next <= rc_reg;
+                m_next <= m_reg;
+                c_next <= c_reg;
             when s_NL =>
-
+                if (WB_NL_ready_int AND ACT_NL_ready_int) = '0' then
+                    rc_next <= rc_reg;
+                    m_next <= m_reg;
+                    c_next <= c_reg;
+                else
+                    rc_next <= rc_out;
+                    m_next <= m_out;
+                    c_next <= c_out;
+                end if;
             when s_finished =>
-
+                rc_next <= rc_reg;
+                m_next <= m_reg;
+                c_next <= c_reg;
             when others =>
-    end case;
+                rc_next <= rc_reg;
+                m_next <= m_reg;
+                c_next <= c_reg;
+        end case;
     end process;
 
     -- PORT Assignations
@@ -264,6 +306,8 @@ begin
     M_cap_int <= to_integer(unsigned(M_cap));
     C_cap_int <= to_integer(unsigned(C_cap));
     r_int <= to_integer(unsigned(r));
-
+    p_int <= to_integer(unsigned(p));
+    HW_p_int <= to_integer(unsigned(HW_p));
+    RS_int <= to_integer(unsigned(RS));
 
 end architecture;
