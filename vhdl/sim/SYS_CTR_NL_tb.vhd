@@ -11,7 +11,7 @@ architecture sim of SYS_CTR_NL_tb is
     constant clk_period : time := 1 sec / clk_hz;
 
     constant M_cap : natural := 16;
-    constant C_cap : natural := 3;
+    constant C_cap : natural := 16;
     constant r : natural := 1;
     constant p : natural := 8;
     constant RS : natural := 3;

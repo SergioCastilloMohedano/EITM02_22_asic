@@ -18,7 +18,7 @@ entity SYS_CTR_WB_NL is
     );
 end SYS_CTR_WB_NL;
 
-architecture rtl of SYS_CTR_WB_NL is
+architecture behavioral of SYS_CTR_WB_NL is
 
     -- Enumeration type for the states and state_type signals
     type state_type is (s_init, s_idle, s_WB_NL, s_finished);

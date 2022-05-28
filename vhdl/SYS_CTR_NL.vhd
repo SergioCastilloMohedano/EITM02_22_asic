@@ -15,18 +15,18 @@ entity SYS_CTR_NL is
         p : in std_logic_vector (7 downto 0);
         RS : in std_logic_vector (7 downto 0);
         HW_p : in std_logic_vector (7 downto 0);
-        m : out std_logic_vector (7 downto 0);
         c : out std_logic_vector (7 downto 0);
+        m : out std_logic_vector (7 downto 0);
         rc : out std_logic_vector (7 downto 0);
         r_p : out std_logic_vector (7 downto 0);
         pm : out std_logic_vector (7 downto 0);
         s : out std_logic_vector (7 downto 0);
-        h_p : out std_logic_vector (7 downto 0);
-        w_p : out std_logic_vector (7 downto 0)
+        w_p : out std_logic_vector (7 downto 0);
+        h_p : out std_logic_vector (7 downto 0)
     );
 end SYS_CTR_NL;
 
-architecture rtl of SYS_CTR_NL is
+architecture behavioral of SYS_CTR_NL is
 
     -- COMPONENT DECLARATIONS
     component SYS_CTR_WB_NL is
@@ -67,7 +67,8 @@ architecture rtl of SYS_CTR_NL is
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
     signal NL_cnt_done_int : std_logic;
-
+    signal ACT_NL_flag_int : std_logic;
+ 
     ---- External Command Signals to the FSMD
     signal NL_start_int : std_logic;
 
@@ -164,7 +165,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, NL_start_int, WB_NL_finished_int, ACT_NL_finished_int, WB_NL_ready_int, ACT_NL_ready_int, NL_cnt_done_int)
+    asmd_ctrl : process(state_reg, NL_start_int, WB_NL_finished_int, ACT_NL_finished_int, WB_NL_ready_int, ACT_NL_ready_int, NL_cnt_done_int, ACT_NL_flag_int)
     begin
         case state_reg is
             when s_init =>
@@ -176,7 +177,11 @@ begin
                     state_next <= s_idle;
                 end if;
             when s_start =>
-                state_next <= s_wait_1;
+                if (ACT_NL_flag_int = '1') then
+                    state_next <= s_wait_1;
+                else
+                    state_next <= s_wait_2;
+                end if;
             when s_wait_1 =>
                 if (WB_NL_finished_int XOR ACT_NL_finished_int) = '0' then
                     if (WB_NL_finished_int AND ACT_NL_finished_int) = '1' then
@@ -213,7 +218,7 @@ begin
     -- control path : output logic
     NL_ready_int <= '1' when state_reg = s_idle else '0';
     WB_NL_start_int <= '1' when state_reg = s_start else '0';
-    ACT_NL_start_int <= '1' when state_reg = s_start else '0';
+    ACT_NL_start_int <= '1' when (state_reg = s_start AND ACT_NL_flag_int = '1') else '0';
     NL_finished_int <= '1' when state_reg = s_finished else '0';
 
     -- data path : data registers
@@ -245,6 +250,8 @@ begin
     NL_cnt_done_int <= '1' when ((c_reg = (C_cap_int - r_int)) AND
                                  (m_reg = (M_cap_int - p_int)) AND
                                  (rc_reg = (c_reg + r_int - 1))) else '0';
+
+    ACT_NL_flag_int <= '1' when m_reg = 0 else '0';
 
     -- data path : mux routing
     data_mux : process(state_reg, rc_reg, m_reg, c_reg, rc_out, m_out, c_out, WB_NL_ready_int, ACT_NL_ready_int)
