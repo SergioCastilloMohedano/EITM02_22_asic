@@ -22,7 +22,9 @@ entity SYS_CTR_NL is
         pm : out std_logic_vector (7 downto 0);
         s : out std_logic_vector (7 downto 0);
         w_p : out std_logic_vector (7 downto 0);
-        h_p : out std_logic_vector (7 downto 0)
+        h_p : out std_logic_vector (7 downto 0);
+-- ......
+        M_div_pt : in std_logic_vector (7 downto 0)
     );
 end SYS_CTR_NL;
 
@@ -56,6 +58,20 @@ architecture behavioral of SYS_CTR_NL is
             h_p : out std_logic_vector (7 downto 0);
             w_p : out std_logic_vector (7 downto 0)
         );
+    end component;
+
+    component SYS_CTR_PASS_FLAG is
+        port (
+            clk : in std_logic;
+            reset : in std_logic;
+            NL_start : in std_logic;
+            NL_finished : in std_logic;
+            r : in std_logic_vector (7 downto 0);
+            M_div_pt : in std_logic_vector (7 downto 0);
+            WB_NL_finished : in std_logic;
+            ACT_NL_finished : in std_logic;
+            pass_flag : out std_logic
+         );
     end component;
 
     -- Enumeration type for the states and state_type signals
@@ -121,6 +137,10 @@ architecture behavioral of SYS_CTR_NL is
     ----------------------------------------------
 
 
+    -- pass flag
+    signal pass_flag_int : std_logic;
+    signal M_div_pt_int : natural range 0 to 127;
+
 begin
 
     -- SYS_CTR_WB_NL
@@ -150,6 +170,20 @@ begin
         HW_p            =>  std_logic_vector(to_unsigned(HW_p_int,HW_p'length)),
         h_p             =>  h_p_int,
         w_p             =>  w_p_int
+    );
+
+    -- SYS_CTR_PASS_FLAG
+    SYS_CTR_PASS_FLAG_inst : SYS_CTR_PASS_FLAG
+    port map (
+        clk             =>  clk,
+        reset           =>  reset,
+        NL_start        => NL_start_int,
+        NL_finished     => NL_finished_int,
+        r               => std_logic_vector(to_unsigned(r_int,r'length)),
+        M_div_pt        => std_logic_vector(to_unsigned(M_div_pt_int,M_div_pt'length)),
+        WB_NL_finished  => WB_NL_finished_int,
+        ACT_NL_finished => ACT_NL_finished_int,
+        pass_flag       => pass_flag_int
     );
 
     -- control path : state register
@@ -316,5 +350,10 @@ begin
     p_int <= to_integer(unsigned(p));
     HW_p_int <= to_integer(unsigned(HW_p));
     RS_int <= to_integer(unsigned(RS));
+
+    -- ..
+    M_div_pt_int <= to_integer(unsigned(M_div_pt));
+
+
 
 end architecture;

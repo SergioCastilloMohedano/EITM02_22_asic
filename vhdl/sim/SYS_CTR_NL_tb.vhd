@@ -11,11 +11,12 @@ architecture sim of SYS_CTR_NL_tb is
     constant clk_period : time := 1 sec / clk_hz;
 
     constant M_cap : natural := 16;
-    constant C_cap : natural := 16;
-    constant r : natural := 1;
+    constant C_cap : natural := 3;
+    constant r : natural := 1; -- X/E
     constant p : natural := 8;
     constant RS : natural := 3;
     constant HW_p : natural := 34;
+    constant M_div_pt : natural := M_cap/(p*1); --M/p*t
     constant HYP_BITWIDTH : natural := 8;
 
     signal clk : std_logic := '1';
@@ -38,6 +39,7 @@ architecture sim of SYS_CTR_NL_tb is
     signal r_p_out_tb : std_logic_vector (7 downto 0);
     signal pm_out_tb : std_logic_vector (7 downto 0);
     signal s_out_tb : std_logic_vector (7 downto 0);
+    signal M_div_pt_tb : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(M_div_pt, HYP_BITWIDTH));
 
     component SYS_CTR_NL is
     port (
@@ -59,7 +61,8 @@ architecture sim of SYS_CTR_NL_tb is
         pm : out std_logic_vector (7 downto 0);
         s : out std_logic_vector (7 downto 0);
         h_p : out std_logic_vector (7 downto 0);
-        w_p : out std_logic_vector (7 downto 0)
+        w_p : out std_logic_vector (7 downto 0);
+        M_div_pt : in std_logic_vector (7 downto 0)
     );
    end component;
 
@@ -87,7 +90,8 @@ begin
         pm => pm_out_tb,
         s => s_out_tb,
         h_p => h_p_out_tb,
-        w_p => w_p_out_tb
+        w_p => w_p_out_tb,
+        M_div_pt => M_div_pt_tb
     );
 
     SEQUENCER_PROC : process
