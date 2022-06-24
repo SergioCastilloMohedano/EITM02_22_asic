@@ -1,3 +1,20 @@
+-------------------------------------------------------------------------------------------------------
+-- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
+-- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
+-------------------------------------------------------------------------------------------------------
+-- File           : SYS_CTR_NL_tb.vhd
+-- Author         : Sergio Castillo Mohedano
+-- University     : Lund University
+-- Department     : Electrical and Information Technology (EIT)
+-- Created        : 2022-05-17
+-- Standard       : VHDL-2008
+-------------------------------------------------------------------------------------------------------
+-- Description    : This block sets the hyperparameters that define the shape and size of the CNN and
+--               sends them to "SYS_CTR_NL.vhd" to check that block's functionality.
+-------------------------------------------------------------------------------------------------------
+-- Revisions      : NA (Git Control)
+-------------------------------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -10,21 +27,25 @@ architecture sim of SYS_CTR_NL_tb is
     constant clk_hz : integer := 100e6;
     constant clk_period : time := 1 sec / clk_hz;
 
-    constant M_cap : natural := 16;
-    constant C_cap : natural := 3;
-    constant r : natural := 1; -- X/E
-    constant p : natural := 8;
+    constant X : natural := 32;
+    constant M_cap : natural := 32;
+    constant C_cap : natural := 32;
     constant RS : natural := 3;
-    constant HW_p : natural := 34;
-    constant M_div_pt : natural := M_cap/(p*1); --M/p*t
+    constant HW : natural := 16;
+    constant HW_p : natural := HW + 2;
+    constant EF : natural := HW;
+    constant r : natural := X/EF; -- X/E
+    constant p : natural := 8;
+    constant t : natural := 1; -- it must always be 1
+    constant M_div_pt : natural := M_cap/(p*t); --M/p*t
     constant HYP_BITWIDTH : natural := 8;
 
     signal clk : std_logic := '1';
     signal reset : std_logic := '1';
 
     signal NL_start_in_tb : std_logic := '0';
-    signal NL_ready_out_tb : std_logic := '0';
-    signal NL_finished_out_tb : std_logic := '0';
+    signal NL_ready_out_tb : std_logic;
+    signal NL_finished_out_tb : std_logic;
     signal M_cap_in_tb : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(M_cap, HYP_BITWIDTH));
     signal C_cap_in_tb : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(C_cap, HYP_BITWIDTH));
     signal r_in_tb : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(r, HYP_BITWIDTH));
@@ -40,6 +61,8 @@ architecture sim of SYS_CTR_NL_tb is
     signal pm_out_tb : std_logic_vector (7 downto 0);
     signal s_out_tb : std_logic_vector (7 downto 0);
     signal M_div_pt_tb : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(M_div_pt, HYP_BITWIDTH));
+
+    signal NoC_ACK_flag_in_tb : std_logic := '0';
 
     component SYS_CTR_NL is
     port (
@@ -62,7 +85,8 @@ architecture sim of SYS_CTR_NL_tb is
         s : out std_logic_vector (7 downto 0);
         h_p : out std_logic_vector (7 downto 0);
         w_p : out std_logic_vector (7 downto 0);
-        M_div_pt : in std_logic_vector (7 downto 0)
+        M_div_pt : in std_logic_vector (7 downto 0);
+        NoC_ACK_flag : in std_logic
     );
    end component;
 
@@ -91,8 +115,17 @@ begin
         s => s_out_tb,
         h_p => h_p_out_tb,
         w_p => w_p_out_tb,
-        M_div_pt => M_div_pt_tb
+        M_div_pt => M_div_pt_tb,
+        NoC_ACK_flag => NoC_ACK_flag_in_tb
     );
+
+    NOC_ACK_PROC : process
+    begin
+        NoC_ACK_flag_in_tb <= '0';
+        wait for 10 us;
+        NoC_ACK_flag_in_tb <= '1';
+        wait for clk_period;
+    end process;
 
     SEQUENCER_PROC : process
     begin
@@ -104,7 +137,6 @@ begin
         NL_start_in_tb <= '1';
         wait for clk_period;
         NL_start_in_tb <= '0';
-
         wait;
     end process;
 

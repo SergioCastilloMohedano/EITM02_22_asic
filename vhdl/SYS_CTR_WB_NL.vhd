@@ -1,3 +1,49 @@
+-------------------------------------------------------------------------------------------------------
+-- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
+-- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
+-------------------------------------------------------------------------------------------------------
+-- File           : SYS_CTR_WB_NL.vhd
+-- Author         : Sergio Castillo Mohedano
+-- University     : Lund University
+-- Department     : Electrical and Information Technology (EIT)
+-- Created        : 2022-05-12
+-- Standard       : VHDL-2008
+-------------------------------------------------------------------------------------------------------
+-- Description    : This block triggers the Nested Loop for sweeping along all the weights & biases.
+--                  "r" and "s" increase from 0 to "RS - 1". "pm" weight output channels are increased
+--                  as well from 0 to "m + p - 1". Values are increased row-wise (s) and
+--                  channel-wise (pm):
+--
+--                  for r’ = 0 to r’ = R – 1, r’++
+--                      for pm = 0 to pm = m + p – 1, pm++
+--                          for s = 0 to s = S – 1, s++
+--                              [s, pm and r_p]
+--                          end for
+--                      end for
+--                  end for
+--
+--                  r’ as to differentiate it from unrolling factor ‘r’
+-------------------------------------------------------------------------------------------------------
+-- Input Signals  :
+--         * clk: clock
+--         * reset: synchronous, active high.
+--         * WB_NL_start: triggers the FSM that outputs all the parameters of a speficic layer within
+--       the network.
+--         * RS: height/width of a kernel of weights.
+--         * p: number of 3D weights processed by a PE Set.
+--         * m: current output feature map being read, it increases in batches of "p" from "0" to
+--       "M - p".
+-- Output Signals :
+--         * WB_NL_ready: active high, set when the FSM is in its idle state. It means the FSM is
+--       ready to be triggered.
+--         * WB_NL_finished: active high, set for 1 clock cycle when the Nested Loop has finished.
+--         * r_p (r'): parameter that represents weight's row.
+--         * pm: parameter that represents weight's channel.
+--         * s: parameter that represents weight's column.
+-------------------------------------------------------------------------------------------------------
+-- Revisions      : NA (Git Control)
+-------------------------------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;

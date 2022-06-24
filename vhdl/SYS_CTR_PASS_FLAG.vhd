@@ -1,3 +1,41 @@
+-------------------------------------------------------------------------------------------------------
+-- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
+-- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
+-------------------------------------------------------------------------------------------------------
+-- File           : SYS_CTR_PASS_FLAG.vhd
+-- Author         : Sergio Castillo Mohedano
+-- University     : Lund University
+-- Department     : Electrical and Information Technology (EIT)
+-- Created        : 2022-05-31
+-- Standard       : VHDL-2008
+-------------------------------------------------------------------------------------------------------
+-- Description    : This block generates a flag that acknowledges the controller that the necessary
+--                  parameters to compute a pass have been already handled by the system controller,
+--                  meaning that the PE Array is full and cannot allocate more values. At this point,
+--                  before continuing, the count holds until the next pass, and computation takes
+--                  place.
+-------------------------------------------------------------------------------------------------------
+-- Input Signals  :
+--         * clk: clock
+--         * reset: synchronous, active high.
+--         * NL_start: flag that tells this block that the controller has started the count of the
+--       Nested Loops, it triggers the FSM within this block. Active high.
+--         * NL_finished: flag indicating end of processing. Evaluated within s_flag state in order to
+--       go to s_idle state. Active high.
+--         * r: hyperparameter of the Network. Indicates the number of PE Sets that process different
+--       input channels within the PE Array.
+--         * M_div_pt: parameter that indicates how many passes can the activations be reutilized
+--       within the PE Array before having to update them again.
+--         * WB_NL_finished: flag indicating that the Nested Loop of the weights/biases has finished.
+--         * ACT_NL_finished: flag indicating that the Nested Loop of the activations has finished.
+-- Output Signals :
+--         * pass_flag: flag that acknowledges the controller that the necessary parameters to
+--       compute a pass have been already handled by the system controller, meaning that the
+--       PE Array is full and cannot allocate more values.
+-------------------------------------------------------------------------------------------------------
+-- Revisions      : NA (Git Control)
+-------------------------------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -26,10 +64,10 @@ architecture behavioral of SYS_CTR_PASS_FLAG is
     ------------ CONTROL PATH SIGNALS ------------
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
-    signal WB_NL_cnt_reg, WB_NL_cnt_next : natural range 0 to 127;
-    signal ACT_NL_cnt_reg, ACT_NL_cnt_next : natural range 0 to 127;
-    signal ACT_pass_cnt_reg, ACT_pass_cnt_next : natural range 0 to 127;
-    signal ACT_flag_reg, ACT_flag_next : std_logic;
+    signal WB_NL_cnt_reg, WB_NL_cnt_next : natural range 0 to 127;          -- counts iterations of the weights NL.
+    signal ACT_NL_cnt_reg, ACT_NL_cnt_next : natural range 0 to 127;        -- counts iterations of the activations NL.
+    signal ACT_pass_cnt_reg, ACT_pass_cnt_next : natural range 0 to 127;    -- counts how many passes are left until activations NL is triggered again.
+    signal ACT_flag_reg, ACT_flag_next : std_logic;                         -- indicates activations NL has run enough times to fill up PE Array entirely.
  
     ---- External Command Signals to the FSMD
     signal NL_start_int : std_logic;
@@ -40,7 +78,7 @@ architecture behavioral of SYS_CTR_PASS_FLAG is
     -- ..
 
     ---- External Status Signals to indicate status of the FSMD
-    signal pass_cnt_ready_int : std_logic;
+    -- signal pass_cnt_ready_int : std_logic;
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
@@ -61,14 +99,26 @@ architecture behavioral of SYS_CTR_PASS_FLAG is
 
 begin
 
-    -- control path : state register
+    -- control path : registers
     asmd_reg : process(clk, reset)
     begin
         if rising_edge(clk) then
             if reset = '1' then
+                -- state register
                 state_reg <= s_init;
+                -- control signals registers
+                WB_NL_cnt_reg <= 0;
+                ACT_NL_cnt_reg <= 0;
+                ACT_pass_cnt_reg <= 0;
+                ACT_flag_reg <= '0';
             else
+                -- state register
                 state_reg <= state_next;
+                -- control signals registers
+                WB_NL_cnt_reg <= WB_NL_cnt_next;
+                ACT_NL_cnt_reg <= ACT_NL_cnt_next;
+                ACT_pass_cnt_reg <= ACT_pass_cnt_next;
+                ACT_flag_reg <= ACT_flag_next;
             end if;
         end if;
     end process;
@@ -117,26 +167,18 @@ begin
     end process;
 
     -- control path : output logic
-    pass_cnt_ready_int <= '1' when state_reg = s_idle else '0';
+    -- pass_cnt_ready_int <= '1' when state_reg = s_idle else '0';
     pass_flag_int <= '1' when state_reg = s_flag else '0';
 
     -- data path : data registers
-    data_reg : process(clk, reset)
-    begin
-        if rising_edge(clk) then
-            if reset = '1' then
-                WB_NL_cnt_reg <= 0;
-                ACT_NL_cnt_reg <= 0;
-                ACT_pass_cnt_reg <= 0;
-                ACT_flag_reg <= '0';
-            else
-                WB_NL_cnt_reg <= WB_NL_cnt_next;
-                ACT_NL_cnt_reg <= ACT_NL_cnt_next;
-                ACT_pass_cnt_reg <= ACT_pass_cnt_next;
-                ACT_flag_reg <= ACT_flag_next;
-            end if;
-        end if;
-    end process;
+--    data_reg : process(clk, reset)
+--    begin
+--        if rising_edge(clk) then
+--            if reset = '1' then
+--                else
+--            end if;
+--        end if;
+--    end process;
 
     -- data path : functional units (perform necessary arithmetic operations)
     -- ..

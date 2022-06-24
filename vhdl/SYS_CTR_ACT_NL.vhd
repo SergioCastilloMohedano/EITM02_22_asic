@@ -1,3 +1,44 @@
+-------------------------------------------------------------------------------------------------------
+-- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
+-- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
+-------------------------------------------------------------------------------------------------------
+-- File           : SYS_CTR_ACT_NL.vhd
+-- Author         : Sergio Castillo Mohedano
+-- University     : Lund University
+-- Department     : Electrical and Information Technology (EIT)
+-- Created        : 2022-05-15
+-- Standard       : VHDL-2008
+-------------------------------------------------------------------------------------------------------
+-- Description    : This block triggers the Nested Loop for sweeping along all the activations.
+--                  "h'" and "w'" increase from 0 to "HW' - 1" column-wise.
+--
+--                  for w’ = 0 to w’ = W’ – 1, w’++
+--                      for h’ = 0 to h’ = H’ – 1, h’++
+--                          [h’, w’]
+--                      end for
+--                  end for
+--
+--                  Notice that:
+--                  HW' = HW + 2*padding => [HW = EF] => HW + 2*(-1 + RS)/2 => [RS = 3] => HW + 2
+--                  Parameters are sent including padding which, due to a fixed kernel size of 3x3, is
+--                  always 1 pixel.
+-------------------------------------------------------------------------------------------------------
+-- Input Signals  :
+--         * clk: clock
+--         * reset: synchronous, active high.
+--         * ACT_NL_start: triggers the FSM that outputs all the parameters of a speficic layer within
+--       the network.
+--         * HW_p: height/width of the Input Feature Map, including padding.
+-- Output Signals :
+--         * ACT_NL_ready: active high, set when the FSM is in its idle state. It means the FSM is
+--       ready to be triggered.
+--         * ACT_NL_finished: active high, set for 1 clock cycle when the Nested Loop has finished.
+--         * h_p (r'): parameter that represents pixel's row, including padding.
+--         * w_p: parameter that represents pixel's column, including padding.
+-------------------------------------------------------------------------------------------------------
+-- Revisions      : NA (Git Control)
+-------------------------------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
