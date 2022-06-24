@@ -159,7 +159,7 @@ architecture behavioral of SYS_CTR_NL is
     -- SYS_CTR_NL Intermediate Signals
     signal ACT_NL_start_tmp : std_logic;
     signal NoC_ACK_flag_int : std_logic;
-    signal start_flag_next, start_flag_reg : std_logic:         -- these two signals avoid that "NL_cnt_done_next" signal gets set to "1" the first time the conditions 
+    signal start_flag_next, start_flag_reg : std_logic;         -- these two signals avoid that "NL_cnt_done_next" signal gets set to "1" the first time the conditions 
     signal start_flag_next_2, start_flag_reg_2 : std_logic;     -- of "c", "m" and "rc" being 0 are met, allowing "NL_cnt_done_next" to be set to "1" only when it has to.
 
     -- SYS_CTR_WB_NL Intermediate Signals
