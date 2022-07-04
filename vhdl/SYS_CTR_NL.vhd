@@ -55,7 +55,9 @@ entity SYS_CTR_NL is
         w_p : out std_logic_vector (7 downto 0);
         h_p : out std_logic_vector (7 downto 0);
         M_div_pt : in std_logic_vector (7 downto 0);
-        NoC_ACK_flag : in std_logic
+        NoC_ACK_flag : in std_logic;
+        ACT_NL_ready : out std_logic;
+        ACT_NL_finished : out std_logic
     );
 end SYS_CTR_NL;
 
@@ -424,7 +426,7 @@ begin
     RS_int <= to_integer(unsigned(RS));
     M_div_pt_int <= to_integer(unsigned(M_div_pt));
     NoC_ACK_flag_int <= NoC_ACK_flag;
-
-
+    ACT_NL_ready <= ACT_NL_ready_int;
+    ACT_NL_finished <= ACT_NL_finished_int;
 
 end architecture;
