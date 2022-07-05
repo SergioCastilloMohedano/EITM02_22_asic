@@ -9,7 +9,6 @@ entity SRAM_ACT is
         -- To/From Front-End Read Interface
         h_p : in std_logic_vector (7 downto 0);
         w_p : in std_logic_vector (7 downto 0);
-        rc : in std_logic_vector (7 downto 0);
         HW : in std_logic_vector (7 downto 0);
         ACT_NL_ready : in std_logic;
         ACT_NL_finished : in std_logic;
@@ -24,7 +23,6 @@ architecture structural of SRAM_ACT is
     -- SIGNAL DECLARATIONS
     signal h_p_int : std_logic_vector (7 downto 0);
     signal w_p_int : std_logic_vector (7 downto 0);
-    signal rc_int : std_logic_vector (7 downto 0);
     signal HW_int : std_logic_vector (7 downto 0);
     signal ACT_NL_ready_int : std_logic;
     signal ACT_NL_finished_int : std_logic;
@@ -42,7 +40,6 @@ architecture structural of SRAM_ACT is
     port(
         h_p : in std_logic_vector (7 downto 0);
         w_p : in std_logic_vector (7 downto 0);
-        rc : in std_logic_vector (7 downto 0);
         HW : in std_logic_vector (7 downto 0);
         ACT_NL_ready : in std_logic;
         ACT_NL_finished : in std_logic;
@@ -105,7 +102,6 @@ begin
     port map (
         h_p => h_p_int,
         w_p => w_p_int,
-        rc => rc_int,
         HW => HW_int,
         ACT_NL_ready => ACT_NL_ready_int,
         ACT_NL_finished => ACT_NL_finished_int,
@@ -149,7 +145,6 @@ begin
     -- PORT ASSIGNATIONS
     h_p_int <= h_p;
     w_p_int <= w_p;
-    rc_int <= rc;
     HW_int <= HW;
     ACT_NL_ready_int <= ACT_NL_ready;
     ACT_NL_finished_int <= ACT_NL_finished;

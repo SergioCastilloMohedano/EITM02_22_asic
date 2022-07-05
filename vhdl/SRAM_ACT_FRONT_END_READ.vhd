@@ -29,7 +29,6 @@ entity SRAM_ACT_FRONT_END_READ is
     port (
         h_p : in std_logic_vector (7 downto 0);
         w_p : in std_logic_vector (7 downto 0);
-        rc : in std_logic_vector (7 downto 0);
         HW : in std_logic_vector (7 downto 0);
         ACT_NL_ready : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
         ACT_NL_finished : in std_logic; -- ACT NL has finished. Do not read SRAM anymore.
@@ -47,7 +46,6 @@ architecture dataflow of SRAM_ACT_FRONT_END_READ is
 
     signal h_p_int : natural range 0 to 127;
     signal w_p_int : natural range 0 to 127;
-    signal rc_int : natural range 0 to 127;
     signal HW_int : natural range 0 to 127;
     signal p : natural range 0 to 127; -- p = padding = (-1+RS)/2. since RS = 3 is fixed for our HW accelerator, p = 1 always.
 
@@ -73,7 +71,6 @@ begin
     -- PORT Assignations
     h_p_int <= to_integer(unsigned(h_p));
     w_p_int <= to_integer(unsigned(w_p));
-    rc_int <= to_integer(unsigned(rc));
     HW_int <= to_integer(unsigned(HW));
     ACT_NL_ready_int <= ACT_NL_ready;
     ACT_NL_finished_int <= ACT_NL_finished;

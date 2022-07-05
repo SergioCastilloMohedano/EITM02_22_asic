@@ -57,7 +57,9 @@ entity SYS_CTR_NL is
         M_div_pt : in std_logic_vector (7 downto 0);
         NoC_ACK_flag : in std_logic;
         ACT_NL_ready : out std_logic;
-        ACT_NL_finished : out std_logic
+        ACT_NL_finished : out std_logic;
+        WB_NL_ready : out std_logic;
+        WB_NL_finished : out std_logic
     );
 end SYS_CTR_NL;
 
@@ -428,5 +430,7 @@ begin
     NoC_ACK_flag_int <= NoC_ACK_flag;
     ACT_NL_ready <= ACT_NL_ready_int;
     ACT_NL_finished <= ACT_NL_finished_int;
+    WB_NL_ready <= WB_NL_ready_int;
+    WB_NL_finished <= WB_NL_finished_int;
 
 end architecture;

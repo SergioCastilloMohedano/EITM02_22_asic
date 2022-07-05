@@ -2,11 +2,11 @@
 -- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
 -- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
 -------------------------------------------------------------------------------------------------------
--- File           : SRAM_ACT_READ_tb.vhd
+-- File           : SRAM_READ_tb.vhd
 -- Author         : Sergio Castillo Mohedano
 -- University     : Lund University
 -- Department     : Electrical and Information Technology (EIT)
--- Created        : 2022-06-27
+-- Created        : 2022-07-05
 -- Standard       : VHDL-2008
 -------------------------------------------------------------------------------------------------------
 -- Description    : ..
@@ -18,10 +18,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity SRAM_ACT_READ_tb is
-end SRAM_ACT_READ_tb;
+entity SRAM_READ_tb is
+end SRAM_READ_tb;
 
-architecture sim of SRAM_ACT_READ_tb is
+architecture sim of SRAM_READ_tb is
 
     constant clk_hz : integer := 100e6;
     constant clk_period : time := 1 sec / clk_hz;
@@ -66,8 +66,11 @@ architecture sim of SRAM_ACT_READ_tb is
 
     signal ACT_NL_ready_tb : std_logic;
     signal ACT_NL_finished_tb : std_logic;
+    signal WB_NL_ready_tb : std_logic;
+    signal WB_NL_finished_tb : std_logic;
 
     signal act_out_tb : std_logic_vector (7 downto 0);
+    signal wb_out_tb : std_logic_vector (15 downto 0);
 
     component SYS_CTR_NL is
     port (
@@ -93,7 +96,9 @@ architecture sim of SRAM_ACT_READ_tb is
         M_div_pt : in std_logic_vector (7 downto 0);
         NoC_ACK_flag : in std_logic;
         ACT_NL_ready : out std_logic;
-        ACT_NL_finished : out std_logic
+        ACT_NL_finished : out std_logic;
+        WB_NL_ready : out std_logic;
+        WB_NL_finished : out std_logic
     );
    end component;
 
@@ -113,6 +118,18 @@ architecture sim of SRAM_ACT_READ_tb is
     );
     end component;
 
+    component SRAM_WB is
+    port (
+        clk : in std_logic;
+        reset : in std_logic;
+        -- To/From Front-End Read Interface
+        WB_NL_ready : in std_logic;
+        WB_NL_finished : in std_logic;
+        wb_out : out std_logic_vector (15 downto 0)
+        -- To/From Front-End Write Interface
+        -- ..
+    );
+    end component;
 begin
 
     clk <= not clk after clk_period / 2;
@@ -141,7 +158,9 @@ begin
         M_div_pt => M_div_pt_tb,
         NoC_ACK_flag => NoC_ACK_flag_tb,
         ACT_NL_ready => ACT_NL_ready_tb,
-        ACT_NL_finished => ACT_NL_finished_tb
+        ACT_NL_finished => ACT_NL_finished_tb,
+        WB_NL_ready => WB_NL_ready_tb,
+        WB_NL_finished => WB_NL_finished_tb
     );
 
     DUT_SRAM_ACT : SRAM_ACT
@@ -154,6 +173,15 @@ begin
         ACT_NL_ready => ACT_NL_ready_tb,
         ACT_NL_finished => ACT_NL_finished_tb,
         act_out => act_out_tb
+    );
+
+    DUT_SRAM_WB : SRAM_WB
+    port map (
+        clk => clk,
+        reset => reset,
+        WB_NL_ready => WB_NL_ready_tb,
+        WB_NL_finished => WB_NL_finished_tb,
+        wb_out => wb_out_tb
     );
 
     NOC_ACK_PROC : process
