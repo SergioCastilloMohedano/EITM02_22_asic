@@ -2,14 +2,14 @@
 -- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
 -- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
 -------------------------------------------------------------------------------------------------------
--- File           : SYS_CTR_ACT_NL.vhd
+-- File           : SYS_CTR_IFM_NL.vhd
 -- Author         : Sergio Castillo Mohedano
 -- University     : Lund University
 -- Department     : Electrical and Information Technology (EIT)
 -- Created        : 2022-05-15
 -- Standard       : VHDL-2008
 -------------------------------------------------------------------------------------------------------
--- Description    : This block triggers the Nested Loop for sweeping along all the activations.
+-- Description    : This block triggers the Nested Loop for sweeping along all the Input Feature Map.
 --                  "h'" and "w'" increase from 0 to "HW' - 1" column-wise.
 --
 --                  for w’ = 0 to w’ = W’ – 1, w’++
@@ -26,13 +26,13 @@
 -- Input Signals  :
 --         * clk: clock
 --         * reset: synchronous, active high.
---         * ACT_NL_start: triggers the FSM that outputs all the parameters of a speficic layer within
+--         * IFM_NL_start: triggers the FSM that outputs all the parameters of a speficic layer within
 --       the network.
 --         * HW_p: height/width of the Input Feature Map, including padding.
 -- Output Signals :
---         * ACT_NL_ready: active high, set when the FSM is in its idle state. It means the FSM is
+--         * IFM_NL_ready: active high, set when the FSM is in its idle state. It means the FSM is
 --       ready to be triggered.
---         * ACT_NL_finished: active high, set for 1 clock cycle when the Nested Loop has finished.
+--         * IFM_NL_finished: active high, set for 1 clock cycle when the Nested Loop has finished.
 --         * h_p (r'): parameter that represents pixel's row, including padding.
 --         * w_p: parameter that represents pixel's column, including padding.
 -------------------------------------------------------------------------------------------------------
@@ -43,40 +43,40 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity SYS_CTR_ACT_NL is
+entity SYS_CTR_IFM_NL is
     port (
         clk : in std_logic;
         reset : in std_logic;
-        ACT_NL_start : in std_logic;
-        ACT_NL_ready : out std_logic;
-        ACT_NL_finished : out std_logic;
+        IFM_NL_start : in std_logic;
+        IFM_NL_ready : out std_logic;
+        IFM_NL_finished : out std_logic;
         HW_p : in std_logic_vector (7 downto 0);
         h_p : out std_logic_vector (7 downto 0);
         w_p : out std_logic_vector (7 downto 0)
     );
-end SYS_CTR_ACT_NL;
+end SYS_CTR_IFM_NL;
 
-architecture behavioral of SYS_CTR_ACT_NL is
+architecture behavioral of SYS_CTR_IFM_NL is
 
     -- Enumeration type for the states and state_type signals
-    type state_type is (s_init, s_idle, s_ACT_NL, s_finished);
+    type state_type is (s_init, s_idle, s_IFM_NL, s_finished);
     signal state_next, state_reg: state_type;
 
     ------------ CONTROL PATH SIGNALS ------------
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
-    signal ACT_NL_cnt_done_int : std_logic;
+    signal IFM_NL_cnt_done_int : std_logic;
 
     ---- External Command Signals to the FSMD
-    signal ACT_NL_start_int : std_logic;
+    signal IFM_NL_start_int : std_logic;
 
     -------- OUTPUTS --------
     ---- Internal Control Signals used to control Data Path Operation
     -- ..
 
     ---- External Status Signals to indicate status of the FSMD
-    signal ACT_NL_ready_int : std_logic;
-    signal ACT_NL_finished_int : std_logic;
+    signal IFM_NL_ready_int : std_logic;
+    signal IFM_NL_finished_int : std_logic;
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
@@ -109,22 +109,22 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, ACT_NL_start_int, ACT_NL_cnt_done_int)
+    asmd_ctrl : process(state_reg, IFM_NL_start_int, IFM_NL_cnt_done_int)
     begin
         case state_reg is
             when s_init =>
                 state_next <= s_idle;
             when s_idle =>
-                if ACT_NL_start_int = '1' then
-                    state_next <= s_ACT_NL;
+                if IFM_NL_start_int = '1' then
+                    state_next <= s_IFM_NL;
                 else
                     state_next <= s_idle;
                 end if;
-            when s_ACT_NL =>
-                if ACT_NL_cnt_done_int = '1' then
+            when s_IFM_NL =>
+                if IFM_NL_cnt_done_int = '1' then
                     state_next <= s_finished;
                 else
-                    state_next <= s_ACT_NL;
+                    state_next <= s_IFM_NL;
                 end if;
             when s_finished =>
                 state_next <= s_idle;
@@ -134,8 +134,8 @@ begin
     end process;
 
     -- control path : output logic
-    ACT_NL_ready_int <= '1' when state_reg = s_idle else '0';
-    ACT_NL_finished_int <= '1' when state_reg = s_finished else '0';
+    IFM_NL_ready_int <= '1' when state_reg = s_idle else '0';
+    IFM_NL_finished_int <= '1' when state_reg = s_finished else '0';
 
     -- data path : data registers
     data_reg : process(clk, reset)
@@ -158,7 +158,7 @@ begin
     w_p_out <= w_p_out_tmp when h_p_reg = (HW_p_int - 1) else w_p_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
-    ACT_NL_cnt_done_int <= '1' when ((h_p_reg = (HW_p_int - 1)) AND (w_p_reg = (HW_p_int - 1))) else '0';
+    IFM_NL_cnt_done_int <= '1' when ((h_p_reg = (HW_p_int - 1)) AND (w_p_reg = (HW_p_int - 1))) else '0';
 
     -- data path : mux routing
     data_mux : process(state_reg, h_p_reg, w_p_reg, h_p_out, w_p_out)
@@ -170,7 +170,7 @@ begin
             when s_idle =>
                 h_p_next <= h_p_reg;
                 w_p_next <= w_p_reg;
-            when s_ACT_NL =>
+            when s_IFM_NL =>
                 h_p_next <= h_p_out;
                 w_p_next <= w_p_out;
             when s_finished =>
@@ -183,9 +183,9 @@ begin
     end process;
 
     -- PORT Assignations
-    ACT_NL_start_int <= ACT_NL_start;
-    ACT_NL_ready <= ACT_NL_ready_int;
-    ACT_NL_finished <= ACT_NL_finished_int;
+    IFM_NL_start_int <= IFM_NL_start;
+    IFM_NL_ready <= IFM_NL_ready_int;
+    IFM_NL_finished <= IFM_NL_finished_int;
     h_p <= std_logic_vector(to_unsigned(h_p_reg, h_p'length));
     w_p <= std_logic_vector(to_unsigned(w_p_reg, w_p'length));
     HW_p_int <= to_integer(unsigned(HW_p));

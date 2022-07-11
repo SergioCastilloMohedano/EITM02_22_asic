@@ -9,15 +9,15 @@
 -- Created        : 2022-05-15
 -- Standard       : VHDL-2008
 -------------------------------------------------------------------------------------------------------
--- Description    : This block integrates the Nested Loops for both weights/biases and activations,
---                  triggers them so that corresponding values of both weights/biases and activations
+-- Description    : This block integrates the Nested Loops for both weights/biases and Input Features Map,
+--                  triggers them so that corresponding values of both weights/biases and ifmaps
 --                  can be retrieved from SRAM blocks concurrently and also be sent concurrently to the
 --                  Multicast Controllers.
 --               
 --              TBD
 --              It needs to be modified to hold for its state when pass is totally loaded into PE Array
 --              and wait for computation to be finished. During this time, at some point, Nested Loop
---              for the activation outputs of next layer shall be triggered.
+--              for the ifmap outputs of next layer shall be triggered.
 -------------------------------------------------------------------------------------------------------
 -- Input Signals  :
 --         * clk: clock
@@ -56,8 +56,8 @@ entity SYS_CTR_NL is
         h_p : out std_logic_vector (7 downto 0);
         M_div_pt : in std_logic_vector (7 downto 0);
         NoC_ACK_flag : in std_logic;
-        ACT_NL_ready : out std_logic;
-        ACT_NL_finished : out std_logic;
+        IFM_NL_ready : out std_logic;
+        IFM_NL_finished : out std_logic;
         WB_NL_ready : out std_logic;
         WB_NL_finished : out std_logic
     );
@@ -82,13 +82,13 @@ architecture behavioral of SYS_CTR_NL is
         );
     end component;
 
-    component SYS_CTR_ACT_NL is
+    component SYS_CTR_IFM_NL is
         port (
             clk : in std_logic;
             reset : in std_logic;
-            ACT_NL_start : in std_logic;
-            ACT_NL_ready : out std_logic;
-            ACT_NL_finished : out std_logic;
+            IFM_NL_start : in std_logic;
+            IFM_NL_ready : out std_logic;
+            IFM_NL_finished : out std_logic;
             HW_p : in std_logic_vector (7 downto 0);
             h_p : out std_logic_vector (7 downto 0);
             w_p : out std_logic_vector (7 downto 0)
@@ -104,7 +104,7 @@ architecture behavioral of SYS_CTR_NL is
             r : in std_logic_vector (7 downto 0);
             M_div_pt : in std_logic_vector (7 downto 0);
             WB_NL_finished : in std_logic;
-            ACT_NL_finished : in std_logic;
+            IFM_NL_finished : in std_logic;
             pass_flag : out std_logic
          );
     end component;
@@ -119,7 +119,7 @@ architecture behavioral of SYS_CTR_NL is
     ---- Internal Status Signals from the Data Path
     signal NL_cnt_done_next : std_logic;    -- signal that is set high only once the whole current layer of the network has been processed by the Nested Loops.
     signal NL_cnt_done_reg : std_logic;
-    signal ACT_NL_flag_int : std_logic;     -- allows the Activation NL to be triggered only once, when m = 0.
+    signal IFM_NL_flag_int : std_logic;     -- allows the IFM NL to be triggered only once, when m = 0.
  
     ---- External Command Signals to the FSMD
     signal NL_start_int : std_logic;
@@ -128,8 +128,8 @@ architecture behavioral of SYS_CTR_NL is
     ---- Internal Control Signals used to control Data Path Operation
     signal WB_NL_ready_int : std_logic;
     signal WB_NL_finished_int : std_logic;
-    signal ACT_NL_ready_int : std_logic;
-    signal ACT_NL_finished_int : std_logic;
+    signal IFM_NL_ready_int : std_logic;
+    signal IFM_NL_finished_int : std_logic;
 
     ---- External Status Signals to indicate status of the FSMD
     signal NL_ready_int : std_logic;
@@ -161,7 +161,7 @@ architecture behavioral of SYS_CTR_NL is
     -- Out PORTs "rc", "c" and "m"
 
     -- SYS_CTR_NL Intermediate Signals
-    signal ACT_NL_start_tmp : std_logic;
+    signal IFM_NL_start_tmp : std_logic;
     signal NoC_ACK_flag_int : std_logic;
     signal start_flag_next, start_flag_reg : std_logic;         -- these two signals avoid that "NL_cnt_done_next" signal gets set to "1" the first time the conditions 
     signal start_flag_next_2, start_flag_reg_2 : std_logic;     -- of "c", "m" and "rc" being 0 are met, allowing "NL_cnt_done_next" to be set to "1" only when it has to.
@@ -172,10 +172,10 @@ architecture behavioral of SYS_CTR_NL is
     signal r_p_int : std_logic_vector (7 downto 0);
     signal WB_NL_start_int : std_logic;
 
-    -- SYS_CTR_ACT_NL Intermediate Signals
+    -- SYS_CTR_IFM_NL Intermediate Signals
     signal h_p_int : std_logic_vector (7 downto 0);
     signal w_p_int : std_logic_vector (7 downto 0);
-    signal ACT_NL_start_int : std_logic;
+    signal IFM_NL_start_int : std_logic;
 
     -- SYS_CTR_PASS_FLAG Intermediate Signals
     signal pass_flag_int : std_logic;
@@ -200,14 +200,14 @@ begin
         s               =>  s_int
     );
 
-    -- SYS_CTR_ACT_NL
-    SYS_CTR_ACT_NL_inst : SYS_CTR_ACT_NL
+    -- SYS_CTR_IFM_NL
+    SYS_CTR_IFM_NL_inst : SYS_CTR_IFM_NL
     port map (
         clk             =>  clk,
         reset           =>  reset,
-        ACT_NL_start    =>  ACT_NL_start_int,
-        ACT_NL_ready    =>  ACT_NL_ready_int,
-        ACT_NL_finished =>  ACT_NL_finished_int,
+        IFM_NL_start    =>  IFM_NL_start_int,
+        IFM_NL_ready    =>  IFM_NL_ready_int,
+        IFM_NL_finished =>  IFM_NL_finished_int,
         HW_p            =>  std_logic_vector(to_unsigned(HW_p_int,HW_p'length)),
         h_p             =>  h_p_int,
         w_p             =>  w_p_int
@@ -223,7 +223,7 @@ begin
         r               => std_logic_vector(to_unsigned(r_int,r'length)),
         M_div_pt        => std_logic_vector(to_unsigned(M_div_pt_int,M_div_pt'length)),
         WB_NL_finished  => WB_NL_finished_int,
-        ACT_NL_finished => ACT_NL_finished_int,
+        IFM_NL_finished => IFM_NL_finished_int,
         pass_flag       => pass_flag_int
     );
 
@@ -250,7 +250,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, NL_start_int, WB_NL_finished_int, ACT_NL_finished_int, WB_NL_ready_int, ACT_NL_ready_int, NL_cnt_done_reg, ACT_NL_flag_int, pass_flag_int, NoC_ACK_flag_int)
+    asmd_ctrl : process(state_reg, NL_start_int, WB_NL_finished_int, IFM_NL_finished_int, WB_NL_ready_int, IFM_NL_ready_int, NL_cnt_done_reg, IFM_NL_flag_int, pass_flag_int, NoC_ACK_flag_int)
     begin
         case state_reg is
             when s_init =>
@@ -263,7 +263,7 @@ begin
                 end if;
             when s_start =>
                 if (pass_flag_int = '0') then
-                    if (ACT_NL_flag_int = '1') then
+                    if (IFM_NL_flag_int = '1') then
                         state_next <= s_wait_1;
                     else
                         state_next <= s_wait_2;
@@ -272,8 +272,8 @@ begin
                     state_next <= s_NoC_ACK;
                 end if;
             when s_wait_1 =>
-                if (WB_NL_finished_int XOR ACT_NL_finished_int) = '0' then
-                    if (WB_NL_finished_int AND ACT_NL_finished_int) = '1' then
+                if (WB_NL_finished_int XOR IFM_NL_finished_int) = '0' then
+                    if (WB_NL_finished_int AND IFM_NL_finished_int) = '1' then
                         state_next <= s_NL;
                     else
                         state_next <= s_wait_1;
@@ -282,13 +282,13 @@ begin
                     state_next <= s_wait_2;
                 end if;
             when s_wait_2 =>
-                if (WB_NL_finished_int OR ACT_NL_finished_int) = '1' then
+                if (WB_NL_finished_int OR IFM_NL_finished_int) = '1' then
                     state_next <= s_NL;
                 else
                     state_next <= s_wait_2;
                 end if;
             when s_NL =>
-                if (WB_NL_ready_int AND ACT_NL_ready_int) = '0' then
+                if (WB_NL_ready_int AND IFM_NL_ready_int) = '0' then
                     state_next <= s_NL;
                 else
                     state_next <= s_start;
@@ -313,8 +313,8 @@ begin
     -- control path : output logic
     NL_ready_int <= '1' when state_reg = s_idle else '0';
     WB_NL_start_int <= '1' when (state_reg = s_start AND pass_flag_int = '0') else '0';
-    ACT_NL_start_tmp <= '1' when (state_reg = s_start AND pass_flag_int = '0') else '0';
-    ACT_NL_start_int <= '1' when (ACT_NL_start_tmp = '1' AND ACT_NL_flag_int = '1') else '0';
+    IFM_NL_start_tmp <= '1' when (state_reg = s_start AND pass_flag_int = '0') else '0';
+    IFM_NL_start_int <= '1' when (IFM_NL_start_tmp = '1' AND IFM_NL_flag_int = '1') else '0';
     NL_finished_int <= '1' when state_reg = s_finished else '0';
 
     -- data path : data registers
@@ -357,10 +357,10 @@ begin
                         '0' when state_reg = s_finished else
                         NL_cnt_done_reg;
 
-    ACT_NL_flag_int <= '1' when m_reg = 0 else '0';
+    IFM_NL_flag_int <= '1' when m_reg = 0 else '0';
 
     -- data path : mux routing
-    data_mux : process(state_reg, rc_reg, m_reg, c_reg, rc_out, m_out, c_out, WB_NL_ready_int, ACT_NL_ready_int)
+    data_mux : process(state_reg, rc_reg, m_reg, c_reg, rc_out, m_out, c_out, WB_NL_ready_int, IFM_NL_ready_int)
     begin
         case state_reg is
             when s_init =>
@@ -384,7 +384,7 @@ begin
                 m_next <= m_reg;
                 c_next <= c_reg;
             when s_NL =>
-                if (WB_NL_ready_int AND ACT_NL_ready_int) = '0' then
+                if (WB_NL_ready_int AND IFM_NL_ready_int) = '0' then
                     rc_next <= rc_reg;
                     m_next <= m_reg;
                     c_next <= c_reg;
@@ -428,8 +428,8 @@ begin
     RS_int <= to_integer(unsigned(RS));
     M_div_pt_int <= to_integer(unsigned(M_div_pt));
     NoC_ACK_flag_int <= NoC_ACK_flag;
-    ACT_NL_ready <= ACT_NL_ready_int;
-    ACT_NL_finished <= ACT_NL_finished_int;
+    IFM_NL_ready <= IFM_NL_ready_int;
+    IFM_NL_finished <= IFM_NL_finished_int;
     WB_NL_ready <= WB_NL_ready_int;
     WB_NL_finished <= WB_NL_finished_int;
 

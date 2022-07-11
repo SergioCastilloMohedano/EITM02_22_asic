@@ -2,14 +2,14 @@
 -- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
 -- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
 -------------------------------------------------------------------------------------------------------
--- File           : SRAM_ACT_BACK_END.vhd
+-- File           : SRAM_IFM_BACK_END.vhd
 -- Author         : Sergio Castillo Mohedano
 -- University     : Lund University
 -- Department     : Electrical and Information Technology (EIT)
 -- Created        : 2022-06-25
 -- Standard       : VHDL-2008
 -------------------------------------------------------------------------------------------------------
--- Description    : Activations SRAM BACK-End Interface
+-- Description    : Input Features Map SRAM BACK-End Interface
 -------------------------------------------------------------------------------------------------------
 -- Input Signals  :
 --         * clk: clock
@@ -25,13 +25,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity SRAM_ACT_BACK_END is
+entity SRAM_IFM_BACK_END is
     port (
         clk : in std_logic;
         reset : in std_logic;
 
         -- Front-End Interface Ports
-        act_FE : out std_logic_vector (7 downto 0);
+        ifm_FE : out std_logic_vector (7 downto 0);
         RE_FE : in std_logic;   -- Read Enable, active high
 
         -- SRAM Wrapper Ports (READ)
@@ -48,9 +48,9 @@ entity SRAM_ACT_BACK_END is
 --        ena : out std_logic;
 --        wea : out std_logic_vector (3 downto 0)
     );
-end SRAM_ACT_BACK_END;
+end SRAM_IFM_BACK_END;
 
-architecture behavioral of SRAM_ACT_BACK_END is
+architecture behavioral of SRAM_IFM_BACK_END is
 
     -- Enumeration type for the states and state_type signals
     type state_type is (s_init, s_idle, s_0, s_1, s_2, s_3);
@@ -83,10 +83,10 @@ architecture behavioral of SRAM_ACT_BACK_END is
     -- ..
 
     ---- Data Outputs
-    signal act_FE_int : std_logic_vector (7 downto 0);
+    signal ifm_FE_int : std_logic_vector (7 downto 0);
     signal enb_int : std_logic;
 
-    -- SRAM_ACT_BACK_END Intermediate Signals
+    -- SRAM_IFM_BACK_END Intermediate Signals
     signal clkb_int : std_logic;
     signal rstb_int : std_logic;
     signal doutb_int : std_logic_vector (31 downto 0);
@@ -153,15 +153,15 @@ begin
     begin
         case state_reg is
             when s_init =>
-                act_FE_int <= (others => '0');
+                ifm_FE_int <= (others => '0');
                 enb_int <= '0';
                 addr_cnt_next <= addr_cnt_reg;
             when s_idle =>
-                act_FE_int <= (others => '0');
+                ifm_FE_int <= (others => '0');
                 addr_cnt_next <= addr_cnt_reg;
                 enb_int <= '0';
             when s_0 =>
-                act_FE_int <= doutb_int (31 downto 24);
+                ifm_FE_int <= doutb_int (31 downto 24);
                 addr_cnt_next <= addr_cnt_reg;
                 if (RE_int = '1') then
                     enb_int <= '1';
@@ -169,19 +169,19 @@ begin
                     enb_int <= '0';
                 end if;
             when s_1 =>
-                act_FE_int <= doutb_int (23 downto 16);
+                ifm_FE_int <= doutb_int (23 downto 16);
                 addr_cnt_next <= addr_cnt_reg;
                 enb_int <= '0';
             when s_2 =>
-                act_FE_int <= doutb_int (15 downto 8);
+                ifm_FE_int <= doutb_int (15 downto 8);
                 addr_cnt_next <= addr_cnt_reg;
                 enb_int <= '0';
             when s_3 =>
-                act_FE_int <= doutb_int (7 downto 0);
+                ifm_FE_int <= doutb_int (7 downto 0);
                 addr_cnt_next <= addr_cnt_reg + 1;
                 enb_int <= '1';
             when others =>
-                act_FE_int <= (others => '0');
+                ifm_FE_int <= (others => '0');
                 addr_cnt_next <= addr_cnt_reg;
                 enb_int <= '0';
         end case;
@@ -196,6 +196,6 @@ begin
     addrb <= std_logic_vector(addr_cnt_reg);
     enb <= enb_int;
     doutb_int <= doutb;
-    act_FE <= act_FE_int;
+    ifm_FE <= ifm_FE_int;
 
 end architecture;

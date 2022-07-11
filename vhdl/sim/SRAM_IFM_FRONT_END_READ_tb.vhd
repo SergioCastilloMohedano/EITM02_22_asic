@@ -2,7 +2,7 @@
 -- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
 -- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
 -------------------------------------------------------------------------------------------------------
--- File           : SRAM_ACT_FRONT_END_READ_tb.vhd
+-- File           : SRAM_IFM_FRONT_END_READ_tb.vhd
 -- Author         : Sergio Castillo Mohedano
 -- University     : Lund University
 -- Department     : Electrical and Information Technology (EIT)
@@ -18,10 +18,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity SRAM_ACT_FRONT_END_READ_tb is
-end SRAM_ACT_FRONT_END_READ_tb;
+entity SRAM_IFM_FRONT_END_READ_tb is
+end SRAM_IFM_FRONT_END_READ_tb;
 
-architecture sim of SRAM_ACT_FRONT_END_READ_tb is
+architecture sim of SRAM_IFM_FRONT_END_READ_tb is
 
     constant clk_hz : integer := 100e6;
     constant clk_period : time := 1 sec / clk_hz;
@@ -64,14 +64,14 @@ architecture sim of SRAM_ACT_FRONT_END_READ_tb is
 
     signal NoC_ACK_flag_tb : std_logic := '0';
 
-    signal ACT_NL_ready_tb : std_logic;
-    signal ACT_NL_finished_tb : std_logic;
+    signal IFM_NL_ready_tb : std_logic;
+    signal IFM_NL_finished_tb : std_logic;
 
-    signal act_out_tb : std_logic_vector (7 downto 0);
+    signal ifm_out_tb : std_logic_vector (7 downto 0);
     signal h_BE_tb : std_logic_vector (7 downto 0);
     signal w_BE_tb : std_logic_vector (7 downto 0);
     signal rc_BE_tb : std_logic_vector (7 downto 0);
-    signal act_BE_tb : std_logic_vector (7 downto 0) := (others => '1');
+    signal ifm_BE_tb : std_logic_vector (7 downto 0) := (others => '1');
     signal RE_BE_tb : std_logic;
 
     component SYS_CTR_NL is
@@ -97,25 +97,25 @@ architecture sim of SRAM_ACT_FRONT_END_READ_tb is
         w_p : out std_logic_vector (7 downto 0);
         M_div_pt : in std_logic_vector (7 downto 0);
         NoC_ACK_flag : in std_logic;
-        ACT_NL_ready : out std_logic;
-        ACT_NL_finished : out std_logic
+        IFM_NL_ready : out std_logic;
+        IFM_NL_finished : out std_logic
     );
    end component;
 
-    component SRAM_ACT_FRONT_END_READ is
+    component SRAM_IFM_FRONT_END_READ is
     port (
         h_p : in std_logic_vector (7 downto 0);
         w_p : in std_logic_vector (7 downto 0);
         rc : in std_logic_vector (7 downto 0);
         HW : in std_logic_vector (7 downto 0);
-        ACT_NL_ready : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
-        ACT_NL_finished : in std_logic; -- ACT NL has finished. Do not read SRAM anymore.
-        act_out : out std_logic_vector (7 downto 0);
+        IFM_NL_ready : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
+        IFM_NL_finished : in std_logic; -- IFM NL has finished. Do not read SRAM anymore.
+        ifm_out : out std_logic_vector (7 downto 0);
         -- Back-End (BE) Interface Ports
         h_addr_BE : out std_logic_vector (7 downto 0);
         w_addr_BE : out std_logic_vector (7 downto 0);
         rc_addr_BE : out std_logic_vector (7 downto 0);
-        act_BE : in std_logic_vector (7 downto 0);
+        ifm_BE : in std_logic_vector (7 downto 0);
         RE_BE : out std_logic   -- Read Enable, active high
     );
     end component;
@@ -147,23 +147,23 @@ begin
         w_p => w_p_tb,
         M_div_pt => M_div_pt_tb,
         NoC_ACK_flag => NoC_ACK_flag_tb,
-        ACT_NL_ready => ACT_NL_ready_tb,
-        ACT_NL_finished => ACT_NL_finished_tb
+        IFM_NL_ready => IFM_NL_ready_tb,
+        IFM_NL_finished => IFM_NL_finished_tb
     );
 
-    DUT_SRAM_ACT_FRONT_END_READ : SRAM_ACT_FRONT_END_READ
+    DUT_SRAM_IFM_FRONT_END_READ : SRAM_IFM_FRONT_END_READ
     port map (
         h_p => h_p_tb,
         w_p => w_p_tb,
         rc => rc_tb,
         HW => HW_tb,
-        ACT_NL_ready => ACT_NL_ready_tb,
-        ACT_NL_finished => ACT_NL_finished_tb,
-        act_out => act_out_tb,
+        IFM_NL_ready => IFM_NL_ready_tb,
+        IFM_NL_finished => IFM_NL_finished_tb,
+        ifm_out => ifm_out_tb,
         h_addr_BE => h_BE_tb,
         w_addr_BE => w_BE_tb,
         rc_addr_BE => rc_BE_tb,
-        act_BE => act_BE_tb,
+        ifm_BE => ifm_BE_tb,
         RE_BE => RE_BE_tb
     );
 

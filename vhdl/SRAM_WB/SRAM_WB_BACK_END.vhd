@@ -86,7 +86,7 @@ architecture behavioral of SRAM_WB_BACK_END is
     signal wb_FE_int : std_logic_vector (15 downto 0);
     signal enb_int : std_logic;
 
-    -- SRAM_ACT_BACK_END Intermediate Signals
+    -- SRAM_WB_BACK_END Intermediate Signals
     signal clkb_int : std_logic;
     signal rstb_int : std_logic;
     signal doutb_int : std_logic_vector (15 downto 0);

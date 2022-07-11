@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity SRAM_ACT is
+entity SRAM_IFM is
     port (
         clk : in std_logic;
         reset : in std_logic;
@@ -10,24 +10,24 @@ entity SRAM_ACT is
         h_p : in std_logic_vector (7 downto 0);
         w_p : in std_logic_vector (7 downto 0);
         HW : in std_logic_vector (7 downto 0);
-        ACT_NL_ready : in std_logic;
-        ACT_NL_finished : in std_logic;
-        act_out : out std_logic_vector (7 downto 0)
+        IFM_NL_ready : in std_logic;
+        IFM_NL_finished : in std_logic;
+        ifm_out : out std_logic_vector (7 downto 0)
         -- To/From Front-End Write Interface
         -- ..
     );
-end SRAM_ACT;
+end SRAM_IFM;
 
-architecture structural of SRAM_ACT is
+architecture structural of SRAM_IFM is
 
     -- SIGNAL DECLARATIONS
     signal h_p_int : std_logic_vector (7 downto 0);
     signal w_p_int : std_logic_vector (7 downto 0);
     signal HW_int : std_logic_vector (7 downto 0);
-    signal ACT_NL_ready_int : std_logic;
-    signal ACT_NL_finished_int : std_logic;
-    signal act_out_int : std_logic_vector (7 downto 0);
-    signal act_int : std_logic_vector (7 downto 0);
+    signal IFM_NL_ready_int : std_logic;
+    signal IFM_NL_finished_int : std_logic;
+    signal ifm_out_int : std_logic_vector (7 downto 0);
+    signal ifm_int : std_logic_vector (7 downto 0);
     signal RE_int : std_logic;
     signal clkb_int : std_logic;
     signal rstb_int : std_logic;
@@ -36,32 +36,32 @@ architecture structural of SRAM_ACT is
     signal enb_int : std_logic;
 
     -- COMPONENT DECLARATIONS
-    component SRAM_ACT_FRONT_END_READ is
+    component SRAM_IFM_FRONT_END_READ is
     port(
         h_p : in std_logic_vector (7 downto 0);
         w_p : in std_logic_vector (7 downto 0);
         HW : in std_logic_vector (7 downto 0);
-        ACT_NL_ready : in std_logic;
-        ACT_NL_finished : in std_logic;
-        act_out : out std_logic_vector (7 downto 0);
+        IFM_NL_ready : in std_logic;
+        IFM_NL_finished : in std_logic;
+        ifm_out : out std_logic_vector (7 downto 0);
         -- Back-End (BE) Interface Ports
-        act_BE : in std_logic_vector (7 downto 0);
+        ifm_BE : in std_logic_vector (7 downto 0);
         RE_BE : out std_logic
         );
     end component;
 
---    component SRAM_ACT_FRONT_END_WRITE is
+--    component SRAM_IFM_FRONT_END_WRITE is
 --    port(clk                : in std_logic;
 --         reset              : in std_logic
 --         -- ...
 --        );
 --    end component;
 
-    component SRAM_ACT_BACK_END is
+    component SRAM_IFM_BACK_END is
     port(clk : in std_logic;
          reset : in std_logic;
         -- Front-End Interface Ports
-         act_FE : out std_logic_vector (7 downto 0);
+         ifm_FE : out std_logic_vector (7 downto 0);
          RE_FE : in std_logic;
         -- SRAM Wrapper Ports (READ)
          clkb : out std_logic;
@@ -97,26 +97,26 @@ architecture structural of SRAM_ACT is
 
 begin
 
-    -- SRAM_ACT_FRONT_END_READ
-    SRAM_ACT_FRONT_END_READ_inst : SRAM_ACT_FRONT_END_READ
+    -- SRAM_IFM_FRONT_END_READ
+    SRAM_IFM_FRONT_END_READ_inst : SRAM_IFM_FRONT_END_READ
     port map (
         h_p => h_p_int,
         w_p => w_p_int,
         HW => HW_int,
-        ACT_NL_ready => ACT_NL_ready_int,
-        ACT_NL_finished => ACT_NL_finished_int,
-        act_out => act_out_int,
+        IFM_NL_ready => IFM_NL_ready_int,
+        IFM_NL_finished => IFM_NL_finished_int,
+        ifm_out => ifm_out_int,
         -- Back-End (BE) Interface Ports
-        act_BE => act_int,
+        ifm_BE => ifm_int,
         RE_BE => RE_int
     );
 
-    -- SRAM_ACT_BACK_END
-    SRAM_ACT_BACK_END_inst : SRAM_ACT_BACK_END
+    -- SRAM_IFM_BACK_END
+    SRAM_IFM_BACK_END_inst : SRAM_IFM_BACK_END
     port map (
         clk => clk,
         reset => reset,
-        act_FE => act_int,
+        ifm_FE => ifm_int,
         RE_FE => RE_int,
         clkb => clkb_int,
         rstb => rstb_int,
@@ -146,9 +146,9 @@ begin
     h_p_int <= h_p;
     w_p_int <= w_p;
     HW_int <= HW;
-    ACT_NL_ready_int <= ACT_NL_ready;
-    ACT_NL_finished_int <= ACT_NL_finished;
-    act_out <= act_out_int;
+    IFM_NL_ready_int <= IFM_NL_ready;
+    IFM_NL_finished_int <= IFM_NL_finished;
+    ifm_out <= ifm_out_int;
 
 
 end architecture;

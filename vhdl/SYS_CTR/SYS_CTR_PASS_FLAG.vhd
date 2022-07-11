@@ -24,10 +24,10 @@
 --       go to s_idle state. Active high.
 --         * r: hyperparameter of the Network. Indicates the number of PE Sets that process different
 --       input channels within the PE Array.
---         * M_div_pt: parameter that indicates how many passes can the activations be reutilized
+--         * M_div_pt: parameter that indicates how many passes can the ifmaps be reutilized
 --       within the PE Array before having to update them again.
 --         * WB_NL_finished: flag indicating that the Nested Loop of the weights/biases has finished.
---         * ACT_NL_finished: flag indicating that the Nested Loop of the activations has finished.
+--         * IFM_NL_finished: flag indicating that the Nested Loop of the ifmaps has finished.
 -- Output Signals :
 --         * pass_flag: flag that acknowledges the controller that the necessary parameters to
 --       compute a pass have been already handled by the system controller, meaning that the
@@ -49,7 +49,7 @@ entity SYS_CTR_PASS_FLAG is
         r : in std_logic_vector (7 downto 0);
         M_div_pt : in std_logic_vector (7 downto 0);
         WB_NL_finished : in std_logic;
-        ACT_NL_finished : in std_logic;
+        IFM_NL_finished : in std_logic;
         pass_flag : out std_logic
          );
 end SYS_CTR_PASS_FLAG;
@@ -65,9 +65,9 @@ architecture behavioral of SYS_CTR_PASS_FLAG is
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
     signal WB_NL_cnt_reg, WB_NL_cnt_next : natural range 0 to 127;          -- counts iterations of the weights NL.
-    signal ACT_NL_cnt_reg, ACT_NL_cnt_next : natural range 0 to 127;        -- counts iterations of the activations NL.
-    signal ACT_pass_cnt_reg, ACT_pass_cnt_next : natural range 0 to 127;    -- counts how many passes are left until activations NL is triggered again.
-    signal ACT_flag_reg, ACT_flag_next : std_logic;                         -- indicates activations NL has run enough times to fill up PE Array entirely.
+    signal IFM_NL_cnt_reg, IFM_NL_cnt_next : natural range 0 to 127;        -- counts iterations of the ifmaps NL.
+    signal IFM_pass_cnt_reg, IFM_pass_cnt_next : natural range 0 to 127;    -- counts how many passes are left until ifmaps NL is triggered again.
+    signal IFM_flag_reg, IFM_flag_next : std_logic;                         -- indicates ifmaps NL has run enough times to fill up PE Array entirely.
  
     ---- External Command Signals to the FSMD
     signal NL_start_int : std_logic;
@@ -86,7 +86,7 @@ architecture behavioral of SYS_CTR_PASS_FLAG is
 
     ---- External Control Signals used to control Data Path Operation
     signal WB_NL_finished_int : std_logic;
-    signal ACT_NL_finished_int : std_logic;
+    signal IFM_NL_finished_int : std_logic;
     signal M_div_pt_int : natural range 0 to 127;
     signal r_int : natural range 0 to 127;
 
@@ -108,23 +108,23 @@ begin
                 state_reg <= s_init;
                 -- control signals registers
                 WB_NL_cnt_reg <= 0;
-                ACT_NL_cnt_reg <= 0;
-                ACT_pass_cnt_reg <= 0;
-                ACT_flag_reg <= '0';
+                IFM_NL_cnt_reg <= 0;
+                IFM_pass_cnt_reg <= 0;
+                IFM_flag_reg <= '0';
             else
                 -- state register
                 state_reg <= state_next;
                 -- control signals registers
                 WB_NL_cnt_reg <= WB_NL_cnt_next;
-                ACT_NL_cnt_reg <= ACT_NL_cnt_next;
-                ACT_pass_cnt_reg <= ACT_pass_cnt_next;
-                ACT_flag_reg <= ACT_flag_next;
+                IFM_NL_cnt_reg <= IFM_NL_cnt_next;
+                IFM_pass_cnt_reg <= IFM_pass_cnt_next;
+                IFM_flag_reg <= IFM_flag_next;
             end if;
         end if;
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, NL_start_int, WB_NL_cnt_reg, ACT_NL_cnt_reg, ACT_pass_cnt_reg, NL_finished_int, r_int, M_div_pt_int, ACT_flag_reg)
+    asmd_ctrl : process(state_reg, NL_start_int, WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, NL_finished_int, r_int, M_div_pt_int, IFM_flag_reg)
     begin
         case state_reg is
             when s_init =>
@@ -136,7 +136,7 @@ begin
                     state_next <= s_idle;
                 end if;
             when s_cnt_1 =>
-                if ((WB_NL_cnt_reg < r_int) OR (ACT_NL_cnt_reg < r_int)) then
+                if ((WB_NL_cnt_reg < r_int) OR (IFM_NL_cnt_reg < r_int)) then
                     state_next <= s_cnt_1;
                 else
                     state_next <= s_flag;
@@ -155,7 +155,7 @@ begin
                 if (NL_finished_int = '1') then
                     state_next <= s_idle;
                 else
-                    if (ACT_flag_reg = '0') then
+                    if (IFM_flag_reg = '0') then
                         state_next <= s_cnt_2;
                     else
                         state_next <= s_cnt_1;
@@ -187,23 +187,23 @@ begin
     -- ..
 
     -- data path : mux routing
-    data_mux : process(state_reg, WB_NL_finished_int, ACT_NL_finished_int, WB_NL_cnt_reg, ACT_NL_cnt_reg, ACT_pass_cnt_reg, r_int, M_div_pt_int, ACT_flag_reg)
+    data_mux : process(state_reg, WB_NL_finished_int, IFM_NL_finished_int, WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, r_int, M_div_pt_int, IFM_flag_reg)
 
     variable WB_NL_cnt_var : natural range 0 to 127;
-    variable ACT_NL_cnt_var : natural range 0 to 127;
+    variable IFM_NL_cnt_var : natural range 0 to 127;
 
     begin
         case state_reg is
             when s_init =>
                 WB_NL_cnt_next <= WB_NL_cnt_reg;
-                ACT_NL_cnt_next <= ACT_NL_cnt_reg;
-                ACT_pass_cnt_next <= ACT_pass_cnt_reg;
-                ACT_flag_next <= ACT_flag_reg;
+                IFM_NL_cnt_next <= IFM_NL_cnt_reg;
+                IFM_pass_cnt_next <= IFM_pass_cnt_reg;
+                IFM_flag_next <= IFM_flag_reg;
             when s_idle =>
                 WB_NL_cnt_next <= WB_NL_cnt_reg;
-                ACT_NL_cnt_next <= ACT_NL_cnt_reg;
-                ACT_pass_cnt_next <= ACT_pass_cnt_reg;
-                ACT_flag_next <= ACT_flag_reg;
+                IFM_NL_cnt_next <= IFM_NL_cnt_reg;
+                IFM_pass_cnt_next <= IFM_pass_cnt_reg;
+                IFM_flag_next <= IFM_flag_reg;
             when s_cnt_1 =>
                 if (WB_NL_finished_int = '1') then
                     WB_NL_cnt_var := WB_NL_cnt_reg + 1;
@@ -211,22 +211,22 @@ begin
                     WB_NL_cnt_var := WB_NL_cnt_reg;
                 end if;
 
-                if (ACT_NL_finished_int = '1') then
-                    ACT_NL_cnt_var := ACT_NL_cnt_reg + 1;
+                if (IFM_NL_finished_int = '1') then
+                    IFM_NL_cnt_var := IFM_NL_cnt_reg + 1;
                 else
-                    ACT_NL_cnt_var := ACT_NL_cnt_reg;
+                    IFM_NL_cnt_var := IFM_NL_cnt_reg;
                 end if;
 
-                if ((WB_NL_cnt_reg < r_int) OR (ACT_NL_cnt_reg < r_int)) then
+                if ((WB_NL_cnt_reg < r_int) OR (IFM_NL_cnt_reg < r_int)) then
                     WB_NL_cnt_next <= WB_NL_cnt_var;
-                    ACT_NL_cnt_next <= ACT_NL_cnt_var;
+                    IFM_NL_cnt_next <= IFM_NL_cnt_var;
                 else
                     WB_NL_cnt_next <= 0;
-                    ACT_NL_cnt_next <= 0;
+                    IFM_NL_cnt_next <= 0;
                 end if;
 
-                ACT_pass_cnt_next <= ACT_pass_cnt_reg;
-                ACT_flag_next <= '0';
+                IFM_pass_cnt_next <= IFM_pass_cnt_reg;
+                IFM_flag_next <= '0';
 
 
             when s_cnt_2 =>
@@ -237,39 +237,39 @@ begin
                 end if;
 
                 if (M_div_pt_int < 2) then
-                    ACT_flag_next <= '1';
-                    ACT_pass_cnt_next <= ACT_pass_cnt_reg;
+                    IFM_flag_next <= '1';
+                    IFM_pass_cnt_next <= IFM_pass_cnt_reg;
                     WB_NL_cnt_next <= WB_NL_cnt_reg;
                 else
                     if (WB_NL_cnt_reg < r_int) then
                         WB_NL_cnt_next <= WB_NL_cnt_var;
-                        ACT_flag_next <= '0';
-                        ACT_pass_cnt_next <= ACT_pass_cnt_reg;
+                        IFM_flag_next <= '0';
+                        IFM_pass_cnt_next <= IFM_pass_cnt_reg;
                     else
                         WB_NL_cnt_next <= 0;
-                        if (ACT_pass_cnt_reg < M_div_pt_int - 1 - 1) then
-                            ACT_flag_next <= '0';
-                            ACT_pass_cnt_next <= ACT_pass_cnt_reg + 1;
+                        if (IFM_pass_cnt_reg < M_div_pt_int - 1 - 1) then
+                            IFM_flag_next <= '0';
+                            IFM_pass_cnt_next <= IFM_pass_cnt_reg + 1;
                         else
-                            ACT_flag_next <= '1';
-                            ACT_pass_cnt_next <= 0;
+                            IFM_flag_next <= '1';
+                            IFM_pass_cnt_next <= 0;
                         end if;
                     end if;
                 end if;
 
-                ACT_NL_cnt_next <= ACT_NL_cnt_reg;
+                IFM_NL_cnt_next <= IFM_NL_cnt_reg;
 
             when s_flag =>
                 WB_NL_cnt_next <= WB_NL_cnt_reg;
-                ACT_NL_cnt_next <= ACT_NL_cnt_reg;
-                ACT_pass_cnt_next <= ACT_pass_cnt_reg;
-                ACT_flag_next <= ACT_flag_reg;
+                IFM_NL_cnt_next <= IFM_NL_cnt_reg;
+                IFM_pass_cnt_next <= IFM_pass_cnt_reg;
+                IFM_flag_next <= IFM_flag_reg;
 
             when others =>
                 WB_NL_cnt_next <= WB_NL_cnt_reg;
-                ACT_NL_cnt_next <= ACT_NL_cnt_reg;
-                ACT_pass_cnt_next <= ACT_pass_cnt_reg;
-                ACT_flag_next <= ACT_flag_reg;
+                IFM_NL_cnt_next <= IFM_NL_cnt_reg;
+                IFM_pass_cnt_next <= IFM_pass_cnt_reg;
+                IFM_flag_next <= IFM_flag_reg;
 
         end case;
     end process;
@@ -280,7 +280,7 @@ begin
     r_int <= to_integer(unsigned(r));
     M_div_pt_int <= to_integer(unsigned(M_div_pt));
     WB_NL_finished_int <= WB_NL_finished;
-    ACT_NL_finished_int <= ACT_NL_finished;
+    IFM_NL_finished_int <= IFM_NL_finished;
     pass_flag <= pass_flag_int;
 
 end architecture;

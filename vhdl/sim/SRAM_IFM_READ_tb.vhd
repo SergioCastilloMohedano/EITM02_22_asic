@@ -2,7 +2,7 @@
 -- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
 -- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
 -------------------------------------------------------------------------------------------------------
--- File           : SRAM_ACT_READ_tb.vhd
+-- File           : SRAM_IFM_READ_tb.vhd
 -- Author         : Sergio Castillo Mohedano
 -- University     : Lund University
 -- Department     : Electrical and Information Technology (EIT)
@@ -18,10 +18,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity SRAM_ACT_READ_tb is
-end SRAM_ACT_READ_tb;
+entity SRAM_IFM_READ_tb is
+end SRAM_IFM_READ_tb;
 
-architecture sim of SRAM_ACT_READ_tb is
+architecture sim of SRAM_IFM_READ_tb is
 
     constant clk_hz : integer := 100e6;
     constant clk_period : time := 1 sec / clk_hz;
@@ -64,10 +64,10 @@ architecture sim of SRAM_ACT_READ_tb is
 
     signal NoC_ACK_flag_tb : std_logic := '0';
 
-    signal ACT_NL_ready_tb : std_logic;
-    signal ACT_NL_finished_tb : std_logic;
+    signal IFM_NL_ready_tb : std_logic;
+    signal IFM_NL_finished_tb : std_logic;
 
-    signal act_out_tb : std_logic_vector (7 downto 0);
+    signal ifm_out_tb : std_logic_vector (7 downto 0);
 
     component SYS_CTR_NL is
     port (
@@ -92,12 +92,12 @@ architecture sim of SRAM_ACT_READ_tb is
         w_p : out std_logic_vector (7 downto 0);
         M_div_pt : in std_logic_vector (7 downto 0);
         NoC_ACK_flag : in std_logic;
-        ACT_NL_ready : out std_logic;
-        ACT_NL_finished : out std_logic
+        IFM_NL_ready : out std_logic;
+        IFM_NL_finished : out std_logic
     );
    end component;
 
-    component SRAM_ACT is
+    component SRAM_IFM is
     port (
         clk : in std_logic;
         reset : in std_logic;
@@ -105,9 +105,9 @@ architecture sim of SRAM_ACT_READ_tb is
         h_p : in std_logic_vector (7 downto 0);
         w_p : in std_logic_vector (7 downto 0);
         HW : in std_logic_vector (7 downto 0);
-        ACT_NL_ready : in std_logic;
-        ACT_NL_finished : in std_logic;
-        act_out : out std_logic_vector (7 downto 0)
+        IFM_NL_ready : in std_logic;
+        IFM_NL_finished : in std_logic;
+        ifm_out : out std_logic_vector (7 downto 0)
         -- To/From Front-End Write Interface
         -- ..
     );
@@ -140,20 +140,20 @@ begin
         w_p => w_p_tb,
         M_div_pt => M_div_pt_tb,
         NoC_ACK_flag => NoC_ACK_flag_tb,
-        ACT_NL_ready => ACT_NL_ready_tb,
-        ACT_NL_finished => ACT_NL_finished_tb
+        IFM_NL_ready => IFM_NL_ready_tb,
+        IFM_NL_finished => IFM_NL_finished_tb
     );
 
-    DUT_SRAM_ACT : SRAM_ACT
+    DUT_SRAM_IFM : SRAM_IFM
     port map (
         clk => clk,
         reset => reset,
         h_p => h_p_tb,
         w_p => w_p_tb,
         HW => HW_tb,
-        ACT_NL_ready => ACT_NL_ready_tb,
-        ACT_NL_finished => ACT_NL_finished_tb,
-        act_out => act_out_tb
+        IFM_NL_ready => IFM_NL_ready_tb,
+        IFM_NL_finished => IFM_NL_finished_tb,
+        ifm_out => ifm_out_tb
     );
 
     NOC_ACK_PROC : process
