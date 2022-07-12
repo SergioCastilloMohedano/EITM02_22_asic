@@ -50,6 +50,7 @@ entity SYS_CTR_IFM_NL is
         IFM_NL_start : in std_logic;
         IFM_NL_ready : out std_logic;
         IFM_NL_finished : out std_logic;
+        IFM_NL_busy : out std_logic;
         HW_p : in std_logic_vector (7 downto 0);
         h_p : out std_logic_vector (7 downto 0);
         w_p : out std_logic_vector (7 downto 0)
@@ -77,6 +78,7 @@ architecture behavioral of SYS_CTR_IFM_NL is
     ---- External Status Signals to indicate status of the FSMD
     signal IFM_NL_ready_int : std_logic;
     signal IFM_NL_finished_int : std_logic;
+    signal IFM_NL_busy_int : std_logic;
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
@@ -136,6 +138,7 @@ begin
     -- control path : output logic
     IFM_NL_ready_int <= '1' when state_reg = s_idle else '0';
     IFM_NL_finished_int <= '1' when state_reg = s_finished else '0';
+    IFM_NL_busy_int <= '1' when state_reg = s_IFM_NL else '0';
 
     -- data path : data registers
     data_reg : process(clk, reset)
@@ -186,6 +189,7 @@ begin
     IFM_NL_start_int <= IFM_NL_start;
     IFM_NL_ready <= IFM_NL_ready_int;
     IFM_NL_finished <= IFM_NL_finished_int;
+    IFM_NL_busy <= IFM_NL_busy_int;
     h_p <= std_logic_vector(to_unsigned(h_p_reg, h_p'length));
     w_p <= std_logic_vector(to_unsigned(w_p_reg, w_p'length));
     HW_p_int <= to_integer(unsigned(HW_p));

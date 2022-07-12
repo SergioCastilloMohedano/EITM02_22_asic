@@ -31,7 +31,7 @@ entity SRAM_WB_BACK_END is
         reset : in std_logic;
 
         -- Front-End Interface Ports
-        wb_FE : out std_logic_vector (15 downto 0);
+        wb_FE : out std_logic_vector (7 downto 0);
         RE_FE : in std_logic;   -- Read Enable, active high
 
         -- SRAM Wrapper Ports (READ)
@@ -83,7 +83,7 @@ architecture behavioral of SRAM_WB_BACK_END is
     -- ..
 
     ---- Data Outputs
-    signal wb_FE_int : std_logic_vector (15 downto 0);
+    signal wb_FE_int : std_logic_vector (7 downto 0);
     signal enb_int : std_logic;
 
     -- SRAM_WB_BACK_END Intermediate Signals
@@ -157,7 +157,7 @@ begin
                 addr_cnt_next <= addr_cnt_reg;
                 enb_int <= '0';
             when s_0 =>
-                wb_FE_int <= doutb_int;
+                wb_FE_int <= doutb_int(7 downto 0); -- 8 MSBs (I'm taking now 8lsb for testing)
                 addr_cnt_next <= addr_cnt_reg + 1;
                 if (RE_int = '1') then
                     enb_int <= '1';
@@ -165,7 +165,7 @@ begin
                     enb_int <= '0';
                 end if;
             when s_3 =>
-                wb_FE_int <= doutb_int;
+                wb_FE_int <= doutb_int(7 downto 0); -- 8 MSBs (I'm taking now 8lsb for testing)
                 addr_cnt_next <= addr_cnt_reg + 1;
                 enb_int <= '1';
             when others =>

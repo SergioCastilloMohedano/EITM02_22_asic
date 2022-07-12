@@ -55,6 +55,7 @@ entity SYS_CTR_WB_NL is
         WB_NL_start : in std_logic;
         WB_NL_ready : out std_logic;
         WB_NL_finished : out std_logic;
+        WB_NL_busy : out std_logic;
         RS : in std_logic_vector (7 downto 0);
         p : in std_logic_vector (7 downto 0);
         m : in std_logic_vector (7 downto 0);
@@ -85,6 +86,7 @@ architecture behavioral of SYS_CTR_WB_NL is
     ---- External Status Signals to indicate status of the FSMD
     signal WB_NL_ready_int : std_logic;
     signal WB_NL_finished_int : std_logic;
+    signal WB_NL_busy_int : std_logic;
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
@@ -149,6 +151,7 @@ begin
     -- control path : output logic
     WB_NL_ready_int <= '1' when state_reg = s_idle else '0';
     WB_NL_finished_int <= '1' when state_reg = s_finished else '0';
+    WB_NL_busy_int <= '1' when state_reg = s_WB_NL else '0';
 
     -- data path : data registers
     data_reg : process(clk, reset)
@@ -209,6 +212,7 @@ begin
     WB_NL_start_int <= WB_NL_start;
     WB_NL_ready <= WB_NL_ready_int;
     WB_NL_finished <= WB_NL_finished_int;
+    WB_NL_busy <= WB_NL_busy_int;
     r_p <= std_logic_vector(to_unsigned(r_p_reg, r_p'length));
     pm <= std_logic_vector(to_unsigned(pm_reg, pm'length));
     s <= std_logic_vector(to_unsigned(s_reg, s'length));
