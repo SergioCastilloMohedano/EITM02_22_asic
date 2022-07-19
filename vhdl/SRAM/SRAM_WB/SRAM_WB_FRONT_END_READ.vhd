@@ -38,21 +38,21 @@ end SRAM_WB_FRONT_END_READ;
 
 architecture dataflow of SRAM_WB_FRONT_END_READ is
 
-    signal WB_NL_ready_int : std_logic;
-    signal WB_NL_finished_int : std_logic;
-    signal wb_out_int : std_logic_vector (7 downto 0);
-    signal wb_BE_int : std_logic_vector (7 downto 0);
-    signal RE_BE_int : std_logic;
+    signal WB_NL_ready_tmp : std_logic;
+    signal WB_NL_finished_tmp : std_logic;
+    signal wb_out_tmp : std_logic_vector (7 downto 0);
+    signal wb_BE_tmp : std_logic_vector (7 downto 0);
+    signal RE_BE_tmp : std_logic;
 
 begin
 
-    wb_out_int <= wb_BE_int;
-    RE_BE_int <= '1' when ((WB_NL_ready_int NOR WB_NL_finished_int) = '1') else '0';
+    wb_out_tmp <= wb_BE_int;
+    RE_BE_tmp <= '1' when ((WB_NL_ready_tmp NOR WB_NL_finished_int) = '1') else '0';
 
     -- PORT Assignations
-    WB_NL_ready_int <= WB_NL_ready;
-    WB_NL_finished_int <= WB_NL_finished;
-    wb_BE_int <= wb_BE;
+    WB_NL_ready_tmp <= WB_NL_ready;
+    WB_NL_finished_tmp <= WB_NL_finished;
+    wb_BE_tmp <= wb_BE;
     wb_out <= wb_out_int;
     RE_BE <= RE_BE_int;
 

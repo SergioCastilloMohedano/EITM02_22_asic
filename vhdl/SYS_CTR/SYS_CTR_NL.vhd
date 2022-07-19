@@ -123,44 +123,44 @@ architecture behavioral of SYS_CTR_NL is
     ---- Internal Status Signals from the Data Path
     signal NL_cnt_done_next : std_logic;    -- signal that is set high only once the whole current layer of the network has been processed by the Nested Loops.
     signal NL_cnt_done_reg : std_logic;
-    signal IFM_NL_flag_int : std_logic;     -- allows the IFM NL to be triggered only once, when m = 0.
+    signal IFM_NL_flag_tmp : std_logic;     -- allows the IFM NL to be triggered only once, when m = 0.
  
     ---- External Command Signals to the FSMD
-    signal NL_start_int : std_logic;
+    signal NL_start_tmp : std_logic;
 
     -------- OUTPUTS --------
     ---- Internal Control Signals used to control Data Path Operation
-    signal WB_NL_ready_int : std_logic;
-    signal WB_NL_finished_int : std_logic;
-    signal WB_NL_busy_int : std_logic;
-    signal IFM_NL_ready_int : std_logic;
-    signal IFM_NL_finished_int : std_logic;
-    signal IFM_NL_busy_int : std_logic;
+    signal WB_NL_ready_tmp : std_logic;
+    signal WB_NL_finished_tmp : std_logic;
+    signal WB_NL_busy_tmp : std_logic;
+    signal IFM_NL_ready_tmp : std_logic;
+    signal IFM_NL_finished_tmp : std_logic;
+    signal IFM_NL_busy_tmp : std_logic;
 
     ---- External Status Signals to indicate status of the FSMD
-    signal NL_ready_int : std_logic;
-    signal NL_finished_int : std_logic;
+    signal NL_ready_tmp : std_logic;
+    signal NL_finished_tmp : std_logic;
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal rc_next, rc_reg : natural range 0 to 127;
-    signal m_next, m_reg : natural range 0 to 127;
-    signal c_next, c_reg : natural range 0 to 127;
+    signal rc_next, rc_reg : natural range 0 to 255;
+    signal m_next, m_reg : natural range 0 to 255;
+    signal c_next, c_reg : natural range 0 to 255;
 
     ---- External Control Signals used to control Data Path Operation
-    signal M_cap_int : natural range 0 to 127;
-    signal C_cap_int : natural range 0 to 127;
-    signal r_int : natural range 0 to 127;
-    signal p_int : natural range 0 to 127;
-    signal RS_int : natural range 0 to 127;
-    signal HW_p_int : natural range 0 to 127;
+    signal M_cap_tmp : natural range 0 to 255;
+    signal C_cap_tmp : natural range 0 to 255;
+    signal r_tmp : natural range 0 to 255;
+    signal p_tmp : natural range 0 to 255;
+    signal RS_tmp : natural range 0 to 255;
+    signal HW_p_tmp : natural range 0 to 255;
 
     ---- Functional Units Intermediate Signals
-    signal rc_out : natural range 0 to 127;
-    signal m_out : natural range 0 to 127;
-    signal m_out_tmp : natural range 0 to 127;
-    signal c_out : natural range 0 to 127;
-    signal c_out_tmp : natural range 0 to 127;
+    signal rc_out : natural range 0 to 255;
+    signal m_out : natural range 0 to 255;
+    signal m_out_tmp : natural range 0 to 255;
+    signal c_out : natural range 0 to 255;
+    signal c_out_tmp : natural range 0 to 255;
     -- ******************************************
 
     ---------------- Data Outputs ----------------
@@ -168,24 +168,24 @@ architecture behavioral of SYS_CTR_NL is
 
     -- SYS_CTR_NL Intermediate Signals
     signal IFM_NL_start_tmp : std_logic;
-    signal NoC_ACK_flag_int : std_logic;
+    signal NoC_ACK_flag_tmp : std_logic;
     signal start_flag_next, start_flag_reg : std_logic;         -- these two signals avoid that "NL_cnt_done_next" signal gets set to "1" the first time the conditions 
     signal start_flag_next_2, start_flag_reg_2 : std_logic;     -- of "c", "m" and "rc" being 0 are met, allowing "NL_cnt_done_next" to be set to "1" only when it has to.
 
     -- SYS_CTR_WB_NL Intermediate Signals
-    signal s_int : std_logic_vector (7 downto 0);
-    signal pm_int : std_logic_vector (7 downto 0);
-    signal r_p_int : std_logic_vector (7 downto 0);
-    signal WB_NL_start_int : std_logic;
+    signal s_tmp : std_logic_vector (7 downto 0);
+    signal pm_tmp : std_logic_vector (7 downto 0);
+    signal r_p_tmp : std_logic_vector (7 downto 0);
+    signal WB_NL_start_tmp : std_logic;
 
     -- SYS_CTR_IFM_NL Intermediate Signals
-    signal h_p_int : std_logic_vector (7 downto 0);
-    signal w_p_int : std_logic_vector (7 downto 0);
-    signal IFM_NL_start_int : std_logic;
+    signal h_p_tmp : std_logic_vector (7 downto 0);
+    signal w_p_tmp : std_logic_vector (7 downto 0);
+    signal IFM_NL_start_tmp : std_logic;
 
     -- SYS_CTR_PASS_FLAG Intermediate Signals
-    signal pass_flag_int : std_logic;
-    signal M_div_pt_int : natural range 0 to 127;
+    signal pass_flag_tmp : std_logic;
+    signal M_div_pt_tmp : natural range 0 to 255;
     ----------------------------------------------
 
 begin
@@ -264,14 +264,14 @@ begin
             when s_init =>
                 state_next <= s_idle;
             when s_idle =>
-                if NL_start_int = '1' then
+                if NL_start_tmp = '1' then
                     state_next <= s_start;
                 else
                     state_next <= s_idle;
                 end if;
             when s_start =>
-                if (pass_flag_int = '0') then
-                    if (IFM_NL_flag_int = '1') then
+                if (pass_flag_tmp = '0') then
+                    if (IFM_NL_flag_tmp = '1') then
                         state_next <= s_wait_1;
                     else
                         state_next <= s_wait_2;
@@ -280,8 +280,8 @@ begin
                     state_next <= s_NoC_ACK;
                 end if;
             when s_wait_1 =>
-                if (WB_NL_finished_int XOR IFM_NL_finished_int) = '0' then
-                    if (WB_NL_finished_int AND IFM_NL_finished_int) = '1' then
+                if (WB_NL_finished_tmp XOR IFM_NL_finished_int) = '0' then
+                    if (WB_NL_finished_tmp AND IFM_NL_finished_int) = '1' then
                         state_next <= s_NL;
                     else
                         state_next <= s_wait_1;
@@ -290,19 +290,19 @@ begin
                     state_next <= s_wait_2;
                 end if;
             when s_wait_2 =>
-                if (WB_NL_finished_int OR IFM_NL_finished_int) = '1' then
+                if (WB_NL_finished_tmp OR IFM_NL_finished_int) = '1' then
                     state_next <= s_NL;
                 else
                     state_next <= s_wait_2;
                 end if;
             when s_NL =>
-                if (WB_NL_ready_int AND IFM_NL_ready_int) = '0' then
+                if (WB_NL_ready_tmp AND IFM_NL_ready_int) = '0' then
                     state_next <= s_NL;
                 else
                     state_next <= s_start;
                 end if;
             when s_NoC_ACK =>
-                if NOC_ACK_flag_int = '1' then
+                if NOC_ACK_flag_tmp = '1' then
                     if NL_cnt_done_reg = '1' then
                         state_next <= s_finished;
                     else
@@ -319,11 +319,11 @@ begin
     end process;
 
     -- control path : output logic
-    NL_ready_int <= '1' when state_reg = s_idle else '0';
-    WB_NL_start_int <= '1' when (state_reg = s_start AND pass_flag_int = '0') else '0';
-    IFM_NL_start_tmp <= '1' when (state_reg = s_start AND pass_flag_int = '0') else '0';
-    IFM_NL_start_int <= '1' when (IFM_NL_start_tmp = '1' AND IFM_NL_flag_int = '1') else '0';
-    NL_finished_int <= '1' when state_reg = s_finished else '0';
+    NL_ready_tmp <= '1' when state_reg = s_idle else '0';
+    WB_NL_start_tmp <= '1' when (state_reg = s_start AND pass_flag_tmp = '0') else '0';
+    IFM_NL_start_tmp <= '1' when (state_reg = s_start AND pass_flag_tmp = '0') else '0';
+    IFM_NL_start_tmp <= '1' when (IFM_NL_start_tmp = '1' AND IFM_NL_flag_tmp = '1') else '0';
+    NL_finished_tmp <= '1' when state_reg = s_finished else '0';
 
     -- data path : data registers
     data_reg : process(clk, reset)
@@ -342,17 +342,17 @@ begin
     end process;
 
     -- data path : functional units (perform necessary arithmetic operations)
-    rc_out <= (rc_reg + 1) when (rc_reg < (c_reg + r_int - 1)) else c_out;
+    rc_out <= (rc_reg + 1) when (rc_reg < (c_reg + r_tmp - 1)) else c_out;
 
-    m_out_tmp <= (m_reg + p_int) when (m_reg < (M_cap_int - p_int)) else 0;
-    m_out <= m_out_tmp when (rc_reg = (c_reg + r_int - 1)) else m_reg;
+    m_out_tmp <= (m_reg + p_int) when (m_reg < (M_cap_tmp - p_int)) else 0;
+    m_out <= m_out_tmp when (rc_reg = (c_reg + r_tmp - 1)) else m_reg;
 
-    c_out_tmp <= (c_reg + r_int) when (c_reg < (C_cap_int - r_int)) else 0;
-    c_out <= c_out_tmp when ((m_reg = (M_cap_int - p_int)) AND (rc_reg = (c_reg + r_int - 1))) else c_reg;
+    c_out_tmp <= (c_reg + r_int) when (c_reg < (C_cap_tmp - r_int)) else 0;
+    c_out <= c_out_tmp when ((m_reg = (M_cap_tmp - p_int)) AND (rc_reg = (c_reg + r_tmp - 1))) else c_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
     start_flag_next <= '0' when (state_reg = s_finished) else
-                       '1' when (state_reg = s_idle AND NL_start_int = '1') else 
+                       '1' when (state_reg = s_idle AND NL_start_tmp = '1') else 
                        start_flag_reg;
 
     start_flag_next_2 <= start_flag_reg;
@@ -365,7 +365,7 @@ begin
                         '0' when state_reg = s_finished else
                         NL_cnt_done_reg;
 
-    IFM_NL_flag_int <= '1' when m_reg = 0 else '0';
+    IFM_NL_flag_tmp <= '1' when m_reg = 0 else '0';
 
     -- data path : mux routing
     data_mux : process(state_reg, rc_reg, m_reg, c_reg, rc_out, m_out, c_out, WB_NL_ready_int, IFM_NL_ready_int)
@@ -392,7 +392,7 @@ begin
                 m_next <= m_reg;
                 c_next <= c_reg;
             when s_NL =>
-                if (WB_NL_ready_int AND IFM_NL_ready_int) = '0' then
+                if (WB_NL_ready_tmp AND IFM_NL_ready_int) = '0' then
                     rc_next <= rc_reg;
                     m_next <= m_reg;
                     c_next <= c_reg;
@@ -417,7 +417,7 @@ begin
     end process;
 
     -- PORT Assignations
-    NL_start_int <= NL_start;
+    NL_start_tmp <= NL_start;
     NL_ready <= NL_ready_int;
     NL_finished <= NL_finished_int;
     m <= std_logic_vector(to_unsigned(m_reg, m'length));
@@ -428,14 +428,14 @@ begin
     s <= s_int;
     h_p <= h_p_int;
     w_p <= w_p_int;
-    M_cap_int <= to_integer(unsigned(M_cap));
-    C_cap_int <= to_integer(unsigned(C_cap));
-    r_int <= to_integer(unsigned(r));
-    p_int <= to_integer(unsigned(p));
-    HW_p_int <= to_integer(unsigned(HW_p));
-    RS_int <= to_integer(unsigned(RS));
-    M_div_pt_int <= to_integer(unsigned(M_div_pt));
-    NoC_ACK_flag_int <= NoC_ACK_flag;
+    M_cap_tmp <= to_integer(unsigned(M_cap));
+    C_cap_tmp <= to_integer(unsigned(C_cap));
+    r_tmp <= to_integer(unsigned(r));
+    p_tmp <= to_integer(unsigned(p));
+    HW_p_tmp <= to_integer(unsigned(HW_p));
+    RS_tmp <= to_integer(unsigned(RS));
+    M_div_pt_tmp <= to_integer(unsigned(M_div_pt));
+    NoC_ACK_flag_tmp <= NoC_ACK_flag;
     IFM_NL_ready <= IFM_NL_ready_int;
     IFM_NL_finished <= IFM_NL_finished_int;
     IFM_NL_busy <= IFM_NL_busy_int;

@@ -62,7 +62,7 @@ architecture behavioral of SRAM_IFM_BACK_END is
     -- ..
 
     ---- External Command Signals to the FSMD
-    signal RE_int : std_logic;
+    signal RE_tmp : std_logic;
 
     -------- OUTPUTS --------
     ---- Internal Control Signals used to control Data Path Operation
@@ -83,13 +83,13 @@ architecture behavioral of SRAM_IFM_BACK_END is
     -- ..
 
     ---- Data Outputs
-    signal ifm_FE_int : std_logic_vector (7 downto 0);
-    signal enb_int : std_logic;
+    signal ifm_FE_tmp : std_logic_vector (7 downto 0);
+    signal enb_tmp : std_logic;
 
     -- SRAM_IFM_BACK_END Intermediate Signals
-    signal clkb_int : std_logic;
-    signal rstb_int : std_logic;
-    signal doutb_int : std_logic_vector (31 downto 0);
+    signal clkb_tmp : std_logic;
+    signal rstb_tmp : std_logic;
+    signal doutb_tmp : std_logic_vector (31 downto 0);
 
 begin
 
@@ -112,7 +112,7 @@ begin
             when s_init =>
                 state_next <= s_idle;
             when s_idle =>
-                if (RE_int = '1') then
+                if (RE_tmp = '1') then
                     state_next <= s_0;
                 else
                     state_next <= s_idle;
@@ -124,7 +124,7 @@ begin
             when s_2 =>
                 state_next <= s_3;
             when s_3 =>
-                if (RE_int = '1') then
+                if (RE_tmp = '1') then
                     state_next <= s_0;
                 else
                     state_next <= s_idle;
@@ -153,49 +153,49 @@ begin
     begin
         case state_reg is
             when s_init =>
-                ifm_FE_int <= (others => '0');
-                enb_int <= '0';
+                ifm_FE_tmp <= (others => '0');
+                enb_tmp <= '0';
                 addr_cnt_next <= addr_cnt_reg;
             when s_idle =>
-                ifm_FE_int <= (others => '0');
+                ifm_FE_tmp <= (others => '0');
                 addr_cnt_next <= addr_cnt_reg;
-                enb_int <= '0';
+                enb_tmp <= '0';
             when s_0 =>
-                ifm_FE_int <= doutb_int (31 downto 24);
+                ifm_FE_tmp <= doutb_tmp (31 downto 24);
                 addr_cnt_next <= addr_cnt_reg;
-                if (RE_int = '1') then
-                    enb_int <= '1';
+                if (RE_tmp = '1') then
+                    enb_tmp <= '1';
                 else
-                    enb_int <= '0';
+                    enb_tmp <= '0';
                 end if;
             when s_1 =>
-                ifm_FE_int <= doutb_int (23 downto 16);
+                ifm_FE_tmp <= doutb_tmp (23 downto 16);
                 addr_cnt_next <= addr_cnt_reg;
-                enb_int <= '0';
+                enb_tmp <= '0';
             when s_2 =>
-                ifm_FE_int <= doutb_int (15 downto 8);
+                ifm_FE_tmp <= doutb_tmp (15 downto 8);
                 addr_cnt_next <= addr_cnt_reg;
-                enb_int <= '0';
+                enb_tmp <= '0';
             when s_3 =>
-                ifm_FE_int <= doutb_int (7 downto 0);
+                ifm_FE_tmp <= doutb_tmp (7 downto 0);
                 addr_cnt_next <= addr_cnt_reg + 1;
-                enb_int <= '1';
+                enb_tmp <= '1';
             when others =>
-                ifm_FE_int <= (others => '0');
+                ifm_FE_tmp <= (others => '0');
                 addr_cnt_next <= addr_cnt_reg;
-                enb_int <= '0';
+                enb_tmp <= '0';
         end case;
     end process;
 
     -- PORT Assignations
-    clkb_int <= clk;
+    clkb_tmp <= clk;
     clkb <= clkb_int;
-    rstb_int <= reset;
+    rstb_tmp <= reset;
     rstb <= rstb_int;
-    RE_int <= RE_FE;
+    RE_tmp <= RE_FE;
     addrb <= std_logic_vector(addr_cnt_reg);
     enb <= enb_int;
-    doutb_int <= doutb;
+    doutb_tmp <= doutb;
     ifm_FE <= ifm_FE_int;
 
 end architecture;

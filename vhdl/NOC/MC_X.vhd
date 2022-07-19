@@ -1,0 +1,146 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use work.thesis_pkg.all;
+
+entity MC_X is
+    generic (
+        -- HW Parameters, at shyntesis time.
+        Y_ID : natural range 0 to 255 := 3;
+        X_ID : natural range 0 to 255 := 16;
+        Y : natural  range 0 to 255 := 3;
+        hw_log2_r : integer_array := (0,1,2)
+    );
+    port (
+        -- config. parameters
+        EF_log2 : in std_logic_vector (7 downto 0);
+        C_cap : in std_logic_vector (7 downto 0);
+        r_log2 : in std_logic_vector (7 downto 0);
+
+        -- from sys ctrl
+        h_p : in std_logic_vector (7 downto 0);
+        rc : in std_logic_vector (7 downto 0);
+
+        -- NoC Internal Signals
+        rr : in std_logic_vector (7 downto 0);
+        ifm_enable : in std_logic;
+        ifm_in : in std_logic_vector (7 downto 0);
+        ifm_out : out std_logic_vector (7 downto 0);
+        ifm_status : out std_logic;
+        w_enable : in std_logic;
+        w_in : in std_logic_vector (7 downto 0);
+        w_out : out std_logic_vector (7 downto 0);
+        w_status : out std_logic
+    );
+end MC_X;
+
+architecture dataflow of MC_X is
+
+    signal w_tmp : std_logic_vector (7 downto 0);
+    signal w_status_tmp : std_logic;
+    signal ifm_tmp : std_logic_vector (7 downto 0);
+    signal ifm_status_tmp : std_logic;
+
+    signal w_ctrl : std_logic;
+    signal w_ifm_ctrl : std_logic;
+    signal ifm_ctrl_2nd : std_logic;
+    signal ifm_ctrl : std_logic;
+    signal ifm_ctrl_tmp : natural;
+    signal w_ifm_ctrl_tmp_4 : std_logic_vector (7 downto 0);
+    signal w_ifm_ctrl_tmp_3 : natural;
+    signal w_ifm_ctrl_tmp_2 : natural;
+    signal w_ifm_ctrl_tmp : natural;
+
+
+    signal C_cap_tmp : natural range 0 to 255;
+    signal EF_log2_tmp : natural range 0 to 255;
+    signal r_log2_tmp : natural range 0 to 255;
+
+    signal h_p_tmp : natural range 0 to 255;
+    signal rc_tmp : natural range 0 to 255;
+    signal rr_tmp : natural range 0 to 255;
+
+    signal Y_tmp : natural range 0 to 255;
+    signal Y_ID_tmp : natural range 0 to 255;
+    signal X_ID_tmp : natural range 0 to 255;
+
+    signal mux_in : std_logic_vector_array(0 to hw_log2_r'length-1); 
+    signal mux_out : std_logic_vector(7 downto 0);
+    signal mux_sel : natural range 0 to 255;
+
+begin
+
+    -- 2nd condition for ifmaps
+    ifm_ctrl_tmp <= to_integer(shift_left(to_unsigned((rr_tmp - 1),8), EF_log2_tmp));
+    ifm_ctrl_2nd <= '1' when (X_ID_tmp = (h_p_tmp + Y_tmp - 1 + Y_ID_tmp + ifm_ctrl_tmp)) else '0';
+
+    -- 3rd condition for ifmaps / 2nd condition for weights ------------
+    w_ifm_ctrl_tmp_4 <= std_logic_vector(unsigned(rc) + to_unsigned(1,8)); -- (c + 1)
+
+    -- instantiate logic for dealing with all possible values of log2_r. r = (1, 2, 4) -> log2r = (0, 1, 2)
+    gen_CEIL_LOG2_DIV : for i in 0 to hw_log2_r'length-1 generate
+        inst_CEIL_LOG2_DIV : CEIL_LOG2_DIV
+        generic map (
+            y => hw_log2_r(i) -- hw parameter, at synthesis time.
+        )
+        port map (
+            x => w_ifm_ctrl_tmp_4,
+            z => mux_in(i)
+        );
+    end generate gen_CEIL_LOG2_DIV;
+
+    p_mux_sel : process (r_log2_tmp)
+    begin
+        case r_log2_tmp is
+            when hw_log2_r(0) => mux_sel <= 0;
+            when hw_log2_r(1) => mux_sel <= 1;
+            when hw_log2_r(2) => mux_sel <= 2;
+            when others => mux_sel <= 0;
+        end case;
+    end process p_mux_sel;    
+
+    p_mux : mux
+    generic map(
+        LEN => 8,
+        NUM => hw_log2_r'length
+    )
+    port map(
+        mux_in  => mux_in,
+        mux_sel => mux_sel,
+        mux_out => mux_out
+    );
+
+    w_ifm_ctrl_tmp_3 <= to_integer(unsigned(mux_out)) - 1; -- roundup((c+1)/r) - 1
+    w_ifm_ctrl_tmp_2 <= to_integer(unsigned(shift_left(to_unsigned((w_ifm_ctrl_tmp_3),8), r_log2_tmp))); -- r*( w_ifm_ctrl_tmp_3)
+    w_ifm_ctrl_tmp <= rc_tmp - w_ifm_ctrl_tmp_3 + 1; -- rc - w_ifm_ctrl_tmp_2 + 1
+    w_ifm_ctrl <= '1' when ((w_ifm_ctrl_tmp = rr_tmp) AND ((0 < (rc_tmp + 1)) AND ((rc_tmp + 1) <= C_cap_tmp))) else '0'; -- rc - r*(roundup((rc+1)/r)-1)+1 == rr AND (0<rc+1<=C)
+    ---------------------------------------------------------------
+
+    -- ifm pass control (2nd AND 3rd conditions)
+    ifm_ctrl <= '1' when (((ifm_ctrl_2nd AND w_ifm_ctrl) = '1') AND (ifm_enable = '1')) else '0';
+    ifm_tmp <= ifm_in when (ifm_ctrl = '1') else (others => '0');
+    ifm_status_tmp <= '1' when (ifm_ctrl = '1') else '0';
+
+    -- weights pass control
+    w_tmp <= w_in when ((w_ifm_ctrl ='1') AND (w_enable = '1')) else (others => '0');
+    w_status_tmp <= '1' when ((w_ifm_ctrl ='1') AND (w_enable = '1')) else '0';
+
+    -- PORT Assignations
+    w_out <= w_tmp;
+    w_status <= w_status_tmp;
+    ifm_out <= ifm_tmp;
+    ifm_status <= ifm_status_tmp;
+
+    EF_log2_tmp <= to_integer(unsigned(EF_log2));
+    C_cap_tmp <= to_integer(unsigned(C_cap));
+    rr_tmp <= to_integer(unsigned(rr));
+    r_log2_tmp <= to_integer(unsigned(r_log2));
+
+    h_p_tmp <= to_integer(unsigned(h_p));
+    rc_tmp <= to_integer(unsigned(rc));
+
+    Y_tmp <= Y;
+    Y_ID_tmp <= Y_ID;
+    X_ID_tmp <= X_ID;
+
+end architecture;

@@ -74,37 +74,37 @@ architecture behavioral of SYS_CTR_WB_NL is
     ------------ CONTROL PATH SIGNALS ------------
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
-    signal WB_NL_cnt_done_int : std_logic;
+    signal WB_NL_cnt_done_tmp : std_logic;
 
     ---- External Command Signals to the FSMD
-    signal WB_NL_start_int : std_logic;
+    signal WB_NL_start_tmp : std_logic;
 
     -------- OUTPUTS --------
     ---- Internal Control Signals used to control Data Path Operation
     -- ..
 
     ---- External Status Signals to indicate status of the FSMD
-    signal WB_NL_ready_int : std_logic;
-    signal WB_NL_finished_int : std_logic;
-    signal WB_NL_busy_int : std_logic;
+    signal WB_NL_ready_tmp : std_logic;
+    signal WB_NL_finished_tmp : std_logic;
+    signal WB_NL_busy_tmp : std_logic;
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal r_p_next, r_p_reg : natural range 0 to 127;
-    signal pm_next, pm_reg : natural range 0 to 127;
-    signal s_next, s_reg : natural range 0 to 127;
+    signal r_p_next, r_p_reg : natural range 0 to 255;
+    signal pm_next, pm_reg : natural range 0 to 255;
+    signal s_next, s_reg : natural range 0 to 255;
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
-    signal RS_int : natural range 0 to 127;
-    signal p_int : natural range 0 to 127;
-    signal m_int : natural range 0 to 127;
+    signal RS_tmp : natural range 0 to 255;
+    signal p_tmp : natural range 0 to 255;
+    signal m_tmp : natural range 0 to 255;
 
     ---- Functional Units Intermediate Signals
-    signal s_out : natural range 0 to 127;
-    signal pm_out : natural range 0 to 127;
-    signal pm_out_tmp : natural range 0 to 127;
-    signal r_p_out : natural range 0 to 127;
-    signal r_p_out_tmp : natural range 0 to 127;
+    signal s_out : natural range 0 to 255;
+    signal pm_out : natural range 0 to 255;
+    signal pm_out_tmp : natural range 0 to 255;
+    signal r_p_out : natural range 0 to 255;
+    signal r_p_out_tmp : natural range 0 to 255;
 
     ---- Data Outputs
     -- Out PORTs "r_p", "s" and "pm"
@@ -130,13 +130,13 @@ begin
             when s_init =>
                 state_next <= s_idle;
             when s_idle =>
-                if WB_NL_start_int = '1' then
+                if WB_NL_start_tmp = '1' then
                     state_next <= s_WB_NL;
                 else
                     state_next <= s_idle;
                 end if;
             when s_WB_NL =>
-                if WB_NL_cnt_done_int = '1' then
+                if WB_NL_cnt_done_tmp = '1' then
                     state_next <= s_finished;
                 else
                     state_next <= s_WB_NL;
@@ -149,9 +149,9 @@ begin
     end process;
 
     -- control path : output logic
-    WB_NL_ready_int <= '1' when state_reg = s_idle else '0';
-    WB_NL_finished_int <= '1' when state_reg = s_finished else '0';
-    WB_NL_busy_int <= '1' when state_reg = s_WB_NL else '0';
+    WB_NL_ready_tmp <= '1' when state_reg = s_idle else '0';
+    WB_NL_finished_tmp <= '1' when state_reg = s_finished else '0';
+    WB_NL_busy_tmp <= '1' when state_reg = s_WB_NL else '0';
 
     -- data path : data registers
     data_reg : process(clk, reset)
@@ -170,16 +170,16 @@ begin
     end process;
 
     -- data path : functional units (perform necessary arithmetic operations)
-    s_out <= s_reg + 1 when s_reg < (RS_int - 1) else 0;
+    s_out <= s_reg + 1 when s_reg < (RS_tmp - 1) else 0;
 
-    pm_out_tmp <= pm_reg + 1 when (pm_reg < (m_int + p_int - 1)) else m_int;
-    pm_out <= pm_out_tmp when s_reg = (RS_int - 1) else pm_reg;
+    pm_out_tmp <= pm_reg + 1 when (pm_reg < (m_tmp + p_tmp - 1)) else m_int;
+    pm_out <= pm_out_tmp when s_reg = (RS_tmp - 1) else pm_reg;
 
-    r_p_out_tmp <= r_p_reg + 1 when r_p_reg < (RS_int - 1) else 0;
-    r_p_out <= r_p_out_tmp when ((pm_reg = (m_int + p_int - 1)) AND (s_reg = (RS_int - 1))) else r_p_reg;
+    r_p_out_tmp <= r_p_reg + 1 when r_p_reg < (RS_tmp - 1) else 0;
+    r_p_out <= r_p_out_tmp when ((pm_reg = (m_tmp + p_tmp - 1)) AND (s_reg = (RS_tmp - 1))) else r_p_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
-    WB_NL_cnt_done_int <= '1' when ((s_reg = (RS_int - 1)) AND (pm_reg = (m_int + p_int - 1)) AND (r_p_reg = (RS_int - 1))) else '0';
+    WB_NL_cnt_done_tmp <= '1' when ((s_reg = (RS_tmp - 1)) AND (pm_reg = (m_tmp + p_tmp - 1)) AND (r_p_reg = (RS_tmp - 1))) else '0';
 
     -- data path : mux routing
     data_mux : process(state_reg, s_reg, pm_reg, r_p_reg, s_out, pm_out, r_p_out, m_int)
@@ -209,15 +209,15 @@ begin
     end process;
 
     -- PORT Assignations
-    WB_NL_start_int <= WB_NL_start;
+    WB_NL_start_tmp <= WB_NL_start;
     WB_NL_ready <= WB_NL_ready_int;
     WB_NL_finished <= WB_NL_finished_int;
     WB_NL_busy <= WB_NL_busy_int;
     r_p <= std_logic_vector(to_unsigned(r_p_reg, r_p'length));
     pm <= std_logic_vector(to_unsigned(pm_reg, pm'length));
     s <= std_logic_vector(to_unsigned(s_reg, s'length));
-    RS_int <= to_integer(unsigned(RS));
-    p_int <= to_integer(unsigned(p));
-    m_int <= to_integer(unsigned(m));
+    RS_tmp <= to_integer(unsigned(RS));
+    p_tmp <= to_integer(unsigned(p));
+    m_tmp <= to_integer(unsigned(m));
 
 end architecture;

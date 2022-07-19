@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.bus_pkg.all;
+use work.thesis_pkg.all;
 
 entity MC_Y_COLUMN_tb is
 end MC_Y_COLUMN_tb;

@@ -18,16 +18,16 @@ end SRAM_WB;
 architecture structural of SRAM_WB is
 
     -- SIGNAL DECLARATIONS
-    signal WB_NL_ready_int : std_logic;
-    signal WB_NL_finished_int : std_logic;
-    signal wb_out_int : std_logic_vector (7 downto 0);
-    signal wb_int : std_logic_vector (7 downto 0);
-    signal RE_int : std_logic;
-    signal clkb_int : std_logic;
-    signal rstb_int : std_logic;
-    signal addrb_int : std_logic_vector (16 downto 0);
-    signal doutb_int : std_logic_vector (15 downto 0);
-    signal enb_int : std_logic;
+    signal WB_NL_ready_tmp : std_logic;
+    signal WB_NL_finished_tmp : std_logic;
+    signal wb_out_tmp : std_logic_vector (7 downto 0);
+    signal wb_tmp : std_logic_vector (7 downto 0);
+    signal RE_tmp : std_logic;
+    signal clkb_tmp : std_logic;
+    signal rstb_tmp : std_logic;
+    signal addrb_tmp : std_logic_vector (16 downto 0);
+    signal doutb_tmp : std_logic_vector (15 downto 0);
+    signal enb_tmp : std_logic;
 
     -- COMPONENT DECLARATIONS
     component SRAM_WB_FRONT_END_READ is
@@ -131,8 +131,8 @@ begin
     );
 
     -- PORT ASSIGNATIONS
-    WB_NL_ready_int <= WB_NL_ready;
-    WB_NL_finished_int <= WB_NL_finished;
+    WB_NL_ready_tmp <= WB_NL_ready;
+    WB_NL_finished_tmp <= WB_NL_finished;
     wb_out <= wb_out_int;
 
 
