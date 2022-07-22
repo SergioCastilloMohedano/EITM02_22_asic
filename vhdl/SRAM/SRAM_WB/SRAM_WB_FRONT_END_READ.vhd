@@ -46,14 +46,14 @@ architecture dataflow of SRAM_WB_FRONT_END_READ is
 
 begin
 
-    wb_out_tmp <= wb_BE_int;
-    RE_BE_tmp <= '1' when ((WB_NL_ready_tmp NOR WB_NL_finished_int) = '1') else '0';
+    wb_out_tmp <= wb_BE_tmp ;
+    RE_BE_tmp <= '1' when ((WB_NL_ready_tmp NOR WB_NL_finished_tmp ) = '1') else '0';
 
     -- PORT Assignations
     WB_NL_ready_tmp <= WB_NL_ready;
     WB_NL_finished_tmp <= WB_NL_finished;
     wb_BE_tmp <= wb_BE;
-    wb_out <= wb_out_int;
-    RE_BE <= RE_BE_int;
+    wb_out <= wb_out_tmp ;
+    RE_BE <= RE_BE_tmp ;
 
 end architecture;

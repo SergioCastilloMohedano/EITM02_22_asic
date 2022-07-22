@@ -124,7 +124,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, NL_start_int, WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, NL_finished_int, r_int, M_div_pt_int, IFM_flag_reg)
+    asmd_ctrl : process(state_reg, NL_start_tmp , WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, NL_finished_tmp , r_tmp , M_div_pt_tmp , IFM_flag_reg)
     begin
         case state_reg is
             when s_init =>
@@ -136,7 +136,7 @@ begin
                     state_next <= s_idle;
                 end if;
             when s_cnt_1 =>
-                if ((WB_NL_cnt_reg < r_int) OR (IFM_NL_cnt_reg < r_int)) then
+                if ((WB_NL_cnt_reg < r_tmp ) OR (IFM_NL_cnt_reg < r_tmp )) then
                     state_next <= s_cnt_1;
                 else
                     state_next <= s_flag;
@@ -145,7 +145,7 @@ begin
                 if (M_div_pt_tmp < 2) then
                     state_next <= s_cnt_1;
                 else
-                    if (WB_NL_cnt_reg < r_int) then
+                    if (WB_NL_cnt_reg < r_tmp ) then
                         state_next <= s_cnt_2;
                     else
                         state_next <= s_flag;
@@ -187,7 +187,7 @@ begin
     -- ..
 
     -- data path : mux routing
-    data_mux : process(state_reg, WB_NL_finished_int, IFM_NL_finished_int, WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, r_int, M_div_pt_int, IFM_flag_reg)
+    data_mux : process(state_reg, WB_NL_finished_tmp , IFM_NL_finished_tmp , WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, r_tmp , M_div_pt_tmp , IFM_flag_reg)
 
     variable WB_NL_cnt_var : natural range 0 to 255;
     variable IFM_NL_cnt_var : natural range 0 to 255;
@@ -217,7 +217,7 @@ begin
                     IFM_NL_cnt_var := IFM_NL_cnt_reg;
                 end if;
 
-                if ((WB_NL_cnt_reg < r_int) OR (IFM_NL_cnt_reg < r_int)) then
+                if ((WB_NL_cnt_reg < r_tmp ) OR (IFM_NL_cnt_reg < r_tmp )) then
                     WB_NL_cnt_next <= WB_NL_cnt_var;
                     IFM_NL_cnt_next <= IFM_NL_cnt_var;
                 else
@@ -241,7 +241,7 @@ begin
                     IFM_pass_cnt_next <= IFM_pass_cnt_reg;
                     WB_NL_cnt_next <= WB_NL_cnt_reg;
                 else
-                    if (WB_NL_cnt_reg < r_int) then
+                    if (WB_NL_cnt_reg < r_tmp ) then
                         WB_NL_cnt_next <= WB_NL_cnt_var;
                         IFM_flag_next <= '0';
                         IFM_pass_cnt_next <= IFM_pass_cnt_reg;
@@ -281,6 +281,6 @@ begin
     M_div_pt_tmp <= to_integer(unsigned(M_div_pt));
     WB_NL_finished_tmp <= WB_NL_finished;
     IFM_NL_finished_tmp <= IFM_NL_finished;
-    pass_flag <= pass_flag_int;
+    pass_flag <= pass_flag_tmp ;
 
 end architecture;

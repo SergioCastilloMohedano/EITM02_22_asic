@@ -65,8 +65,8 @@ begin
     h_ctrl <= '1' when ((h_p_tmp < p) OR (h_p_tmp > (HW_tmp - 1 + p))) else '0';
     w_ctrl <= '1' when ((w_p_tmp < p) OR (w_p_tmp > (HW_tmp - 1 + p))) else '0';
 
-    ifm_out_tmp <= ifm_BE_int;
-    RE_BE_tmp <= '1' when (((NOT(h_ctrl OR w_ctrl)) AND (IFM_NL_ready_tmp NOR IFM_NL_finished_int)) = '1') else '0';
+    ifm_out_tmp <= ifm_BE_tmp ;
+    RE_BE_tmp <= '1' when (((NOT(h_ctrl OR w_ctrl)) AND (IFM_NL_ready_tmp NOR IFM_NL_finished_tmp )) = '1') else '0';
 
     -- PORT Assignations
     h_p_tmp <= to_integer(unsigned(h_p));
@@ -75,7 +75,7 @@ begin
     IFM_NL_ready_tmp <= IFM_NL_ready;
     IFM_NL_finished_tmp <= IFM_NL_finished;
     ifm_BE_tmp <= ifm_BE;
-    ifm_out <= ifm_out_int;
-    RE_BE <= RE_BE_int;
+    ifm_out <= ifm_out_tmp ;
+    RE_BE <= RE_BE_tmp ;
 
 end architecture;

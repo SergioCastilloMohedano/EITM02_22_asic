@@ -106,7 +106,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, RE_int)
+    asmd_ctrl : process(state_reg, RE_tmp )
     begin
         case state_reg is
             when s_init =>
@@ -145,7 +145,7 @@ begin
     end process;
 
     -- data path : mux routing
-    data_mux : process(state_reg, RE_int, doutb_int, addr_cnt_reg)
+    data_mux : process(state_reg, RE_tmp , doutb_tmp , addr_cnt_reg)
     begin
         case state_reg is
             when s_init =>
@@ -157,7 +157,7 @@ begin
                 addr_cnt_next <= addr_cnt_reg;
                 enb_tmp <= '0';
             when s_0 =>
-                wb_FE_tmp <= doutb_int(7 downto 0); -- 8 MSBs (I'm taking now 8lsb for testing)
+                wb_FE_tmp <= doutb_tmp (7 downto 0); -- 8 MSBs (I'm taking now 8lsb for testing)
                 addr_cnt_next <= addr_cnt_reg + 1;
                 if (RE_tmp = '1') then
                     enb_tmp <= '1';
@@ -165,7 +165,7 @@ begin
                     enb_tmp <= '0';
                 end if;
             when s_3 =>
-                wb_FE_tmp <= doutb_int(7 downto 0); -- 8 MSBs (I'm taking now 8lsb for testing)
+                wb_FE_tmp <= doutb_tmp (7 downto 0); -- 8 MSBs (I'm taking now 8lsb for testing)
                 addr_cnt_next <= addr_cnt_reg + 1;
                 enb_tmp <= '1';
             when others =>
@@ -177,13 +177,13 @@ begin
 
     -- PORT Assignations
     clkb_tmp <= clk;
-    clkb <= clkb_int;
+    clkb <= clkb_tmp ;
     rstb_tmp <= reset;
-    rstb <= rstb_int;
+    rstb <= rstb_tmp ;
     RE_tmp <= RE_FE;
     addrb <= std_logic_vector(addr_cnt_reg);
-    enb <= enb_int;
+    enb <= enb_tmp ;
     doutb_tmp <= doutb;
-    wb_FE <= wb_FE_int;
+    wb_FE <= wb_FE_tmp ;
 
 end architecture;

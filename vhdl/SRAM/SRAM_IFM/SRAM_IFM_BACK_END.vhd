@@ -106,7 +106,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, RE_int)
+    asmd_ctrl : process(state_reg, RE_tmp )
     begin
         case state_reg is
             when s_init =>
@@ -149,7 +149,7 @@ begin
     end process;
 
     -- data path : mux routing
-    data_mux : process(state_reg, RE_int, doutb_int, addr_cnt_reg)
+    data_mux : process(state_reg, RE_tmp , doutb_tmp , addr_cnt_reg)
     begin
         case state_reg is
             when s_init =>
@@ -189,13 +189,13 @@ begin
 
     -- PORT Assignations
     clkb_tmp <= clk;
-    clkb <= clkb_int;
+    clkb <= clkb_tmp ;
     rstb_tmp <= reset;
-    rstb <= rstb_int;
+    rstb <= rstb_tmp ;
     RE_tmp <= RE_FE;
     addrb <= std_logic_vector(addr_cnt_reg);
-    enb <= enb_int;
+    enb <= enb_tmp ;
     doutb_tmp <= doutb;
-    ifm_FE <= ifm_FE_int;
+    ifm_FE <= ifm_FE_tmp ;
 
 end architecture;

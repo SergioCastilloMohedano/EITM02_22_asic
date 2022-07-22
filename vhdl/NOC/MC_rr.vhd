@@ -58,9 +58,9 @@ begin
             when hw_log2_EF(0) => mux_sel <= 0;
             when hw_log2_EF(1) => mux_sel <= 1;
             when hw_log2_EF(2) => mux_sel <= 2;
-            when others => mux_sel <= 0;
+            when others        => mux_sel        <= 0;
         end case;
-    end process p_mux_sel;    
+    end process p_mux_sel;
 
     p_mux : mux
     generic map(

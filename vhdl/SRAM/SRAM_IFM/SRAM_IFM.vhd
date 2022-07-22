@@ -100,15 +100,15 @@ begin
     -- SRAM_IFM_FRONT_END_READ
     SRAM_IFM_FRONT_END_READ_inst : SRAM_IFM_FRONT_END_READ
     port map (
-        h_p => h_p_int,
-        w_p => w_p_int,
-        HW => HW_int,
-        IFM_NL_ready => IFM_NL_ready_int,
-        IFM_NL_finished => IFM_NL_finished_int,
-        ifm_out => ifm_out_int,
+        h_p => h_p_tmp ,
+        w_p => w_p_tmp ,
+        HW => HW_tmp ,
+        IFM_NL_ready => IFM_NL_ready_tmp ,
+        IFM_NL_finished => IFM_NL_finished_tmp ,
+        ifm_out => ifm_out_tmp ,
         -- Back-End (BE) Interface Ports
-        ifm_BE => ifm_int,
-        RE_BE => RE_int
+        ifm_BE => ifm_tmp ,
+        RE_BE => RE_tmp 
     );
 
     -- SRAM_IFM_BACK_END
@@ -116,13 +116,13 @@ begin
     port map (
         clk => clk,
         reset => reset,
-        ifm_FE => ifm_int,
-        RE_FE => RE_int,
-        clkb => clkb_int,
-        rstb => rstb_int,
-        addrb => addrb_int,
-        doutb => doutb_int,
-        enb => enb_int
+        ifm_FE => ifm_tmp ,
+        RE_FE => RE_tmp ,
+        clkb => clkb_tmp ,
+        rstb => rstb_tmp ,
+        addrb => addrb_tmp ,
+        doutb => doutb_tmp ,
+        enb => enb_tmp 
     );
 
     -- blk_mem_gen_0
@@ -133,11 +133,11 @@ begin
         wea => (others => '0'),
         addra => (others => '0'),
         dina => (others => '0'),
-        clkb => clkb_int,
-        rstb => rstb_int,
-        enb => enb_int,
-        addrb => addrb_int,
-        doutb => doutb_int,
+        clkb => clkb_tmp ,
+        rstb => rstb_tmp ,
+        enb => enb_tmp ,
+        addrb => addrb_tmp ,
+        doutb => doutb_tmp ,
         rsta_busy => open,
         rstb_busy => open
     );
@@ -148,7 +148,7 @@ begin
     HW_tmp <= HW;
     IFM_NL_ready_tmp <= IFM_NL_ready;
     IFM_NL_finished_tmp <= IFM_NL_finished;
-    ifm_out <= ifm_out_int;
+    ifm_out <= ifm_out_tmp ;
 
 
 end architecture;

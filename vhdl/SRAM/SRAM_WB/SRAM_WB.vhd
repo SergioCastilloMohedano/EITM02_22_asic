@@ -91,12 +91,12 @@ begin
     -- SRAM_WB_FRONT_END_READ
     SRAM_WB_FRONT_END_READ_inst : SRAM_WB_FRONT_END_READ
     port map (
-        WB_NL_ready => WB_NL_ready_int,
-        WB_NL_finished => WB_NL_finished_int,
-        wb_out => wb_out_int,
+        WB_NL_ready => WB_NL_ready_tmp ,
+        WB_NL_finished => WB_NL_finished_tmp ,
+        wb_out => wb_out_tmp ,
         -- Back-End (BE) Interface Ports
-        wb_BE => wb_int,
-        RE_BE => RE_int
+        wb_BE => wb_tmp ,
+        RE_BE => RE_tmp 
     );
 
     -- SRAM_WB_BACK_END
@@ -104,13 +104,13 @@ begin
     port map (
         clk => clk,
         reset => reset,
-        wb_FE => wb_int,
-        RE_FE => RE_int,
-        clkb => clkb_int,
-        rstb => rstb_int,
-        addrb => addrb_int,
-        doutb => doutb_int,
-        enb => enb_int
+        wb_FE => wb_tmp ,
+        RE_FE => RE_tmp ,
+        clkb => clkb_tmp ,
+        rstb => rstb_tmp ,
+        addrb => addrb_tmp ,
+        doutb => doutb_tmp ,
+        enb => enb_tmp 
     );
 
     -- blk_mem_gen_1
@@ -121,11 +121,11 @@ begin
         wea =>  (others => '0'),
         addra => (others => '0'),
         dina => (others => '0'),
-        clkb => clkb_int,
-        rstb => rstb_int,
-        enb => enb_int,
-        addrb => addrb_int,
-        doutb => doutb_int,
+        clkb => clkb_tmp ,
+        rstb => rstb_tmp ,
+        enb => enb_tmp ,
+        addrb => addrb_tmp ,
+        doutb => doutb_tmp ,
         rsta_busy => open,
         rstb_busy => open
     );
@@ -133,7 +133,7 @@ begin
     -- PORT ASSIGNATIONS
     WB_NL_ready_tmp <= WB_NL_ready;
     WB_NL_finished_tmp <= WB_NL_finished;
-    wb_out <= wb_out_int;
+    wb_out <= wb_out_tmp ;
 
 
 end architecture;

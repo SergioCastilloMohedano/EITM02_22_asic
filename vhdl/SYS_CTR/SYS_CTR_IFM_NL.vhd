@@ -111,7 +111,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, IFM_NL_start_int, IFM_NL_cnt_done_int)
+    asmd_ctrl : process(state_reg, IFM_NL_start_tmp , IFM_NL_cnt_done_tmp )
     begin
         case state_reg is
             when s_init =>
@@ -187,9 +187,9 @@ begin
 
     -- PORT Assignations
     IFM_NL_start_tmp <= IFM_NL_start;
-    IFM_NL_ready <= IFM_NL_ready_int;
-    IFM_NL_finished <= IFM_NL_finished_int;
-    IFM_NL_busy <= IFM_NL_busy_int;
+    IFM_NL_ready <= IFM_NL_ready_tmp ;
+    IFM_NL_finished <= IFM_NL_finished_tmp ;
+    IFM_NL_busy <= IFM_NL_busy_tmp ;
     h_p <= std_logic_vector(to_unsigned(h_p_reg, h_p'length));
     w_p <= std_logic_vector(to_unsigned(w_p_reg, w_p'length));
     HW_p_tmp <= to_integer(unsigned(HW_p));

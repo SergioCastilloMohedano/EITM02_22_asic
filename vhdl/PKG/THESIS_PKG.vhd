@@ -7,9 +7,11 @@ use ieee.numeric_std.all;
 
 package thesis_pkg is
 
-    -- **** TYPE DECLARATIONS ****        
+    -- **** TYPE DECLARATIONS ****
     type std_logic_vector_array is array(natural range <>) of std_logic_vector(7 downto 0);
+    type std_logic_vector_2D_array is array(natural range <>) of std_logic_vector_array;
     type std_logic_array is array(natural range <>) of std_logic;
+    type std_logic_2D_array is array(natural range <>) of std_logic_array;
     type integer_array is array(natural range <>) of integer;
 
     -- **** PROCEDURES DECLARATIONS ****
@@ -124,7 +126,7 @@ package thesis_pkg is
         generic (
             LEN : natural := 8; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
             NUM : natural -- Number of inputs
-        ); 
+        );
         port (
             mux_in  : in std_logic_vector_array(0 to NUM - 1);
             mux_sel : in natural range 0 to NUM - 1;

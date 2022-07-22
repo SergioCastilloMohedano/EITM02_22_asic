@@ -124,7 +124,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, WB_NL_start_int, WB_NL_cnt_done_int)
+    asmd_ctrl : process(state_reg, WB_NL_start_tmp , WB_NL_cnt_done_tmp )
     begin
         case state_reg is
             when s_init =>
@@ -172,7 +172,7 @@ begin
     -- data path : functional units (perform necessary arithmetic operations)
     s_out <= s_reg + 1 when s_reg < (RS_tmp - 1) else 0;
 
-    pm_out_tmp <= pm_reg + 1 when (pm_reg < (m_tmp + p_tmp - 1)) else m_int;
+    pm_out_tmp <= pm_reg + 1 when (pm_reg < (m_tmp + p_tmp - 1)) else m_tmp ;
     pm_out <= pm_out_tmp when s_reg = (RS_tmp - 1) else pm_reg;
 
     r_p_out_tmp <= r_p_reg + 1 when r_p_reg < (RS_tmp - 1) else 0;
@@ -182,7 +182,7 @@ begin
     WB_NL_cnt_done_tmp <= '1' when ((s_reg = (RS_tmp - 1)) AND (pm_reg = (m_tmp + p_tmp - 1)) AND (r_p_reg = (RS_tmp - 1))) else '0';
 
     -- data path : mux routing
-    data_mux : process(state_reg, s_reg, pm_reg, r_p_reg, s_out, pm_out, r_p_out, m_int)
+    data_mux : process(state_reg, s_reg, pm_reg, r_p_reg, s_out, pm_out, r_p_out, m_tmp )
     begin
         case state_reg is
             when s_init =>
@@ -191,7 +191,7 @@ begin
                 r_p_next <= r_p_reg;
             when s_idle =>
                 s_next <= s_reg;
-                pm_next <= m_int;
+                pm_next <= m_tmp ;
                 r_p_next <= r_p_reg;
             when s_WB_NL =>
                 s_next <= s_out;
@@ -210,9 +210,9 @@ begin
 
     -- PORT Assignations
     WB_NL_start_tmp <= WB_NL_start;
-    WB_NL_ready <= WB_NL_ready_int;
-    WB_NL_finished <= WB_NL_finished_int;
-    WB_NL_busy <= WB_NL_busy_int;
+    WB_NL_ready <= WB_NL_ready_tmp ;
+    WB_NL_finished <= WB_NL_finished_tmp ;
+    WB_NL_busy <= WB_NL_busy_tmp ;
     r_p <= std_logic_vector(to_unsigned(r_p_reg, r_p'length));
     pm <= std_logic_vector(to_unsigned(pm_reg, pm'length));
     s <= std_logic_vector(to_unsigned(s_reg, s'length));
