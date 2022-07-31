@@ -28,17 +28,17 @@ entity MC_X is
         ifm_x_out    : out std_logic_vector (7 downto 0);
         ifm_x_status : out std_logic;
         w_x_enable   : in std_logic;
-        w_x_in       : in std_logic_vector (7 downto 0);
-        w_x_out      : out std_logic_vector (7 downto 0);
+        w_x_in       : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        w_x_out      : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         w_x_status   : out std_logic
     );
 end MC_X;
 
 architecture dataflow of MC_X is
 
-    signal w_x_tmp          : std_logic_vector (7 downto 0);
+    signal w_x_tmp          : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal w_x_status_tmp   : std_logic;
-    signal ifm_x_tmp        : std_logic_vector (7 downto 0);
+    signal ifm_x_tmp        : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal ifm_x_status_tmp : std_logic;
 
     signal w_x_ctrl           : std_logic;

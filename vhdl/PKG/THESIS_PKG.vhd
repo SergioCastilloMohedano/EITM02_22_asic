@@ -8,15 +8,45 @@ use ieee.numeric_std.all;
 package thesis_pkg is
 
     -- **** TYPE DECLARATIONS ****
-    type std_logic_vector_array is array(natural range <>) of std_logic_vector(7 downto 0);
+    constant COMP_BITWIDTH : natural := 8; -- determines computing resolution of the accelerator
+    type std_logic_vector_array is array(natural range <>) of std_logic_vector(COMP_BITWIDTH - 1 downto 0);
     type std_logic_vector_2D_array is array(natural range <>) of std_logic_vector_array;
     type std_logic_array is array(natural range <>) of std_logic;
     type std_logic_2D_array is array(natural range <>) of std_logic_array;
     type integer_array is array(natural range <>) of integer;
+    type psum_array is array(natural range <>) of std_logic_vector(19 downto 0); -- log2(R*S*2^8*2P8) = 19.1 = 20
+    type psum_2D_array is array(natural range <>) of psum_array;
 
     -- **** PROCEDURES DECLARATIONS ****
 
     -- **** FUNCTIONS DECLARATIONS ****
+
+    --## Compute the total number of bits needed to represent a number in binary.
+    --#
+    --# Args:
+    --#   n: Number to compute size from
+    --# Returns:
+    --#   Number of bits.
+    --# [SOURCE: https://github.com/kevinpt/vhdl-extras]
+    function bit_size(n : natural) return natural;
+
+    --## Decoder with variable sized output (power of 2).
+    --# Args:
+    --#  Sel: Numeric value to decode (range 0 to 2**Sel'length-1)
+    --# Returns:
+    --#  Decoded (one-hot) representation of Sel.
+    --# [SOURCE: https://github.com/kevinpt/vhdl-extras]
+    function decode(Sel : unsigned) return std_logic_vector;
+
+    --## Decoder with variable sized output (user specified).
+    --# Args:
+    --#  Sel:  Numeric value to decode (range 0 to Size-1)
+    --#  Size: Number of bits in result (leftmost bits)
+    --# Returns:
+    --#  Decoded (one-hot) representation of Sel.
+    --# [SOURCE: https://github.com/kevinpt/vhdl-extras]
+    function decode(Sel : unsigned; Size : positive
+    ) return std_logic_vector;
 
     -- ceil_log2div
     --------------------------------------------------------------------------------------
@@ -137,6 +167,54 @@ end thesis_pkg;
 package body thesis_pkg is
 
     -- **** FUNCTIONS DEFINITIONS ****
+
+    --## Compute the total number of bits needed to represent a number in binary.  [SOURCE: https://github.com/kevinpt/vhdl-extras]
+    function bit_size(n          : natural) return natural is
+        variable log, residual, base : natural;
+    begin
+        residual := n;
+        base     := 2;
+        log      := 0;
+
+        while residual > (base - 1) loop
+            residual := residual / base;
+            log      := log + 1;
+        end loop;
+
+        if n = 0 then
+            return 1;
+        else
+            return log + 1;
+        end if;
+    end function;
+
+    -- ## Decoder with variable sized output (power of 2)  [SOURCE: https://github.com/kevinpt/vhdl-extras]
+    function decode(Sel : unsigned) return std_logic_vector is
+
+        variable result : std_logic_vector(0 to (2 ** Sel'length) - 1);
+    begin
+
+        -- generate the one-hot vector from binary encoded Sel
+        result                  := (others => '0');
+        result(to_integer(Sel)) := '1';
+        return result;
+    end function;
+
+    --## Decoder with variable sized output (user specified)  [SOURCE: https://github.com/kevinpt/vhdl-extras]
+    function decode(Sel : unsigned; Size : positive)
+        return std_logic_vector is
+
+        variable full_result : std_logic_vector(0 to (2 ** Sel'length) - 1);
+    begin
+        -- assert Size <= 2 ** Sel'length
+        -- report "Decoder output size: " & integer'image(Size)
+        --     & " is too big for the selection vector"
+        --     severity failure;
+
+        full_result := decode(Sel);
+        return full_result(0 to Size - 1);
+    end function;
+
     -- ceil_log2div
     function ceil_log2div (x : std_logic_vector; y : integer) return std_logic_vector is
         variable tmp        : std_logic_vector ((x'left + y) downto x'right);

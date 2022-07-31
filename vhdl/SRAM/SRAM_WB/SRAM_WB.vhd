@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SRAM_WB is
     port (
@@ -9,7 +10,7 @@ entity SRAM_WB is
         -- To/From Front-End Read Interface
         WB_NL_ready : in std_logic;
         WB_NL_finished : in std_logic;
-        wb_out : out std_logic_vector (7 downto 0)
+        wb_out : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
         -- To/From Front-End Write Interface
         -- ..
     );
@@ -20,8 +21,8 @@ architecture structural of SRAM_WB is
     -- SIGNAL DECLARATIONS
     signal WB_NL_ready_tmp : std_logic;
     signal WB_NL_finished_tmp : std_logic;
-    signal wb_out_tmp : std_logic_vector (7 downto 0);
-    signal wb_tmp : std_logic_vector (7 downto 0);
+    signal wb_out_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal wb_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal RE_tmp : std_logic;
     signal clkb_tmp : std_logic;
     signal rstb_tmp : std_logic;
@@ -34,9 +35,9 @@ architecture structural of SRAM_WB is
     port(
         WB_NL_ready : in std_logic;
         WB_NL_finished : in std_logic;
-        wb_out : out std_logic_vector (7 downto 0);
+        wb_out : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         -- Back-End (BE) Interface Ports
-        wb_BE : in std_logic_vector (7 downto 0);
+        wb_BE : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         RE_BE : out std_logic
         );
     end component;
@@ -52,7 +53,7 @@ architecture structural of SRAM_WB is
     port(clk : in std_logic;
          reset : in std_logic;
         -- Front-End Interface Ports
-         wb_FE : out std_logic_vector (7 downto 0);
+         wb_FE : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
          RE_FE : in std_logic;
         -- SRAM Wrapper Ports (READ)
          clkb : out std_logic;

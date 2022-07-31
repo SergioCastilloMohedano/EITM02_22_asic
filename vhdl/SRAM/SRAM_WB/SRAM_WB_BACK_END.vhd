@@ -24,6 +24,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SRAM_WB_BACK_END is
     port (
@@ -31,7 +32,7 @@ entity SRAM_WB_BACK_END is
         reset : in std_logic;
 
         -- Front-End Interface Ports
-        wb_FE : out std_logic_vector (7 downto 0);
+        wb_FE : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         RE_FE : in std_logic;   -- Read Enable, active high
 
         -- SRAM Wrapper Ports (READ)
@@ -83,7 +84,7 @@ architecture behavioral of SRAM_WB_BACK_END is
     -- ..
 
     ---- Data Outputs
-    signal wb_FE_tmp : std_logic_vector (7 downto 0);
+    signal wb_FE_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal enb_tmp : std_logic;
 
     -- SRAM_WB_BACK_END Intermediate Signals
@@ -106,7 +107,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, RE_tmp )
+    asmd_ctrl : process(state_reg, RE_tmp)
     begin
         case state_reg is
             when s_init =>

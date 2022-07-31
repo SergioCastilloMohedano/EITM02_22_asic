@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.thesis_pkg.all;
-use IEEE.math_real."log2";
+use IEEE.math_real.log2;
 
 entity NOC_tb is
 end NOC_tb;
@@ -14,10 +14,10 @@ architecture sim of NOC_tb is
 
     constant X            : natural := 32;
     constant Y            : natural := 3;
-    constant M_cap        : natural := 16;
-    constant C_cap        : natural := 3;
+    constant M_cap        : natural := 32;
+    constant C_cap        : natural := 16;
     constant RS           : natural := 3;
-    constant HW           : natural := 32;
+    constant HW           : natural := 16;
     constant HW_p         : natural := HW + 2;
     constant EF           : natural := HW;
     constant EF_log2      : natural := natural(log2(real(EF)));

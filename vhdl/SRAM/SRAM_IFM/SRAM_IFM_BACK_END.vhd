@@ -24,6 +24,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SRAM_IFM_BACK_END is
     port (
@@ -31,7 +32,7 @@ entity SRAM_IFM_BACK_END is
         reset : in std_logic;
 
         -- Front-End Interface Ports
-        ifm_FE : out std_logic_vector (7 downto 0);
+        ifm_FE : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         RE_FE : in std_logic;   -- Read Enable, active high
 
         -- SRAM Wrapper Ports (READ)
@@ -83,7 +84,7 @@ architecture behavioral of SRAM_IFM_BACK_END is
     -- ..
 
     ---- Data Outputs
-    signal ifm_FE_tmp : std_logic_vector (7 downto 0);
+    signal ifm_FE_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal enb_tmp : std_logic;
 
     -- SRAM_IFM_BACK_END Intermediate Signals

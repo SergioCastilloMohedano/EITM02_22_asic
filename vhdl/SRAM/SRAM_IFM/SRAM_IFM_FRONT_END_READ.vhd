@@ -24,6 +24,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SRAM_IFM_FRONT_END_READ is
     port (
@@ -32,9 +33,9 @@ entity SRAM_IFM_FRONT_END_READ is
         HW : in std_logic_vector (7 downto 0);
         IFM_NL_ready : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
         IFM_NL_finished : in std_logic; -- IFM NL has finished. Do not read SRAM anymore.
-        ifm_out : out std_logic_vector (7 downto 0);
+        ifm_out : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         -- Back-End (BE) Interface Ports
-        ifm_BE : in std_logic_vector (7 downto 0);
+        ifm_BE : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         RE_BE : out std_logic   -- Read Enable, active high
     );
 end SRAM_IFM_FRONT_END_READ;
@@ -53,8 +54,8 @@ architecture dataflow of SRAM_IFM_FRONT_END_READ is
     signal h_ctrl : std_logic;
     signal w_ctrl : std_logic;
 
-    signal ifm_out_tmp : std_logic_vector (7 downto 0);
-    signal ifm_BE_tmp : std_logic_vector (7 downto 0);
+    signal ifm_out_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal ifm_BE_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
 
     signal RE_BE_tmp : std_logic;
 

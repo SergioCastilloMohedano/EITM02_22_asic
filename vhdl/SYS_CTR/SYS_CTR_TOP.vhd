@@ -61,7 +61,8 @@ entity SYS_CTR_TOP is
         IFM_NL_busy     : out std_logic;
         WB_NL_ready     : out std_logic;
         WB_NL_finished  : out std_logic;
-        WB_NL_busy      : out std_logic
+        WB_NL_busy      : out std_logic;
+        pass_flag       : out std_logic
     );
 end SYS_CTR_TOP;
 
@@ -257,5 +258,6 @@ begin
     WB_NL_ready     <= WB_NL_ready_tmp;
     WB_NL_finished  <= WB_NL_finished_tmp;
     WB_NL_busy      <= WB_NL_busy_tmp;
+    pass_flag       <= pass_flag_tmp;
 
 end architecture;

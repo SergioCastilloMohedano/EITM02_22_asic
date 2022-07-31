@@ -12,10 +12,10 @@ entity TOP is
         hw_log2_EF : integer_array          := (5, 4, 3)
     );
     port (
-        clk      : in std_logic;
-        reset    : in std_logic;
-        NL_start : in std_logic;
-        NL_ready : out std_logic;
+        clk         : in std_logic;
+        reset       : in std_logic;
+        NL_start    : in std_logic;
+        NL_ready    : out std_logic;
         NL_finished : out std_logic;
 
         -- Signals Below Shall be coming from within the accelerator later on. ----
@@ -54,12 +54,13 @@ architecture structural of TOP is
     signal WB_NL_ready_tmp     : std_logic;
     signal WB_NL_finished_tmp  : std_logic;
     signal WB_NL_busy_tmp      : std_logic;
+    signal pass_flag_tmp       : std_logic;
 
     -- SRAM_WB
-    signal w_tmp : std_logic_vector (7 downto 0);
+    signal w_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
 
     -- SRAM_IFM
-    signal ifm_tmp : std_logic_vector (7 downto 0);
+    signal ifm_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is
@@ -90,7 +91,8 @@ architecture structural of TOP is
             IFM_NL_busy     : out std_logic;
             WB_NL_ready     : out std_logic;
             WB_NL_finished  : out std_logic;
-            WB_NL_busy      : out std_logic
+            WB_NL_busy      : out std_logic;
+            pass_flag       : out std_logic
         );
     end component;
 
@@ -100,7 +102,7 @@ architecture structural of TOP is
             reset          : in std_logic;
             WB_NL_ready    : in std_logic;
             WB_NL_finished : in std_logic;
-            wb_out         : out std_logic_vector (7 downto 0)
+            wb_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -113,7 +115,7 @@ architecture structural of TOP is
             HW              : in std_logic_vector (7 downto 0);
             IFM_NL_ready    : in std_logic;
             IFM_NL_finished : in std_logic;
-            ifm_out         : out std_logic_vector (7 downto 0)
+            ifm_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -143,8 +145,9 @@ architecture structural of TOP is
             r_p         : in std_logic_vector (7 downto 0);
             WB_NL_busy  : in std_logic;
             IFM_NL_busy : in std_logic;
-            ifm_sram    : in std_logic_vector (7 downto 0);
-            w_sram      : in std_logic_vector (7 downto 0)
+            pass_flag   : in std_logic;
+            ifm_sram    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            w_sram      : in std_logic_vector (COMP_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -214,7 +217,8 @@ begin
         IFM_NL_busy     => IFM_NL_busy_tmp,
         WB_NL_ready     => WB_NL_ready_tmp,
         WB_NL_finished  => WB_NL_finished_tmp,
-        WB_NL_busy      => WB_NL_busy_tmp
+        WB_NL_busy      => WB_NL_busy_tmp,
+        pass_flag       => pass_flag_tmp
     );
 
     -- SRAM_WB
@@ -230,14 +234,14 @@ begin
     -- SRAM_IFM
     SRAM_IFM_inst : SRAM_IFM
     port map(
-        clk   => clk,
-        reset => reset,
-        h_p => h_p_tmp,
-        w_p => w_p_tmp,
-        HW => HW,
-        IFM_NL_ready => IFM_NL_ready_tmp,
+        clk             => clk,
+        reset           => reset,
+        h_p             => h_p_tmp,
+        w_p             => w_p_tmp,
+        HW              => HW,
+        IFM_NL_ready    => IFM_NL_ready_tmp,
         IFM_NL_finished => IFM_NL_finished_tmp,
-        ifm_out => ifm_tmp
+        ifm_out         => ifm_tmp
     );
 
     -- -- OFMAP SRAM INTERFACE
@@ -251,25 +255,26 @@ begin
     -- NOC
     NOC_inst : NOC
     generic map(
-        X => X,
-        Y => Y,
-        hw_log2_r => hw_log2_r,
+        X          => X,
+        Y          => Y,
+        hw_log2_r  => hw_log2_r,
         hw_log2_EF => hw_log2_EF
     )
     port map(
-        clk   => clk,
-        reset => reset,
-        C_cap => C_cap,
-        HW_p => HW_p,
-        EF_log2 => EF_log2,
-        r_log2 => r_log2,
-        h_p => h_p_tmp,
-        rc => rc_tmp,
-        r_p => r_p_tmp,
-        WB_NL_busy => WB_NL_busy_tmp,
+        clk         => clk,
+        reset       => reset,
+        C_cap       => C_cap,
+        HW_p        => HW_p,
+        EF_log2     => EF_log2,
+        r_log2      => r_log2,
+        h_p         => h_p_tmp,
+        rc          => rc_tmp,
+        r_p         => r_p_tmp,
+        WB_NL_busy  => WB_NL_busy_tmp,
         IFM_NL_busy => IFM_NL_busy_tmp,
-        ifm_sram => ifm_tmp,
-        w_sram => w_tmp
+        pass_flag   => pass_flag_tmp,
+        ifm_sram    => ifm_tmp,
+        w_sram      => w_tmp
     );
 
     -- -- ADDER TREE
@@ -313,8 +318,6 @@ begin
     -- );
 
     -- PORT Assignations
-    NL_ready <= NL_ready_tmp;
+    NL_ready    <= NL_ready_tmp;
     NL_finished <= NL_finished_tmp;
-
-
 end architecture;

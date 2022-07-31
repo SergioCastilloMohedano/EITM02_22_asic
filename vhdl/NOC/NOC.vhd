@@ -6,10 +6,12 @@ use work.thesis_pkg.all;
 entity NOC is
     generic (
         -- HW Parameters, at shyntesis time.
-        X          : natural range 0 to 255 := 32;
-        Y          : natural range 0 to 255 := 3;
-        hw_log2_r  : integer_array          := (0, 1, 2);
-        hw_log2_EF : integer_array          := (5, 4, 3)
+        X                     : natural range 0 to 255 := 32;
+        Y                     : natural range 0 to 255 := 3;
+        hw_log2_r             : integer_array          := (0, 1, 2);
+        hw_log2_EF            : integer_array          := (5, 4, 3);
+        NUM_REGS_IFM_REG_FILE : natural                := 32; -- Emax (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural                := 24 -- p*S = 8*3 = 24
     );
     port (
         clk   : in std_logic;
@@ -27,9 +29,11 @@ entity NOC is
         r_p         : in std_logic_vector (7 downto 0);
         WB_NL_busy  : in std_logic;
         IFM_NL_busy : in std_logic;
+        pass_flag   : in std_logic;
+
         -- from SRAMs
-        ifm_sram : in std_logic_vector (7 downto 0);
-        w_sram   : in std_logic_vector (7 downto 0)
+        ifm_sram : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        w_sram   : in std_logic_vector (COMP_BITWIDTH - 1 downto 0)
     );
 end NOC;
 
@@ -51,23 +55,46 @@ architecture structural of NOC is
     -- MC_rr to MC_X
     signal rr_tmp : std_logic_vector_array(0 to (X - 1));
 
+    -- Internal PE Array Signals
+    signal psum_inter_array : psum_2D_array(0 to (X - 1))(0 to (Y));
+    signal psum_out_array   : psum_array(0 to (X - 1));
+
     -- Delay Signals
     signal h_p_reg         : std_logic_vector (7 downto 0);
     signal r_p_reg         : std_logic_vector (7 downto 0);
     signal rc_reg          : std_logic_vector (7 downto 0);
     signal IFM_NL_busy_reg : std_logic;
     signal WB_NL_busy_reg  : std_logic;
+    signal pass_flag_reg   : std_logic;
+
+    -- Other Signals
+    signal PE_ARRAY_RF_write_start : std_logic; -- triggers writing state within all PEs.
 
     -- COMPONENT DECLARATIONS
     component PE is
+        generic (
+            -- HW Parameters, at shyntesis time.
+            Y_ID                  : natural range 0 to 255 := 3;
+            X_ID                  : natural range 0 to 255 := 16;
+            Y                     : natural range 0 to 255 := Y;
+            NUM_REGS_IFM_REG_FILE : natural                := 32; -- Emax (conv0 and conv1)
+            NUM_REGS_W_REG_FILE   : natural                := 24 -- p*S = 8*3 = 24
+        );
         port (
-            clk           : in std_logic;
-            reset         : in std_logic;
-            ifm_PE        : out std_logic_vector (7 downto 0);
-            ifm_status_PE : out std_logic;
-            w_PE          : out std_logic_vector (7 downto 0);
-            w_status_PE   : out std_logic
-            -- ...
+            clk   : in std_logic;
+            reset : in std_logic;
+
+            -- from sys ctrl
+            pass_flag : in std_logic;
+
+            -- NoC Internal Signals
+            ifm_PE                  : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            ifm_PE_enable           : in std_logic;
+            w_PE                    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            w_PE_enable             : in std_logic;
+            psum_in                 : in std_logic_vector (19 downto 0); -- log2(R*S*2^8*2^8) = 19.1 = 20
+            psum_out                : out std_logic_vector (19 downto 0);
+            PE_ARRAY_RF_write_start : in std_logic
         );
     end component;
 
@@ -88,11 +115,11 @@ architecture structural of NOC is
             r_p          : in std_logic_vector (7 downto 0);
             WB_NL_busy   : in std_logic;
             IFM_NL_busy  : in std_logic;
-            ifm_y_in     : in std_logic_vector (7 downto 0);
-            ifm_y_out    : out std_logic_vector(7 downto 0);
+            ifm_y_in     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            ifm_y_out    : out std_logic_vector(COMP_BITWIDTH - 1 downto 0);
             ifm_y_status : out std_logic;
-            w_y_in       : in std_logic_vector (7 downto 0);
-            w_y_out      : out std_logic_vector (7 downto 0);
+            w_y_in       : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            w_y_out      : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             w_y_status   : out std_logic
         );
     end component;
@@ -112,12 +139,12 @@ architecture structural of NOC is
             rc           : in std_logic_vector (7 downto 0);
             rr           : in std_logic_vector (7 downto 0);
             ifm_x_enable : in std_logic;
-            ifm_x_in     : in std_logic_vector (7 downto 0);
-            ifm_x_out    : out std_logic_vector (7 downto 0);
+            ifm_x_in     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            ifm_x_out    : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             ifm_x_status : out std_logic;
             w_x_enable   : in std_logic;
-            w_x_in       : in std_logic_vector (7 downto 0);
-            w_x_out      : out std_logic_vector (7 downto 0);
+            w_x_in       : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            w_x_out      : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             w_x_status   : out std_logic
         );
     end component;
@@ -135,17 +162,32 @@ architecture structural of NOC is
 
 begin
 
-    -- -- PE ARRAY
-    -- PE_ARRAY_X_loop : for i in 0 to (X - 1) generate
-    --     PE_ARRAY_Y_loop : for j in 0 to (Y - 1) generate
-    --         PE_inst : PE
-    --         port map(
-    --             clk   => clk,
-    --             reset => reset
-    --             -- ..
-    --         );
-    --     end generate PE_ARRAY_Y_loop;
-    -- end generate PE_ARRAY_X_loop;
+    -- PE ARRAY
+    PE_ARRAY_X_loop : for i in 0 to (X - 1) generate
+        PE_ARRAY_Y_loop : for j in 0 to (Y - 1) generate
+            PE_inst : PE
+            generic map(
+                Y_ID                  => j + 1,
+                X_ID                  => i + 1,
+                Y                     => Y,
+                NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE,
+                NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE
+            )
+            port map(
+                clk                     => clk,
+                reset                   => reset,
+                pass_flag               => pass_flag_reg,
+                ifm_PE                  => ifm_x_to_PE(i)(j),
+                ifm_PE_enable           => ifm_status_x_to_PE(i)(j),
+                w_PE                    => w_x_to_PE(i)(j),
+                w_PE_enable             => w_status_x_to_PE(i)(j),
+                psum_in                 => psum_inter_array(i)(Y - 1 - j),
+                psum_out                => psum_inter_array(i)(Y - j),
+                PE_ARRAY_RF_write_start => PE_ARRAY_RF_write_start
+            );
+        end generate PE_ARRAY_Y_loop;
+        psum_out_array(i) <= psum_inter_array(i)(0);
+    end generate PE_ARRAY_X_loop;
 
     -- -- MC FC ROW
     -- MC_FC_ROW_loop : for i in 0 to (X - 1) generate
@@ -229,7 +271,10 @@ begin
             rc_reg          <= rc;
             IFM_NL_busy_reg <= IFM_NL_busy;
             WB_NL_busy_reg  <= WB_NL_busy;
+            pass_flag_reg   <= pass_flag;
         end if;
     end process;
+
+    PE_ARRAY_RF_write_start <= '1' when (IFM_NL_busy_reg or WB_NL_busy_reg) else '0'; -- triggers writing state within all PEs.
 
 end architecture;

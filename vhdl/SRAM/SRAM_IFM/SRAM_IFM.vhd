@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SRAM_IFM is
     port (
@@ -12,7 +13,7 @@ entity SRAM_IFM is
         HW : in std_logic_vector (7 downto 0);
         IFM_NL_ready : in std_logic;
         IFM_NL_finished : in std_logic;
-        ifm_out : out std_logic_vector (7 downto 0)
+        ifm_out : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
         -- To/From Front-End Write Interface
         -- ..
     );
@@ -26,8 +27,8 @@ architecture structural of SRAM_IFM is
     signal HW_tmp : std_logic_vector (7 downto 0);
     signal IFM_NL_ready_tmp : std_logic;
     signal IFM_NL_finished_tmp : std_logic;
-    signal ifm_out_tmp : std_logic_vector (7 downto 0);
-    signal ifm_tmp : std_logic_vector (7 downto 0);
+    signal ifm_out_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal ifm_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal RE_tmp : std_logic;
     signal clkb_tmp : std_logic;
     signal rstb_tmp : std_logic;
@@ -43,9 +44,9 @@ architecture structural of SRAM_IFM is
         HW : in std_logic_vector (7 downto 0);
         IFM_NL_ready : in std_logic;
         IFM_NL_finished : in std_logic;
-        ifm_out : out std_logic_vector (7 downto 0);
+        ifm_out : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         -- Back-End (BE) Interface Ports
-        ifm_BE : in std_logic_vector (7 downto 0);
+        ifm_BE : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         RE_BE : out std_logic
         );
     end component;
@@ -61,7 +62,7 @@ architecture structural of SRAM_IFM is
     port(clk : in std_logic;
          reset : in std_logic;
         -- Front-End Interface Ports
-         ifm_FE : out std_logic_vector (7 downto 0);
+         ifm_FE : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
          RE_FE : in std_logic;
         -- SRAM Wrapper Ports (READ)
          clkb : out std_logic;
