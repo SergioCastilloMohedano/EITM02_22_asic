@@ -9,12 +9,13 @@ package thesis_pkg is
 
     -- **** TYPE DECLARATIONS ****
     constant COMP_BITWIDTH : natural := 8; -- determines computing resolution of the accelerator
+    constant PSUM_BITWIDTH : natural := 20; -- determines bitwidth of the psum considering worst case scenario accumulations -> ceil(log2(R*S*2^8*2^8)) = ceil(19.1) = 20
     type std_logic_vector_array is array(natural range <>) of std_logic_vector(COMP_BITWIDTH - 1 downto 0);
     type std_logic_vector_2D_array is array(natural range <>) of std_logic_vector_array;
     type std_logic_array is array(natural range <>) of std_logic;
     type std_logic_2D_array is array(natural range <>) of std_logic_array;
     type integer_array is array(natural range <>) of integer;
-    type psum_array is array(natural range <>) of std_logic_vector(19 downto 0); -- log2(R*S*2^8*2P8) = 19.1 = 20
+    type psum_array is array(natural range <>) of std_logic_vector(PSUM_BITWIDTH - 1 downto 0); 
     type psum_2D_array is array(natural range <>) of psum_array;
 
     -- **** PROCEDURES DECLARATIONS ****
@@ -312,7 +313,7 @@ architecture behavioral of dff is
 
 begin
 
-    process (clk)
+    process (clk, reset)
     begin
         if clk'event and clk = '1' then
             if reset = '1' then

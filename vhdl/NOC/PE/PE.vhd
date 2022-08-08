@@ -16,6 +16,11 @@ entity PE is
         clk   : in std_logic;
         reset : in std_logic;
 
+        -- config. parameters
+        HW_p : in std_logic_vector (7 downto 0);
+        RS   : in std_logic_vector (7 downto 0);
+        p    : in std_logic_vector (7 downto 0);
+
         -- from sys ctrl
         pass_flag : in std_logic;
 
@@ -24,8 +29,8 @@ entity PE is
         ifm_PE_enable           : in std_logic;
         w_PE                    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         w_PE_enable             : in std_logic;
-        psum_in                 : in std_logic_vector (19 downto 0); -- log2(R*S*2^8*2P8) = 19.1 = 20
-        psum_out                : out std_logic_vector (19 downto 0);
+        psum_in                 : in std_logic_vector (PSUM_BITWIDTH - 1 downto 0); -- log2(R*S*2^8*2P8) = 19.1 = 20
+        psum_out                : out std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
         PE_ARRAY_RF_write_start : in std_logic
     );
 end PE;
@@ -40,6 +45,25 @@ architecture structural of PE is
     -- PE_CTR to REG_FILE_w
     signal w_rf_addr : std_logic_vector(bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
     signal w_we_rf   : std_logic;
+
+    -- Multiplier Signals
+    signal ifm_mult   : std_logic_vector(COMP_BITWIDTH - 1 downto 0);
+    signal w_mult     : std_logic_vector(COMP_BITWIDTH - 1 downto 0);
+    signal mult_out   : unsigned(PSUM_BITWIDTH - 1 downto 0);
+    signal mult_zeros : unsigned((PSUM_BITWIDTH - 2 * COMP_BITWIDTH) - 1 downto 0);
+
+    -- Adder Signals
+    signal adder_in_1 : unsigned(PSUM_BITWIDTH - 1 downto 0);
+    signal adder_in_2 : unsigned(PSUM_BITWIDTH - 1 downto 0);
+    signal adder_out  : unsigned(PSUM_BITWIDTH - 1 downto 0);
+
+    -- MUX control Signals
+    signal inter_PE_acc : std_logic;
+    signal reset_acc    : std_logic;
+
+    -- psum registers Signals
+    signal in_psum_reg                       : unsigned(PSUM_BITWIDTH - 1 downto 0);
+    signal accumulator_reg, accumulator_next : unsigned(PSUM_BITWIDTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
     component REG_FILE is
@@ -63,12 +87,18 @@ architecture structural of PE is
     component PE_CTR is
         generic (
             -- HW Parameters, at shyntesis time.
+            Y_ID                  : natural := 3;
             NUM_REGS_IFM_REG_FILE : natural := 32;
             NUM_REGS_W_REG_FILE   : natural := 24
         );
         port (
             clk   : in std_logic;
             reset : in std_logic;
+
+            -- config. parameters
+            HW_p : in std_logic_vector (7 downto 0);
+            RS   : in std_logic_vector (7 downto 0);
+            p    : in std_logic_vector (7 downto 0);
 
             -- from sys ctrl
             pass_flag : in std_logic;
@@ -79,11 +109,12 @@ architecture structural of PE is
             PE_ARRAY_RF_write_start : in std_logic;
 
             -- PE_CTR signals
-            w_addr    : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
-            ifm_addr  : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
-            w_we_rf   : out std_logic;
-            ifm_we_rf : out std_logic
-
+            w_addr       : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
+            ifm_addr     : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
+            w_we_rf      : out std_logic;
+            ifm_we_rf    : out std_logic;
+            reset_acc    : out std_logic;
+            inter_PE_acc : out std_logic
         );
     end component;
 
@@ -101,7 +132,7 @@ begin
         reg_sel     => unsigned(ifm_rf_addr),
         we          => ifm_we_rf,
         wr_data     => ifm_PE,
-        rd_data     => open,
+        rd_data     => ifm_mult,
         registers   => open,
         reg_written => open
     );
@@ -118,19 +149,23 @@ begin
         reg_sel     => unsigned(w_rf_addr),
         we          => w_we_rf,
         wr_data     => w_PE,
-        rd_data     => open,
+        rd_data     => w_mult,
         registers   => open,
         reg_written => open
     );
 
     PE_CTR_inst : PE_CTR
     generic map(
+        Y_ID                  => Y_ID,
         NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE,
         NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE
     )
     port map(
         clk                     => clk,
         reset                   => reset,
+        HW_p                    => HW_p,
+        RS                      => RS,
+        p                       => p,
         pass_flag               => pass_flag,
         ifm_PE_enable           => ifm_PE_enable,
         w_PE_enable             => w_PE_enable,
@@ -138,7 +173,42 @@ begin
         w_addr                  => w_rf_addr,
         ifm_addr                => ifm_rf_addr,
         w_we_rf                 => w_we_rf,
-        ifm_we_rf               => ifm_we_rf
+        ifm_we_rf               => ifm_we_rf,
+        reset_acc               => reset_acc,
+        inter_PE_acc            => inter_PE_acc
     );
+
+    -- MAC Registers
+    REG_PROC : process (clk)
+    begin
+        if rising_edge(clk) then
+            if (reset = '1') then
+                accumulator_reg <= (others => '0');
+                in_psum_reg     <= (others => '0');
+            else
+                accumulator_reg <= accumulator_next; -- Acc. reg.
+                in_psum_reg     <= unsigned(psum_in); -- In psum reg.
+            end if;
+        end if;
+    end process;
+
+    -- Combinational Logic --
+    -- Multiplier
+    mult_zeros <= (others => '0');
+    mult_out   <= mult_zeros & (unsigned(ifm_mult) * unsigned(w_mult));
+
+    -- Inter-PE Acc. MUX
+    adder_in_1 <= mult_out when inter_PE_acc = '0' else in_psum_reg;
+
+    -- Intra-PE Acc. MUX
+    adder_in_2 <= accumulator_reg when reset_acc = '0' else (others => '0');
+
+    -- Adder
+    adder_out        <= adder_in_1 + adder_in_2;
+    accumulator_next <= adder_out;
+    -------------------------
+
+    -- PORTS Assignations
+    psum_out <= std_logic_vector(adder_out);
 
 end architecture;

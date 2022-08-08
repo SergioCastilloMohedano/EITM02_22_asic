@@ -22,6 +22,8 @@ entity NOC is
         HW_p    : in std_logic_vector (7 downto 0);
         EF_log2 : in std_logic_vector (7 downto 0);
         r_log2  : in std_logic_vector (7 downto 0);
+        RS      : in std_logic_vector (7 downto 0);
+        p       : in std_logic_vector (7 downto 0);
 
         -- from sys ctrl
         h_p         : in std_logic_vector (7 downto 0);
@@ -84,6 +86,11 @@ architecture structural of NOC is
             clk   : in std_logic;
             reset : in std_logic;
 
+            -- config. parameters
+            HW_p      : in std_logic_vector (7 downto 0);
+            RS      : in std_logic_vector (7 downto 0);
+            p       : in std_logic_vector (7 downto 0);
+
             -- from sys ctrl
             pass_flag : in std_logic;
 
@@ -92,8 +99,8 @@ architecture structural of NOC is
             ifm_PE_enable           : in std_logic;
             w_PE                    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             w_PE_enable             : in std_logic;
-            psum_in                 : in std_logic_vector (19 downto 0); -- log2(R*S*2^8*2^8) = 19.1 = 20
-            psum_out                : out std_logic_vector (19 downto 0);
+            psum_in                 : in std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
+            psum_out                : out std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
             PE_ARRAY_RF_write_start : in std_logic
         );
     end component;
@@ -176,6 +183,9 @@ begin
             port map(
                 clk                     => clk,
                 reset                   => reset,
+                HW_p                      => HW_p,
+                RS                      => RS,
+                p                       => p,
                 pass_flag               => pass_flag_reg,
                 ifm_PE                  => ifm_x_to_PE(i)(j),
                 ifm_PE_enable           => ifm_status_x_to_PE(i)(j),
@@ -186,7 +196,8 @@ begin
                 PE_ARRAY_RF_write_start => PE_ARRAY_RF_write_start
             );
         end generate PE_ARRAY_Y_loop;
-        psum_out_array(i) <= psum_inter_array(i)(0);
+        psum_out_array(i)      <= psum_inter_array(i)(Y); -- Connect psum output of top PEs to the output of the PE Array.
+        psum_inter_array(i)(0) <= (others => '0'); -- Connect psum input of bottom PEs to zero.
     end generate PE_ARRAY_X_loop;
 
     -- -- MC FC ROW

@@ -108,7 +108,7 @@ begin
     NOC_ACK_PROC : process
     begin
         NoC_ACK_flag_tb <= '0';
-        wait for 20 us;
+        wait for 25 us;
         NoC_ACK_flag_tb <= '1';
         wait for clk_period;
     end process;

@@ -140,6 +140,8 @@ architecture structural of TOP is
             HW_p        : in std_logic_vector (7 downto 0);
             EF_log2     : in std_logic_vector (7 downto 0);
             r_log2      : in std_logic_vector (7 downto 0);
+            RS          : in std_logic_vector (7 downto 0);
+            p           : in std_logic_vector (7 downto 0);
             h_p         : in std_logic_vector (7 downto 0);
             rc          : in std_logic_vector (7 downto 0);
             r_p         : in std_logic_vector (7 downto 0);
@@ -267,6 +269,8 @@ begin
         HW_p        => HW_p,
         EF_log2     => EF_log2,
         r_log2      => r_log2,
+        RS          => RS,
+        p           => p,
         h_p         => h_p_tmp,
         rc          => rc_tmp,
         r_p         => r_p_tmp,
