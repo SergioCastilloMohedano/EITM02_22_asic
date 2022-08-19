@@ -5,12 +5,13 @@ use work.thesis_pkg.all;
 
 entity PE is
     generic (
-        -- HW Parameters, at shyntesis time.
-        Y_ID                  : natural range 0 to 255 := 3;
-        X_ID                  : natural range 0 to 255 := 16;
-        Y                     : natural range 0 to 255 := 3;
-        NUM_REGS_IFM_REG_FILE : natural                := 32; -- Emax (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural                := 24 -- p*S = 8*3 = 24
+        -- HW Parameters, at synthesis time.
+        Y_ID                  : natural       := 3;
+        X_ID                  : natural       := 16;
+        Y                     : natural       := 3;
+        X                     : natural       := 32;
+        NUM_REGS_IFM_REG_FILE : natural       := X; -- Emax (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
     );
     port (
         clk   : in std_logic;
@@ -20,6 +21,7 @@ entity PE is
         HW_p : in std_logic_vector (7 downto 0);
         RS   : in std_logic_vector (7 downto 0);
         p    : in std_logic_vector (7 downto 0);
+        r    : in std_logic_vector (7 downto 0);
 
         -- from sys ctrl
         pass_flag : in std_logic;
@@ -31,7 +33,8 @@ entity PE is
         w_PE_enable             : in std_logic;
         psum_in                 : in std_logic_vector (PSUM_BITWIDTH - 1 downto 0); -- log2(R*S*2^8*2P8) = 19.1 = 20
         psum_out                : out std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
-        PE_ARRAY_RF_write_start : in std_logic
+        PE_ARRAY_RF_write_start : in std_logic;
+        ofmap_p_done            : out std_logic -- control signal that ackowledges the ofmap is already computed (ONLY to be used when Y_ID = 1, else leave it "open").
     );
 end PE;
 
@@ -41,6 +44,7 @@ architecture structural of PE is
     -- PE_CTR to REG_FILE_ifm
     signal ifm_rf_addr : std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
     signal ifm_we_rf   : std_logic;
+    signal re_rf       : std_logic; -- it also connects to REG_FILE_w
 
     -- PE_CTR to REG_FILE_w
     signal w_rf_addr : std_logic_vector(bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
@@ -78,6 +82,7 @@ architecture structural of PE is
             reg_sel     : in unsigned (bit_size(NUM_REGS) - 1 downto 0);
             we          : in std_logic;
             wr_data     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            re          : in std_logic;
             rd_data     : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             registers   : out std_logic_vector_array(0 to (NUM_REGS - 1));
             reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
@@ -86,10 +91,11 @@ architecture structural of PE is
 
     component PE_CTR is
         generic (
-            -- HW Parameters, at shyntesis time.
-            Y_ID                  : natural := 3;
-            NUM_REGS_IFM_REG_FILE : natural := 32;
-            NUM_REGS_W_REG_FILE   : natural := 24
+            -- HW Parameters, at synthesis time.
+            Y_ID                  : natural       := 3;
+            X                     : natural       := X;
+            NUM_REGS_IFM_REG_FILE : natural       := X;
+            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE
         );
         port (
             clk   : in std_logic;
@@ -99,6 +105,7 @@ architecture structural of PE is
             HW_p : in std_logic_vector (7 downto 0);
             RS   : in std_logic_vector (7 downto 0);
             p    : in std_logic_vector (7 downto 0);
+            r    : in std_logic_vector (7 downto 0);
 
             -- from sys ctrl
             pass_flag : in std_logic;
@@ -114,7 +121,8 @@ architecture structural of PE is
             w_we_rf      : out std_logic;
             ifm_we_rf    : out std_logic;
             reset_acc    : out std_logic;
-            inter_PE_acc : out std_logic
+            inter_PE_acc : out std_logic;
+            re_rf        : out std_logic
         );
     end component;
 
@@ -132,6 +140,7 @@ begin
         reg_sel     => unsigned(ifm_rf_addr),
         we          => ifm_we_rf,
         wr_data     => ifm_PE,
+        re          => re_rf,
         rd_data     => ifm_mult,
         registers   => open,
         reg_written => open
@@ -149,6 +158,7 @@ begin
         reg_sel     => unsigned(w_rf_addr),
         we          => w_we_rf,
         wr_data     => w_PE,
+        re          => re_rf,
         rd_data     => w_mult,
         registers   => open,
         reg_written => open
@@ -157,6 +167,7 @@ begin
     PE_CTR_inst : PE_CTR
     generic map(
         Y_ID                  => Y_ID,
+        X                     => X,
         NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE,
         NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE
     )
@@ -166,6 +177,7 @@ begin
         HW_p                    => HW_p,
         RS                      => RS,
         p                       => p,
+        r                       => r,
         pass_flag               => pass_flag,
         ifm_PE_enable           => ifm_PE_enable,
         w_PE_enable             => w_PE_enable,
@@ -175,11 +187,12 @@ begin
         w_we_rf                 => w_we_rf,
         ifm_we_rf               => ifm_we_rf,
         reset_acc               => reset_acc,
-        inter_PE_acc            => inter_PE_acc
+        inter_PE_acc            => inter_PE_acc,
+        re_rf                   => re_rf
     );
 
     -- MAC Registers
-    REG_PROC : process (clk)
+    REG_PROC : process (clk, reset)
     begin
         if rising_edge(clk) then
             if (reset = '1') then
@@ -209,6 +222,7 @@ begin
     -------------------------
 
     -- PORTS Assignations
-    psum_out <= std_logic_vector(adder_out);
+    psum_out <= std_logic_vector(accumulator_reg) when (Y_ID = 1) else std_logic_vector(adder_out); -- registers output only when Y_ID = 1. Instead of creating a new register, use acc_reg.
+    ofmap_p_done <= reset_acc;
 
 end architecture;

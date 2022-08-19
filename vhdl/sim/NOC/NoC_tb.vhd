@@ -12,24 +12,27 @@ architecture sim of NOC_tb is
     constant clk_hz     : integer := 100e6;
     constant clk_period : time    := 1 sec / clk_hz;
 
-    constant X            : natural := 32;
-    constant Y            : natural := 3;
-    constant M_cap        : natural := 32;
-    constant C_cap        : natural := 16;
-    constant RS           : natural := 3;
-    constant HW           : natural := 16;
-    constant HW_p         : natural := HW + 2;
-    constant EF           : natural := HW;
-    constant EF_log2      : natural := natural(log2(real(EF)));
-    constant r            : natural := X/EF; -- X/E
-    constant r_log2       : natural := natural(log2(real(r)));
-    constant p            : natural := 8;
-    constant t            : natural := 1; -- it must always be 1
-    constant M_div_pt     : natural := M_cap/(p * t); --M/p*t
-    constant HYP_BITWIDTH : natural := 8;
-
-    signal clk   : std_logic := '1';
-    signal reset : std_logic := '1';
+    constant X                     : natural       := 32;
+    constant Y                     : natural       := 3;
+    constant M_cap                 : natural       := 32;
+    constant C_cap                 : natural       := 16;
+    constant RS                    : natural       := 3;
+    constant HW                    : natural       := 16;
+    constant HW_p                  : natural       := HW + 2;
+    constant EF                    : natural       := HW;
+    constant EF_log2               : natural       := natural(log2(real(EF)));
+    constant r                     : natural       := X/EF; -- X/E
+    constant r_log2                : natural       := natural(log2(real(r)));
+    constant p                     : natural       := 8;
+    constant t                     : natural       := 1; -- it must always be 1
+    constant M_div_pt              : natural       := M_cap/(p * t); --M/p*t
+    constant HYP_BITWIDTH          : natural       := 8;
+    constant NUM_REGS_IFM_REG_FILE : natural       := X; -- Emax (conv0 and conv1)
+    constant NUM_REGS_W_REG_FILE   : natural       := natural(p * RS); -- p*S = 8*3 = 24
+    constant hw_log2_r             : integer_array := (0, 1, 2);
+    constant hw_log2_EF            : integer_array := (5, 4, 3); -- for E = (32, 16, 8)
+    signal clk                     : std_logic     := '1';
+    signal reset                   : std_logic     := '1';
 
     signal NL_start_tb     : std_logic := '0';
     signal NL_ready_tb     : std_logic;
@@ -48,11 +51,13 @@ architecture sim of NOC_tb is
 
     component TOP is
         generic (
-            -- HW Parameters, at shyntesis time.
-            X          : natural range 0 to 255 := 32;
-            Y          : natural range 0 to 255 := 3;
-            hw_log2_r  : integer_array          := (0, 1, 2);
-            hw_log2_EF : integer_array          := (5, 4, 3)
+            -- HW Parameters, at synthesis time.
+            X                     : natural       := 32;
+            Y                     : natural       := 3;
+            hw_log2_r             : integer_array := (0, 1, 2);
+            hw_log2_EF            : integer_array := (5, 4, 3);
+            NUM_REGS_IFM_REG_FILE : natural       := 32; -- Emax (conv0 and conv1)
+            NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
         );
         port (
             clk         : in std_logic;
@@ -83,8 +88,12 @@ begin
 
     inst_TOP_UUT : TOP
     generic map(
-        X => X,
-        Y => Y
+        X                     => X,
+        Y                     => Y,
+        hw_log2_r             => (0, 1, 2),
+        hw_log2_EF            => (5, 4, 3),
+        NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE, -- Emax (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE -- p*S = 8*3 = 24
     )
     port map(
         clk          => clk,
@@ -108,7 +117,7 @@ begin
     NOC_ACK_PROC : process
     begin
         NoC_ACK_flag_tb <= '0';
-        wait for 25 us;
+        wait for 40 us;
         NoC_ACK_flag_tb <= '1';
         wait for clk_period;
     end process;

@@ -5,8 +5,8 @@ use work.thesis_pkg.all;
 
 entity MC_Y is
     generic (
-        Y_ID : natural range 0 to 255 := 1;
-        Y    : natural range 0 to 255 := 3
+        Y_ID : natural := 1;
+        Y    : natural := 3
     );
     port (
         -- config. parameters

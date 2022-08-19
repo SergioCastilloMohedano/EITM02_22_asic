@@ -5,10 +5,11 @@ use work.thesis_pkg.all;
 
 entity PE_CTR is
     generic (
-        -- HW Parameters, at shyntesis time.
-        Y_ID                  : natural := 3;
-        NUM_REGS_IFM_REG_FILE : natural := 32; -- Emax (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural := 24 -- p*S = 8*3 = 24
+        -- HW Parameters, at synthesis time.
+        Y_ID                  : natural       := 3;
+        X                     : natural       := 32;
+        NUM_REGS_IFM_REG_FILE : natural       := X;  -- Emax (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
     );
     port (
         clk   : in std_logic;
@@ -18,6 +19,7 @@ entity PE_CTR is
         HW_p : in std_logic_vector (7 downto 0);
         RS   : in std_logic_vector (7 downto 0);
         p    : in std_logic_vector (7 downto 0);
+        r    : in std_logic_vector (7 downto 0);
 
         -- from sys ctrl
         pass_flag : in std_logic;
@@ -33,13 +35,14 @@ entity PE_CTR is
         w_we_rf      : out std_logic;
         ifm_we_rf    : out std_logic;
         reset_acc    : out std_logic;
-        inter_PE_acc : out std_logic
+        inter_PE_acc : out std_logic;
+        re_rf        : out std_logic
     );
 end PE_CTR;
 
 architecture behavioral of PE_CTR is
     -- Enumeration type for the states and state_type signals
-    type state_type is (s_init, s_idle_writing, s_intra_PE_acc, s_inter_PE_acc, s_hold, s_reset_acc, s_finished);
+    type state_type is (s_init, s_idle_writing, s_intra_PE_acc, s_inter_PE_acc, s_hold, s_reset_acc, s_stall, s_finished);
     signal state_next, state_reg : state_type;
 
     ------------ CONTROL PATH SIGNALS ------------
@@ -52,10 +55,15 @@ architecture behavioral of PE_CTR is
     signal inter_cnt_done_tmp_2                    : std_logic;
     signal inter_cnt_done                          : std_logic;
     signal hold_cnt_done                           : std_logic;
+    signal j_cnt_done                              : std_logic;
+    signal j_cnt_done_tmp_1                        : std_logic;
+    signal j_cnt_done_tmp_2                        : std_logic;
+    signal stall_cnt_done                          : std_logic;
 
     ---- External Command Signals to the FSMD
     signal PE_ARRAY_RF_write_start_tmp : std_logic;
     signal pass_flag_tmp               : std_logic;
+    signal stall_cnt                   : natural range 0 to 255;
 
     -------- OUTPUTS --------
     ----- Internal Control Signals used to control Data Path Operation
@@ -64,6 +72,7 @@ architecture behavioral of PE_CTR is
     ---- External Status Signals to indicate status of the FSMD
     signal reset_acc_tmp    : std_logic;
     signal inter_PE_acc_tmp : std_logic;
+    signal re_rf_tmp        : std_logic; -- avoids reading from RF when they are being writen.
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
@@ -77,6 +86,8 @@ architecture behavioral of PE_CTR is
     signal intra_p_reg, intra_p_next                 : natural range 0 to 255;
     signal inter_r_p_reg, inter_r_p_next             : natural range 0 to 255;
     signal hold_cnt_reg, hold_cnt_next               : natural range 0 to 255;
+    signal j_cnt_reg, j_cnt_next                     : natural range 0 to 255;
+    signal stall_cnt_reg, stall_cnt_next             : natural range 0 to 255;
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
     signal ifm_PE_enable_tmp : std_logic;
@@ -84,6 +95,7 @@ architecture behavioral of PE_CTR is
     signal HW_p_tmp          : natural range 0 to 255;
     signal RS_tmp            : natural range 0 to 255;
     signal p_tmp             : natural range 0 to 255;
+    signal r_tmp             : natural range 0 to 255;
 
     ---- Functional Units Intermediate Signals
     signal intra_s_out           : natural range 0 to 255;
@@ -99,6 +111,9 @@ architecture behavioral of PE_CTR is
     signal inter_r_p_out_2       : natural range 0 to 255;
     signal inter_r_p_out         : natural range 0 to 255;
     signal hold_cnt_out          : natural range 0 to 255;
+    signal j_cnt_out             : natural range 0 to 255;
+    signal j_cnt_out_tmp         : natural range 0 to 255;
+    signal stall_cnt_out         : natural range 0 to 255;
 
     ---- Data Outputs
     signal ifm_we_rf_tmp : std_logic;
@@ -129,7 +144,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, pass_flag_tmp, NoC_ACK_counter_tmp, intra_s_reg, intra_cnt_done_reg, inter_cnt_done, hold_cnt_done)
+    asmd_ctrl : process (state_reg, pass_flag_tmp, NoC_ACK_counter_tmp, intra_s_reg, intra_cnt_done_reg, inter_cnt_done, hold_cnt_done, j_cnt_done, stall_cnt_done)
     begin
         case state_reg is
             when s_init =>
@@ -158,8 +173,8 @@ begin
                 end if;
             when s_hold =>
                 if (hold_cnt_done = '1') then
-                    if (intra_cnt_done_reg = '1') then
-                        state_next <= s_finished;
+                    if (j_cnt_done = '1') then
+                        state_next <= s_stall;
                     else
                         state_next <= s_intra_PE_acc;
                     end if;
@@ -167,10 +182,20 @@ begin
                     state_next <= s_hold;
                 end if;
             when s_reset_acc =>
-                if (intra_cnt_done_reg = '1') then
-                    state_next <= s_finished;
+                if (j_cnt_done = '1') then
+                    state_next <= s_stall;
                 else
                     state_next <= s_intra_PE_acc;
+                end if;
+            when s_stall =>
+                if (stall_cnt_done = '1') then
+                    if (intra_cnt_done_reg = '1') then
+                        state_next <= s_finished;
+                    else
+                        state_next <= s_intra_PE_acc;
+                    end if;
+                else
+                    state_next <= s_stall;
                 end if;
             when s_finished =>
                 if NoC_ACK_counter_tmp = std_logic_vector(to_unsigned(0, 5)) then
@@ -183,9 +208,13 @@ begin
         end case;
     end process;
 
+    -- control path : input logic
+    stall_cnt <= (X - 1) - RS_tmp - RS_tmp + RF_READ_LATENCY;
+
     -- control path : output logic
     reset_acc_tmp    <= '1' when ((state_reg = s_reset_acc) or ((state_reg = s_inter_PE_acc) and (Y_ID /= 1))) else '0';
     inter_PE_acc_tmp <= '1' when state_reg = s_inter_PE_acc else '0';
+    re_rf_tmp        <= '0' when state_reg = s_idle_writing else '1';
 
     ifm_addr_tmp <= ifm_addr_write_reg when state_reg = s_idle_writing else
         std_logic_vector(to_unsigned(ifm_addr_read_tmp, bit_size(NUM_REGS_IFM_REG_FILE))) when state_reg = s_intra_PE_acc else
@@ -210,6 +239,8 @@ begin
                 w_addr_read_reg     <= 0;
                 inter_r_p_reg       <= 0;
                 hold_cnt_reg        <= 0;
+                stall_cnt_reg       <= 0;
+                j_cnt_reg           <= 0;
             else
                 ifm_addr_write_reg  <= ifm_addr_write_next;
                 w_addr_write_reg    <= w_addr_write_next;
@@ -222,6 +253,8 @@ begin
                 w_addr_read_reg     <= w_addr_read_next;
                 inter_r_p_reg       <= inter_r_p_next;
                 hold_cnt_reg        <= hold_cnt_next;
+                stall_cnt_reg       <= stall_cnt_next;
+                j_cnt_reg           <= j_cnt_next;
             end if;
         end if;
     end process;
@@ -261,11 +294,19 @@ begin
     hold_cnt_out <= hold_cnt_reg + 1 when (hold_cnt_reg < (Y_ID - 2)) else 0;
     -------------------------------------------------------
 
+    -- Stall Counter --------------------------------------
+    j_cnt_out_tmp <= j_cnt_reg + 1 when ((inter_cnt_done ='1') and (state_reg = s_inter_PE_acc)) else j_cnt_reg;
+    j_cnt_out <= j_cnt_out_tmp when (j_cnt_reg < (r_tmp)) else 0;
+
+    stall_cnt_out <= stall_cnt_reg + 1 when (stall_cnt_reg < stall_cnt) else 0;
+    -------------------------------------------------------
+
     -- data path : status (inputs to control path to modify next state logic)
     NoC_ACK_counter_tmp <= NoC_ACK_counter_reg;
+
     intra_cnt_done_next <= '1' when ((intra_s_reg = (RS_tmp - 1)) and (intra_w_p_reg = (HW_p_tmp - RS_tmp)) and (intra_p_reg = (p_tmp - 1))) else
-        '0' when state_reg = s_finished else
-        intra_cnt_done_reg;
+                           '0' when state_reg = s_finished else
+                           intra_cnt_done_reg;
 
     inter_cnt_done_tmp_1 <= '1' when (inter_r_p_reg = (RS_tmp - Y_ID - 1)) else '0';
     inter_cnt_done_tmp_2 <= '1' when (inter_r_p_reg = (RS_tmp - Y_ID)) else '0';
@@ -276,8 +317,17 @@ begin
 
     hold_cnt_done <= '1' when (hold_cnt_reg = (Y_ID - 2)) else '0';
 
+    j_cnt_done_tmp_1 <= '1' when ((j_cnt_reg = (r_tmp)) and (state_reg = s_reset_acc)) else '0';
+    j_cnt_done_tmp_2 <= '1' when ((j_cnt_reg = (r_tmp)) and (state_reg = s_hold)) else '0';
+
+    with Y_ID select j_cnt_done <=
+        j_cnt_done_tmp_1 when 1,
+        j_cnt_done_tmp_2 when others;
+
+    stall_cnt_done <= '1' when (stall_cnt_reg = stall_cnt) else '0';
+
     -- data path : mux routing and logic
-    data_mux : process (state_reg, pass_flag_tmp, PE_ARRAY_RF_write_start_tmp, ifm_PE_enable_tmp, w_PE_enable_tmp, NoC_ACK_counter_reg, w_addr_write_reg, ifm_addr_write_reg, intra_s_reg, intra_w_p_reg, intra_p_reg, intra_s_out, intra_w_p_out, intra_p_out, w_addr_read_reg, ifm_addr_read_reg, w_addr_read_out, ifm_addr_read_out, inter_r_p_reg, inter_r_p_out, hold_cnt_reg, hold_cnt_out)
+    data_mux : process (state_reg, pass_flag_tmp, PE_ARRAY_RF_write_start_tmp, ifm_PE_enable_tmp, w_PE_enable_tmp, NoC_ACK_counter_reg, w_addr_write_reg, ifm_addr_write_reg, intra_s_reg, intra_w_p_reg, intra_p_reg, intra_s_out, intra_w_p_out, intra_p_out, w_addr_read_reg, ifm_addr_read_reg, w_addr_read_out, ifm_addr_read_out, inter_r_p_reg, inter_r_p_out, hold_cnt_reg, hold_cnt_out, stall_cnt_reg, stall_cnt_out, j_cnt_reg, j_cnt_out)
     begin
         case state_reg is
             when s_init =>
@@ -298,6 +348,10 @@ begin
                 inter_r_p_next <= 0;
 
                 hold_cnt_next <= 0;
+
+                j_cnt_next <= 0;
+
+                stall_cnt_next <= 0;
 
             when s_idle_writing =>
 
@@ -339,6 +393,10 @@ begin
 
                 hold_cnt_next <= hold_cnt_reg;
 
+                j_cnt_next <= j_cnt_reg;
+
+                stall_cnt_next <= stall_cnt_reg;
+
             when s_intra_PE_acc =>
 
                 NoC_ACK_counter_next <= NoC_ACK_counter_reg;
@@ -357,6 +415,10 @@ begin
                 inter_r_p_next <= inter_r_p_reg;
 
                 hold_cnt_next <= hold_cnt_reg;
+
+                j_cnt_next <= j_cnt_reg;
+
+                stall_cnt_next <= stall_cnt_reg;
 
             when s_inter_PE_acc =>
 
@@ -377,6 +439,10 @@ begin
 
                 hold_cnt_next <= hold_cnt_reg;
 
+                j_cnt_next <= j_cnt_out;
+
+                stall_cnt_next <= stall_cnt_reg;
+
             when s_hold =>
 
                 NoC_ACK_counter_next <= NoC_ACK_counter_reg;
@@ -395,6 +461,10 @@ begin
                 inter_r_p_next <= inter_r_p_reg;
 
                 hold_cnt_next <= hold_cnt_out;
+
+                j_cnt_next <= j_cnt_reg;
+
+                stall_cnt_next <= stall_cnt_reg;
 
             when s_reset_acc =>
 
@@ -415,6 +485,33 @@ begin
 
                 hold_cnt_next <= hold_cnt_reg;
 
+                j_cnt_next <= j_cnt_reg;
+
+                stall_cnt_next <= stall_cnt_reg;
+
+            when s_stall =>
+
+                NoC_ACK_counter_next <= NoC_ACK_counter_reg;
+
+                ifm_addr_write_next <= ifm_addr_write_reg;
+                w_addr_write_next   <= w_addr_write_reg;
+                ifm_we_rf_tmp       <= '0';
+                w_we_rf_tmp         <= '0';
+
+                intra_s_next       <= intra_s_reg;
+                intra_w_p_next     <= intra_w_p_reg;
+                intra_p_next       <= intra_p_reg;
+                w_addr_read_next   <= w_addr_read_reg;
+                ifm_addr_read_next <= ifm_addr_read_reg;
+
+                inter_r_p_next <= inter_r_p_reg;
+
+                hold_cnt_next <= hold_cnt_reg;
+
+                j_cnt_next <= 0;
+
+                stall_cnt_next <= stall_cnt_out;
+
             when s_finished =>
 
                 NoC_ACK_counter_next <= std_logic_vector(unsigned(NoC_ACK_counter_reg) + 1);
@@ -433,6 +530,10 @@ begin
                 inter_r_p_next <= inter_r_p_reg;
 
                 hold_cnt_next <= hold_cnt_reg;
+
+                j_cnt_next <= j_cnt_reg;
+
+                stall_cnt_next <= stall_cnt_reg;
 
             when others =>
 
@@ -453,6 +554,10 @@ begin
 
                 hold_cnt_next <= hold_cnt_reg;
 
+                j_cnt_next <= j_cnt_reg;
+
+                stall_cnt_next <= stall_cnt_reg;
+
         end case;
     end process;
 
@@ -468,8 +573,10 @@ begin
     HW_p_tmp                    <= to_integer(unsigned(HW_p));
     RS_tmp                      <= to_integer(unsigned(RS));
     p_tmp                       <= to_integer(unsigned(p));
+    r_tmp                       <= to_integer(unsigned(r));
     inter_PE_acc                <= inter_PE_acc_delay(inter_PE_acc_delay'high);
     reset_acc                   <= reset_acc_delay(reset_acc_delay'high);
+    re_rf                       <= re_rf_tmp;
 
     -- Other Logic
     -- Introduces 2cc delay to the PE control signals, to synchronize them w.r.t. RFs read latency.

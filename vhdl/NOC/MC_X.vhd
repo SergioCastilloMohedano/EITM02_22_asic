@@ -5,11 +5,11 @@ use work.thesis_pkg.all;
 
 entity MC_X is
     generic (
-        -- HW Parameters, at shyntesis time.
-        Y_ID      : natural range 0 to 255 := 3;
-        X_ID      : natural range 0 to 255 := 16;
-        Y         : natural range 0 to 255 := 3;
-        hw_log2_r : integer_array          := (0, 1, 2)
+        -- HW Parameters, at synthesis time.
+        Y_ID      : natural       := 3;
+        X_ID      : natural       := 16;
+        Y         : natural       := 3;
+        hw_log2_r : integer_array := (0, 1, 2)
     );
     port (
         -- config. parameters

@@ -23,8 +23,8 @@ architecture sim of MC_rr_tb is
     -- COMPONENT DECLARATIONS
     component MC_rr is
     generic (
-        -- HW Parameters, at shyntesis time.
-        X_ID : natural range 0 to 255 := 1;
+        -- HW Parameters, at synthesis time.
+        X_ID : natural := 1;
         hw_log2_EF : integer_array := (5,4,3)  -- log2(32, 16, 8)
     );
     port (

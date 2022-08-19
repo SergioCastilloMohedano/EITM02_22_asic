@@ -5,7 +5,7 @@ use work.thesis_pkg.all;
 
 entity MC_Y_COLUMN_UUT is
     generic (
-        Y : natural range 0 to 255 := 3 -- number of PE Rows in the PE Array
+        Y : natural := 3 -- number of PE Rows in the PE Array
     );
     port (
         -- config. parameters
@@ -32,8 +32,8 @@ architecture structural of MC_Y_COLUMN_UUT is
     -- COMPONENT DECLARATIONS
     component MC_Y is
         generic (
-            Y_ID : natural range 0 to 255 := 1;
-            Y    : natural range 0 to 255 := 3
+            Y_ID : natural := 1;
+            Y    : natural := 3
         );
         port (
             -- config. parameters

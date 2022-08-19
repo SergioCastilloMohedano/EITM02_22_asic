@@ -18,6 +18,7 @@ entity REG_FILE is
         reg_sel : in unsigned (bit_size(NUM_REGS) - 1 downto 0); -- Register address for write and read (2^4 = 32) 
         we      : in std_logic; -- Write to selected register
         wr_data : in std_logic_vector (COMP_BITWIDTH - 1 downto 0); -- Write port
+        re      : in std_logic; -- read enable
         rd_data : out std_logic_vector (COMP_BITWIDTH - 1 downto 0); -- Read port
 
         -- Internal file contents
@@ -32,6 +33,7 @@ architecture rtl of REG_FILE is
     signal we_reg        : std_logic;
     signal wr_data_reg   : std_logic_vector(wr_data'range);
     signal registers_loc : std_logic_vector_array(registers'range);
+    signal re_reg        : std_logic;
 
 begin
 
@@ -43,10 +45,12 @@ begin
                     reg_sel_reg <= (others => '0');
                     we_reg      <= '0';
                     wr_data_reg <= (others => '0');
+                    re_reg      <= '0';
                 else
                     reg_sel_reg <= reg_sel;
                     we_reg      <= we;
                     wr_data_reg <= wr_data;
+                    re_reg      <= re;
                 end if;
             end if;
         end process;
@@ -56,6 +60,7 @@ begin
         reg_sel_reg <= reg_sel;
         we_reg      <= we;
         wr_data_reg <= wr_data;
+        re_reg      <= re;
     end generate;
 
     process (clk, reset) is
@@ -88,8 +93,12 @@ begin
 
                 -- Read control
                 for i in registers'range loop
-                    if reg_sel_onehot(i) = '1' then
-                        rd_data <= registers_loc(i);
+                    if re_reg = '0' then
+                        rd_data <= (rd_data'range => '0');
+                    else
+                        if reg_sel_onehot(i) = '1' then
+                            rd_data <= registers_loc(i);
+                        end if;
                     end if;
                 end loop;
             end if;
