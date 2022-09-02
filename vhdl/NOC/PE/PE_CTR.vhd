@@ -17,6 +17,7 @@ entity PE_CTR is
 
         -- config. parameters
         HW_p : in std_logic_vector (7 downto 0);
+        EF   : in std_logic_vector (7 downto 0);
         RS   : in std_logic_vector (7 downto 0);
         p    : in std_logic_vector (7 downto 0);
         r    : in std_logic_vector (7 downto 0);
@@ -93,6 +94,7 @@ architecture behavioral of PE_CTR is
     signal ifm_PE_enable_tmp : std_logic;
     signal w_PE_enable_tmp   : std_logic;
     signal HW_p_tmp          : natural range 0 to 255;
+    signal EF_tmp            : natural range 0 to 255;
     signal RS_tmp            : natural range 0 to 255;
     signal p_tmp             : natural range 0 to 255;
     signal r_tmp             : natural range 0 to 255;
@@ -209,7 +211,7 @@ begin
     end process;
 
     -- control path : input logic
-    stall_cnt <= (X - 1) - RS_tmp - RS_tmp + RF_READ_LATENCY;
+    stall_cnt <= (EF_tmp - 1) - RS_tmp - RS_tmp + 1;
 
     -- control path : output logic
     reset_acc_tmp    <= '1' when ((state_reg = s_reset_acc) or ((state_reg = s_inter_PE_acc) and (Y_ID /= 1))) else '0';
@@ -296,7 +298,7 @@ begin
 
     -- Stall Counter --------------------------------------
     j_cnt_out_tmp <= j_cnt_reg + 1 when ((inter_cnt_done ='1') and (state_reg = s_inter_PE_acc)) else j_cnt_reg;
-    j_cnt_out <= j_cnt_out_tmp when (j_cnt_reg < (r_tmp)) else 0;
+    j_cnt_out <= j_cnt_out_tmp when (j_cnt_reg < (r_tmp)) else j_cnt_reg;
 
     stall_cnt_out <= stall_cnt_reg + 1 when (stall_cnt_reg < stall_cnt) else 0;
     -------------------------------------------------------
@@ -393,7 +395,7 @@ begin
 
                 hold_cnt_next <= hold_cnt_reg;
 
-                j_cnt_next <= j_cnt_reg;
+                j_cnt_next <= 0;
 
                 stall_cnt_next <= stall_cnt_reg;
 
@@ -508,7 +510,7 @@ begin
 
                 hold_cnt_next <= hold_cnt_reg;
 
-                j_cnt_next <= 0;
+                j_cnt_next <= j_cnt_reg;
 
                 stall_cnt_next <= stall_cnt_out;
 
@@ -571,6 +573,7 @@ begin
     PE_ARRAY_RF_write_start_tmp <= PE_ARRAY_RF_write_start;
     pass_flag_tmp               <= pass_flag;
     HW_p_tmp                    <= to_integer(unsigned(HW_p));
+    EF_tmp                      <= to_integer(unsigned(EF));
     RS_tmp                      <= to_integer(unsigned(RS));
     p_tmp                       <= to_integer(unsigned(p));
     r_tmp                       <= to_integer(unsigned(r));

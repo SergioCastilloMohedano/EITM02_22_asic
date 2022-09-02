@@ -20,6 +20,7 @@ entity NOC is
         -- config. parameters
         C_cap   : in std_logic_vector (7 downto 0);
         HW_p    : in std_logic_vector (7 downto 0);
+        EF      : in std_logic_vector (7 downto 0);
         EF_log2 : in std_logic_vector (7 downto 0);
         r_log2  : in std_logic_vector (7 downto 0);
         RS      : in std_logic_vector (7 downto 0);
@@ -98,6 +99,7 @@ architecture structural of NOC is
 
             -- config. parameters
             HW_p : in std_logic_vector (7 downto 0);
+            EF   : in std_logic_vector (7 downto 0);
             RS   : in std_logic_vector (7 downto 0);
             p    : in std_logic_vector (7 downto 0);
             r    : in std_logic_vector (7 downto 0);
@@ -197,6 +199,7 @@ begin
                 clk                     => clk,
                 reset                   => reset,
                 HW_p                    => HW_p,
+                EF                      => EF,
                 RS                      => RS,
                 p                       => p,
                 r                       => r,

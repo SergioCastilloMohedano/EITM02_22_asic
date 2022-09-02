@@ -26,6 +26,7 @@ entity TOP is
         r            : in std_logic_vector (7 downto 0);
         p            : in std_logic_vector (7 downto 0);
         RS           : in std_logic_vector (7 downto 0);
+        EF           : in std_logic_vector (7 downto 0);
         HW_p         : in std_logic_vector (7 downto 0);
         HW           : in std_logic_vector (7 downto 0);
         M_div_pt     : in std_logic_vector (7 downto 0);
@@ -147,6 +148,7 @@ architecture structural of TOP is
             reset             : in std_logic;
             C_cap             : in std_logic_vector (7 downto 0);
             HW_p              : in std_logic_vector (7 downto 0);
+            EF                : in std_logic_vector (7 downto 0);
             EF_log2           : in std_logic_vector (7 downto 0);
             r_log2            : in std_logic_vector (7 downto 0);
             RS                : in std_logic_vector (7 downto 0);
@@ -173,6 +175,7 @@ architecture structural of TOP is
             clk               : in std_logic;
             reset             : in std_logic;
             r                 : in std_logic_vector (7 downto 0);
+            EF                : in std_logic_vector (7 downto 0);
             ofmap_p           : in psum_array(0 to (X - 1));
             PISO_Buffer_start : in std_logic;
             ofmap             : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0)
@@ -281,6 +284,7 @@ begin
         reset             => reset,
         C_cap             => C_cap,
         HW_p              => HW_p,
+        EF                => EF,
         EF_log2           => EF_log2,
         r_log2            => r_log2,
         RS                => RS,
@@ -307,6 +311,7 @@ begin
         clk               => clk,
         reset             => reset,
         r                 => r,
+        EF                => EF,
         ofmap_p           => ofmap_p,
         PISO_Buffer_start => PISO_Buffer_start,
         ofmap             => open

@@ -19,6 +19,7 @@ entity PE is
 
         -- config. parameters
         HW_p : in std_logic_vector (7 downto 0);
+        EF   : in std_logic_vector (7 downto 0);
         RS   : in std_logic_vector (7 downto 0);
         p    : in std_logic_vector (7 downto 0);
         r    : in std_logic_vector (7 downto 0);
@@ -103,6 +104,7 @@ architecture structural of PE is
 
             -- config. parameters
             HW_p : in std_logic_vector (7 downto 0);
+            EF   : in std_logic_vector (7 downto 0);
             RS   : in std_logic_vector (7 downto 0);
             p    : in std_logic_vector (7 downto 0);
             r    : in std_logic_vector (7 downto 0);
@@ -175,6 +177,7 @@ begin
         clk                     => clk,
         reset                   => reset,
         HW_p                    => HW_p,
+        EF                      => EF,
         RS                      => RS,
         p                       => p,
         r                       => r,

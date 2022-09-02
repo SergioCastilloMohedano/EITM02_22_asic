@@ -13,7 +13,8 @@ entity PISO_BUFFER_TOP is
         reset : in std_logic;
 
         -- config. parameters
-        r : in std_logic_vector (7 downto 0);
+        r  : in std_logic_vector (7 downto 0);
+        EF : in std_logic_vector (7 downto 0);
 
         -- From Adder Tree
         PISO_Buffer_start_1 : in std_logic;
@@ -68,6 +69,7 @@ architecture structural of PISO_BUFFER_TOP is
             clk                 : in std_logic;
             reset               : in std_logic;
             r                   : in std_logic_vector (7 downto 0);
+            EF                  : in std_logic_vector (7 downto 0);
             PISO_Buffer_start_1 : in std_logic;
             PISO_Buffer_start_2 : in std_logic;
             PISO_Buffer_start_4 : in std_logic;
@@ -106,6 +108,7 @@ begin
         clk                 => clk,
         reset               => reset,
         r                   => r,
+        EF                  => EF,
         PISO_Buffer_start_1 => PISO_Buffer_start_1,
         PISO_Buffer_start_2 => PISO_Buffer_start_2,
         PISO_Buffer_start_4 => PISO_Buffer_start_4,

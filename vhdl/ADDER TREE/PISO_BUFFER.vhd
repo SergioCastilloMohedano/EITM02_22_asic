@@ -100,9 +100,9 @@ begin
             end if;
         end process;
 
-        ofmap_buffer_next(i) <= ofmap_buffer_reg(i + 1) when (shift = '1') else -- Allows serial shifting.
-        ofmap_p_in(i) when (parallel_in = '1') else -- Allows parallel inputting.
-        ofmap_buffer_reg(i); -- Holds register values.
+        ofmap_buffer_next(i) <= ofmap_buffer_reg(i + 1) when (shift = '1')       else -- Allows serial shifting.
+                                ofmap_p_in(i)           when (parallel_in = '1') else -- Allows parallel inputting.
+                                ofmap_buffer_reg(i);                                  -- Holds register values.
 
     end generate PISO_BUFFER_loop;
 
