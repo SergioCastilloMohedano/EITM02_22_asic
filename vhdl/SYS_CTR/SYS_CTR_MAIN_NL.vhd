@@ -54,7 +54,10 @@ entity SYS_CTR_MAIN_NL is
         WB_NL_finished  : in std_logic;
         IFM_NL_start    : out std_logic;
         WB_NL_start     : out std_logic;
-        pass_flag       : in std_logic
+        pass_flag       : in std_logic;
+        OFM_NL_ready    : in std_logic;
+        OFM_NL_finished : in std_logic;
+        OFM_NL_start    : out std_logic
     );
 end SYS_CTR_MAIN_NL;
 
@@ -81,7 +84,8 @@ architecture behavioral of SYS_CTR_MAIN_NL is
     signal WB_NL_finished_tmp  : std_logic;
     signal IFM_NL_ready_tmp    : std_logic;
     signal IFM_NL_finished_tmp : std_logic;
-
+    signal OFM_NL_ready_tmp    : std_logic;
+    signal OFM_NL_finished_tmp : std_logic;
     ---- External Status Signals to indicate status of the FSMD
     signal NL_ready_tmp    : std_logic;
     signal NL_finished_tmp : std_logic;
@@ -114,9 +118,10 @@ architecture behavioral of SYS_CTR_MAIN_NL is
     signal IFM_NL_start_tmp_2                  : std_logic;
     signal WB_NL_start_tmp                     : std_logic;
     signal NoC_ACK_flag_tmp                    : std_logic;
-    signal start_flag_next, start_flag_reg     : std_logic; -- these two signals avoid that "NL_cnt_done_next" signal gets set to "1" the first time the conditions 
+    signal start_flag_next, start_flag_reg     : std_logic; -- these two regs avoid that "NL_cnt_done_next" signal gets set to "1" the first time the conditions 
     signal start_flag_next_2, start_flag_reg_2 : std_logic; -- of "c", "m" and "rc" being 0 are met, allowing "NL_cnt_done_next" to be set to "1" only when it has to.
     signal pass_flag_tmp                       : std_logic;
+    signal OFM_NL_start_tmp                    : std_logic;
     ----------------------------------------------
 
 begin
@@ -188,11 +193,15 @@ begin
                     state_next <= s_start;
                 end if;
             when s_NoC_ACK =>
-                if NoC_ACK_flag_tmp = '1' then
-                    if NL_cnt_done_reg = '1' then
-                        state_next <= s_finished;
+                if OFM_NL_finished = '1' then
+                    if NoC_ACK_flag_tmp = '1' then
+                        if NL_cnt_done_reg = '1' then
+                            state_next <= s_finished;
+                        else
+                            state_next <= s_start;
+                        end if;
                     else
-                        state_next <= s_start;
+                        state_next <= s_NoC_ACK;
                     end if;
                 else
                     state_next <= s_NoC_ACK;
@@ -205,11 +214,12 @@ begin
     end process;
 
     -- control path : output logic
-    NL_ready_tmp     <= '1' when state_reg = s_idle else '0';
-    WB_NL_start_tmp  <= '1' when (state_reg = s_start and pass_flag_tmp = '0') else '0';
+    NL_ready_tmp       <= '1' when state_reg = s_idle else '0';
+    WB_NL_start_tmp    <= '1' when (state_reg = s_start and pass_flag_tmp = '0') else '0';
     IFM_NL_start_tmp_2 <= '1' when (state_reg = s_start and pass_flag_tmp = '0') else '0';
-    IFM_NL_start_tmp <= '1' when (IFM_NL_start_tmp_2 = '1' and IFM_NL_flag_tmp = '1') else '0';
-    NL_finished_tmp  <= '1' when state_reg = s_finished else '0';
+    IFM_NL_start_tmp   <= '1' when (IFM_NL_start_tmp_2 = '1' and IFM_NL_flag_tmp = '1') else '0';
+    NL_finished_tmp    <= '1' when state_reg = s_finished else '0';
+    OFM_NL_start_tmp   <= '1' when (state_reg = s_start and pass_flag_tmp = '1') else '0';
 
     -- data path : data registers
     data_reg : process (clk, reset)
@@ -321,5 +331,8 @@ begin
     WB_NL_ready_tmp     <= WB_NL_ready;
     IFM_NL_ready_tmp    <= IFM_NL_ready;
     pass_flag_tmp       <= pass_flag;
+    OFM_NL_start        <= OFM_NL_start_tmp;
+    OFM_NL_finished_tmp <= OFM_NL_finished;
+    OFM_NL_ready_tmp    <= OFM_NL_ready;
 
 end architecture;

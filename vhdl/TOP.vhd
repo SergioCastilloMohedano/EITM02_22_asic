@@ -30,7 +30,7 @@ entity TOP is
         HW_p         : in std_logic_vector (7 downto 0);
         HW           : in std_logic_vector (7 downto 0);
         M_div_pt     : in std_logic_vector (7 downto 0);
-        NoC_ACK_flag : in std_logic;
+--        NoC_ACK_flag : in std_logic;
         EF_log2      : in std_logic_vector (7 downto 0);
         r_log2       : in std_logic_vector (7 downto 0)
         ---------------------------------------------------------------------------
@@ -68,6 +68,8 @@ architecture structural of TOP is
     -- PE ARRAY
     signal ofmap_p           : psum_array(0 to (X - 1));
     signal PISO_Buffer_start : std_logic;
+    signal NoC_ACK_flag      : std_logic;
+    signal shift_PISO        : std_logic;
 
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is
@@ -83,6 +85,7 @@ architecture structural of TOP is
             p               : in std_logic_vector (7 downto 0);
             RS              : in std_logic_vector (7 downto 0);
             HW_p            : in std_logic_vector (7 downto 0);
+            EF              : in std_logic_vector (7 downto 0);
             c               : out std_logic_vector (7 downto 0);
             m               : out std_logic_vector (7 downto 0);
             rc              : out std_logic_vector (7 downto 0);
@@ -99,7 +102,8 @@ architecture structural of TOP is
             WB_NL_ready     : out std_logic;
             WB_NL_finished  : out std_logic;
             WB_NL_busy      : out std_logic;
-            pass_flag       : out std_logic
+            pass_flag       : out std_logic;
+            shift_PISO      : in std_logic
         );
     end component;
 
@@ -172,13 +176,15 @@ architecture structural of TOP is
             X : natural := X
         );
         port (
-            clk               : in std_logic;
-            reset             : in std_logic;
-            r                 : in std_logic_vector (7 downto 0);
-            EF                : in std_logic_vector (7 downto 0);
-            ofmap_p           : in psum_array(0 to (X - 1));
-            PISO_Buffer_start : in std_logic;
-            ofmap             : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0)
+            clk               : in  std_logic;
+            reset             : in  std_logic;
+            r                 : in  std_logic_vector (7 downto 0);
+            EF                : in  std_logic_vector (7 downto 0);
+            ofmap_p           : in  psum_array(0 to (X - 1));
+            PISO_Buffer_start : in  std_logic;
+            ofmap             : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
+            NoC_ACK_flag      : out std_logic;
+            shift_PISO        : out std_logic
         );
     end component;
 
@@ -226,6 +232,7 @@ begin
         p               => p,
         RS              => RS,
         HW_p            => HW_p,
+        EF              => EF,
         c               => c_tmp,
         m               => m_tmp,
         rc              => rc_tmp,
@@ -242,7 +249,8 @@ begin
         WB_NL_ready     => WB_NL_ready_tmp,
         WB_NL_finished  => WB_NL_finished_tmp,
         WB_NL_busy      => WB_NL_busy_tmp,
-        pass_flag       => pass_flag_tmp
+        pass_flag       => pass_flag_tmp,
+        shift_PISO      => shift_PISO
     );
 
     -- SRAM_WB
@@ -314,7 +322,9 @@ begin
         EF                => EF,
         ofmap_p           => ofmap_p,
         PISO_Buffer_start => PISO_Buffer_start,
-        ofmap             => open
+        ofmap             => open,
+        NoC_ACK_flag      => NoC_ACK_flag,
+        shift_PISO        => shift_PISO
     );
 
     -- -- OFMAP SRAM INTERFACE

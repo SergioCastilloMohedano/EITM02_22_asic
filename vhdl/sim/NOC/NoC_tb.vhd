@@ -14,10 +14,10 @@ architecture sim of NOC_tb is
 
     constant X                     : natural       := 32;
     constant Y                     : natural       := 3;
-    constant M_cap                 : natural       := 64;
-    constant C_cap                 : natural       := 32;
+    constant M_cap                 : natural       := 32;
+    constant C_cap                 : natural       := 16;
     constant RS                    : natural       := 3;
-    constant HW                    : natural       := 8;
+    constant HW                    : natural       := 16;
     constant HW_p                  : natural       := HW + 2;
     constant EF                    : natural       := HW;
     constant EF_log2               : natural       := natural(log2(real(EF)));
@@ -46,7 +46,6 @@ architecture sim of NOC_tb is
     signal HW_p_tb         : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(HW_p, HYP_BITWIDTH));
     signal HW_tb           : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(HW, HYP_BITWIDTH));
     signal M_div_pt_tb     : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(M_div_pt, HYP_BITWIDTH));
-    signal NoC_ACK_flag_tb : std_logic                     := '0';
     signal r_log2_tb       : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(r_log2, HYP_BITWIDTH));
     signal EF_log2_tb      : std_logic_vector (7 downto 0) := std_logic_vector(to_unsigned(EF_log2, HYP_BITWIDTH));
 
@@ -77,7 +76,6 @@ architecture sim of NOC_tb is
             HW_p         : in std_logic_vector (7 downto 0);
             HW           : in std_logic_vector (7 downto 0);
             M_div_pt     : in std_logic_vector (7 downto 0);
-            NoC_ACK_flag : in std_logic;
             EF_log2      : in std_logic_vector (7 downto 0);
             r_log2       : in std_logic_vector (7 downto 0)
             ---------------------------------------------------------------------------
@@ -112,18 +110,9 @@ begin
         HW_p         => HW_p_tb,
         HW           => HW_tb,
         M_div_pt     => M_div_pt_tb,
-        NoC_ACK_flag => NoC_ACK_flag_tb,
         EF_log2      => EF_log2_tb,
         r_log2       => r_log2_tb
     );
-
-    NOC_ACK_PROC : process
-    begin
-        NoC_ACK_flag_tb <= '0';
-        wait for 40 us;
-        NoC_ACK_flag_tb <= '1';
-        wait for clk_period;
-    end process;
 
     SEQUENCER_PROC : process
     begin

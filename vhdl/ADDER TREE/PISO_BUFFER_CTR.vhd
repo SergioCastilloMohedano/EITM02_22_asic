@@ -24,7 +24,10 @@ entity PISO_BUFFER_CTR is
         -- To PISO Buffer
         shift       : out std_logic;
         parallel_in : out std_logic;
-        j           : out natural range 0 to 255
+        j           : out natural range 0 to 255;
+
+        -- To Sys Controller
+        buffer_empty : out std_logic
     );
 end PISO_BUFFER_CTR;
 
@@ -39,7 +42,7 @@ architecture behavioral of PISO_BUFFER_CTR is
     ---- Internal Status Signals from the Data Path
     signal j_cnt_done      : std_logic;
     signal buffer_cnt_done : std_logic;
-    signal buffer_empty    : std_logic;
+    signal buffer_empty_tmp    : std_logic;
 
     ---- External Command Signals to the FSMD
     signal r_tmp                 : natural range 0 to 255;
@@ -86,7 +89,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, PISO_Buffer_start_tmp, j_cnt_done, buffer_cnt_done, buffer_empty)
+    asmd_ctrl : process (state_reg, PISO_Buffer_start_tmp, j_cnt_done, buffer_cnt_done, buffer_empty_tmp)
     begin
         case state_reg is
             when s_init =>
@@ -111,7 +114,7 @@ begin
                     if (PISO_Buffer_start_tmp = '1') then
                         state_next <= s_parallel;
                     else
-                        if (buffer_empty = '0') then
+                        if (buffer_empty_tmp = '0') then
                             state_next <= s_empty;
                         else
                             state_next <= s_idle;
@@ -122,7 +125,7 @@ begin
                 end if;
 
             when s_empty =>
-                if (buffer_empty = '1') then
+                if (buffer_empty_tmp = '1') then
                     state_next <= s_idle;
                 else
                     state_next <= s_empty;
@@ -170,7 +173,7 @@ begin
                        '0';
     buffer_cnt_done <= '1' when (buffer_cnt_reg = (EF_tmp - 1)) else '0'; -- Buffer has shifted E values and a new set of E values can be added.
 
-    buffer_empty <= '1' when (empty_cnt_reg = 1) else '0'; -- Buffer is empty.
+    buffer_empty_tmp <= '1' when (empty_cnt_reg = 1) else '0'; -- Buffer is empty.
 
     -- data path : mux routing and logic
     data_mux : process (state_reg, j_cnt_reg, buffer_cnt_reg, j_cnt_out, buffer_cnt_out, empty_cnt_reg, empty_cnt_out)
@@ -216,10 +219,11 @@ begin
         PISO_Buffer_start_4 when 4,
         '0' when others;
 
-    r_tmp       <= to_integer(unsigned(r));
-    EF_tmp      <= to_integer(unsigned(EF));
-    parallel_in <= parallel_in_tmp;
-    shift       <= shift_tmp;
-    j           <= j_tmp;
+    r_tmp        <= to_integer(unsigned(r));
+    EF_tmp       <= to_integer(unsigned(EF));
+    parallel_in  <= parallel_in_tmp;
+    shift        <= shift_tmp;
+    j            <= j_tmp;
+    buffer_empty <= buffer_empty_tmp;
 
 end architecture;

@@ -22,7 +22,11 @@ entity ADDER_TREE_TOP is
         PISO_Buffer_start : in std_logic;
 
         -- To OFMAP SRAM
-        ofmap : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0)
+        ofmap : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
+
+        -- To Sys Controller
+        NoC_ACK_flag : out std_logic;
+        shift_PISO   : out std_logic
     );
 end ADDER_TREE_TOP;
 
@@ -72,7 +76,9 @@ architecture structural of ADDER_TREE_TOP is
             ofmap_p_1           : in ofmap_p_array (0 to (X - 1));
             ofmap_p_2           : in ofmap_p_array (0 to ((X/2) - 1));
             ofmap_p_4           : in ofmap_p_array (0 to ((X/4) - 1));
-            ofmap               : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0)
+            ofmap               : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
+            buffer_empty        : out std_logic;
+            shift_PISO          : out std_logic
         );
     end component;
 
@@ -113,7 +119,9 @@ begin
         ofmap_p_1           => ofmap_p_1,
         ofmap_p_2           => ofmap_p_2,
         ofmap_p_4           => ofmap_p_4,
-        ofmap               => ofmap
+        ofmap               => ofmap,
+        buffer_empty        => NoC_ACK_flag,
+        shift_PISO          => shift_PISO
     );
 
 end architecture;

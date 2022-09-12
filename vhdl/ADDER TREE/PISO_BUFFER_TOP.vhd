@@ -25,7 +25,11 @@ entity PISO_BUFFER_TOP is
         ofmap_p_4           : in ofmap_p_array (0 to ((X/4) - 1));
 
         -- To OFMAP SRAM
-        ofmap : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0)
+        ofmap : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
+
+        -- To Sys Controller
+        buffer_empty : out std_logic;
+        shift_PISO   : out std_logic
     );
 end PISO_BUFFER_TOP;
 
@@ -75,7 +79,8 @@ architecture structural of PISO_BUFFER_TOP is
             PISO_Buffer_start_4 : in std_logic;
             shift               : out std_logic;
             parallel_in         : out std_logic;
-            j                   : out natural range 0 to 255
+            j                   : out natural range 0 to 255;
+            buffer_empty        : out std_logic
         );
     end component;
 
@@ -114,7 +119,11 @@ begin
         PISO_Buffer_start_4 => PISO_Buffer_start_4,
         shift               => shift,
         parallel_in         => parallel_in,
-        j                   => j_tmp
+        j                   => j_tmp,
+        buffer_empty        => buffer_empty
     );
+
+    -- PORT Assignations
+    shift_PISO <= shift;
 
 end architecture;
