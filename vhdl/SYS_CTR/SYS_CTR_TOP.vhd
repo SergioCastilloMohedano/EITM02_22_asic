@@ -35,36 +35,40 @@ use ieee.numeric_std.all;
 
 entity SYS_CTR_TOP is
     port (
-        clk             : in std_logic;
-        reset           : in std_logic;
-        NL_start        : in std_logic;
-        NL_ready        : out std_logic;
-        NL_finished     : out std_logic;
-        M_cap           : in std_logic_vector (7 downto 0);
-        C_cap           : in std_logic_vector (7 downto 0);
-        r               : in std_logic_vector (7 downto 0);
-        p               : in std_logic_vector (7 downto 0);
-        RS              : in std_logic_vector (7 downto 0);
-        HW_p            : in std_logic_vector (7 downto 0);
-        EF              : in std_logic_vector (7 downto 0);
-        c               : out std_logic_vector (7 downto 0);
-        m               : out std_logic_vector (7 downto 0);
-        rc              : out std_logic_vector (7 downto 0);
-        r_p             : out std_logic_vector (7 downto 0);
-        pm              : out std_logic_vector (7 downto 0);
-        s               : out std_logic_vector (7 downto 0);
-        w_p             : out std_logic_vector (7 downto 0);
-        h_p             : out std_logic_vector (7 downto 0);
-        M_div_pt        : in std_logic_vector (7 downto 0);
-        NoC_ACK_flag    : in std_logic;
-        IFM_NL_ready    : out std_logic;
-        IFM_NL_finished : out std_logic;
-        IFM_NL_busy     : out std_logic;
-        WB_NL_ready     : out std_logic;
-        WB_NL_finished  : out std_logic;
-        WB_NL_busy      : out std_logic;
-        pass_flag       : out std_logic;
-        shift_PISO      : in std_logic
+        clk                       : in std_logic;
+        reset                     : in std_logic;
+        NL_start                  : in std_logic;
+        NL_ready                  : out std_logic;
+        NL_finished               : out std_logic;
+        M_cap                     : in std_logic_vector (7 downto 0);
+        C_cap                     : in std_logic_vector (7 downto 0);
+        r                         : in std_logic_vector (7 downto 0);
+        p                         : in std_logic_vector (7 downto 0);
+        RS                        : in std_logic_vector (7 downto 0);
+        HW_p                      : in std_logic_vector (7 downto 0);
+        EF                        : in std_logic_vector (7 downto 0);
+        c                         : out std_logic_vector (7 downto 0);
+        m                         : out std_logic_vector (7 downto 0);
+        rc                        : out std_logic_vector (7 downto 0);
+        r_p                       : out std_logic_vector (7 downto 0);
+        pm                        : out std_logic_vector (7 downto 0);
+        s                         : out std_logic_vector (7 downto 0);
+        w_p                       : out std_logic_vector (7 downto 0);
+        h_p                       : out std_logic_vector (7 downto 0);
+        M_div_pt                  : in std_logic_vector (7 downto 0);
+        NoC_ACK_flag              : in std_logic;
+        IFM_NL_ready              : out std_logic;
+        IFM_NL_finished           : out std_logic;
+        IFM_NL_busy               : out std_logic;
+        WB_NL_ready               : out std_logic;
+        WB_NL_finished            : out std_logic;
+        WB_NL_busy                : out std_logic;
+        pass_flag                 : out std_logic;
+        shift_PISO                : in std_logic;
+        OFM_NL_cnt_finished       : out std_logic;
+        OFM_NL_NoC_m_cnt_finished : out std_logic;
+        NoC_c                     : out std_logic_vector (7 downto 0);
+        OFM_NL_Busy               : out std_logic
     );
 end SYS_CTR_TOP;
 
@@ -146,22 +150,24 @@ architecture architectural of SYS_CTR_TOP is
 
     component SYS_CTR_OFM_NL is
         port (
-            clk             : in std_logic;
-            reset           : in std_logic;
-            OFM_NL_start    : in std_logic;
-            OFM_NL_ready    : out std_logic;
-            OFM_NL_finished : out std_logic;
-            OFM_NL_busy     : out std_logic;
-            C_cap           : in std_logic_vector (7 downto 0);
-            M_cap           : in std_logic_vector (7 downto 0);
-            EF              : in std_logic_vector (7 downto 0);
-            r               : in std_logic_vector (7 downto 0);
-            p               : in std_logic_vector (7 downto 0);
-            NoC_c           : out std_logic_vector (7 downto 0);
-            NoC_pm           : out std_logic_vector (7 downto 0);
-            NoC_f           : out std_logic_vector (7 downto 0);
-            NoC_e           : out std_logic_vector (7 downto 0);
-            shift_PISO      : in std_logic
+            clk                       : in std_logic;
+            reset                     : in std_logic;
+            OFM_NL_start              : in std_logic;
+            OFM_NL_ready              : out std_logic;
+            OFM_NL_finished           : out std_logic;
+            OFM_NL_busy               : out std_logic;
+            C_cap                     : in std_logic_vector (7 downto 0);
+            M_cap                     : in std_logic_vector (7 downto 0);
+            EF                        : in std_logic_vector (7 downto 0);
+            r                         : in std_logic_vector (7 downto 0);
+            p                         : in std_logic_vector (7 downto 0);
+            NoC_c                     : out std_logic_vector (7 downto 0);
+            NoC_pm                    : out std_logic_vector (7 downto 0);
+            NoC_f                     : out std_logic_vector (7 downto 0);
+            NoC_e                     : out std_logic_vector (7 downto 0);
+            shift_PISO                : in std_logic;
+            OFM_NL_cnt_finished       : out std_logic;
+            OFM_NL_NoC_m_cnt_finished : out std_logic
         );
     end component;
 
@@ -198,8 +204,8 @@ architecture architectural of SYS_CTR_TOP is
     signal M_div_pt_tmp  : natural range 0 to 255;
 
     -- SYS_CTR_OFM_NL Intermediate Signals
-    signal NoC_c_tmp        : std_logic_vector (7 downto 0);
-    signal NoC_pm_tmp        : std_logic_vector (7 downto 0);
+    --    signal NoC_c_tmp        : std_logic_vector (7 downto 0);
+    signal NoC_pm_tmp       : std_logic_vector (7 downto 0);
     signal NoC_f_tmp        : std_logic_vector (7 downto 0);
     signal NoC_e_tmp        : std_logic_vector (7 downto 0);
     signal OFM_NL_start_tmp : std_logic;
@@ -282,22 +288,24 @@ begin
     -- SYS_CTR_OFM_NL
     SYS_CTR_CTR_OFM_NL_inst : SYS_CTR_OFM_NL
     port map(
-        clk             => clk,
-        reset           => reset,
-        OFM_NL_start    => OFM_NL_start_tmp,
-        OFM_NL_ready    => OFM_NL_ready_tmp,
-        OFM_NL_finished => OFM_NL_finished_tmp,
-        OFM_NL_busy     => open,
-        C_cap           => C_cap,
-        M_cap           => M_cap,
-        EF              => EF,
-        r               => r,
-        p               => p,
-        NoC_c           => NoC_c_tmp,
-        NoC_pm           => NoC_pm_tmp,
-        NoC_f           => NoC_f_tmp,
-        NoC_e           => NoC_e_tmp,
-        shift_PISO      => shift_PISO
+        clk                       => clk,
+        reset                     => reset,
+        OFM_NL_start              => OFM_NL_start_tmp,
+        OFM_NL_ready              => OFM_NL_ready_tmp,
+        OFM_NL_finished           => OFM_NL_finished_tmp,
+        OFM_NL_busy               => OFM_NL_Busy,
+        C_cap                     => C_cap,
+        M_cap                     => M_cap,
+        EF                        => EF,
+        r                         => r,
+        p                         => p,
+        NoC_c                     => NoC_c,
+        NoC_pm                    => NoC_pm_tmp,
+        NoC_f                     => NoC_f_tmp,
+        NoC_e                     => NoC_e_tmp,
+        shift_PISO                => shift_PISO,
+        OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
+        OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished
     );
 
     -- PORT Assignations

@@ -21,18 +21,18 @@ entity TOP is
         NL_finished : out std_logic;
 
         -- Signals Below Shall be coming from within the accelerator later on. ----
-        M_cap        : in std_logic_vector (7 downto 0);
-        C_cap        : in std_logic_vector (7 downto 0);
-        r            : in std_logic_vector (7 downto 0);
-        p            : in std_logic_vector (7 downto 0);
-        RS           : in std_logic_vector (7 downto 0);
-        EF           : in std_logic_vector (7 downto 0);
-        HW_p         : in std_logic_vector (7 downto 0);
-        HW           : in std_logic_vector (7 downto 0);
-        M_div_pt     : in std_logic_vector (7 downto 0);
---        NoC_ACK_flag : in std_logic;
-        EF_log2      : in std_logic_vector (7 downto 0);
-        r_log2       : in std_logic_vector (7 downto 0)
+        M_cap    : in std_logic_vector (7 downto 0);
+        C_cap    : in std_logic_vector (7 downto 0);
+        r        : in std_logic_vector (7 downto 0);
+        p        : in std_logic_vector (7 downto 0);
+        RS       : in std_logic_vector (7 downto 0);
+        EF       : in std_logic_vector (7 downto 0);
+        HW_p     : in std_logic_vector (7 downto 0);
+        HW       : in std_logic_vector (7 downto 0);
+        M_div_pt : in std_logic_vector (7 downto 0);
+        --        NoC_ACK_flag : in std_logic;
+        EF_log2 : in std_logic_vector (7 downto 0);
+        r_log2  : in std_logic_vector (7 downto 0)
         ---------------------------------------------------------------------------
     );
 end TOP;
@@ -58,6 +58,8 @@ architecture structural of TOP is
     signal WB_NL_finished_tmp  : std_logic;
     signal WB_NL_busy_tmp      : std_logic;
     signal pass_flag_tmp       : std_logic;
+    signal NoC_c               : std_logic_vector (7 downto 0);
+    signal OFM_NL_busy_tmp     : std_logic;
 
     -- SRAM_WB
     signal w_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
@@ -66,44 +68,53 @@ architecture structural of TOP is
     signal ifm_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
 
     -- PE ARRAY
-    signal ofmap_p           : psum_array(0 to (X - 1));
-    signal PISO_Buffer_start : std_logic;
-    signal NoC_ACK_flag      : std_logic;
-    signal shift_PISO        : std_logic;
+    signal ofmap_p                   : psum_array(0 to (X - 1));
+    signal PISO_Buffer_start         : std_logic;
+    signal NoC_ACK_flag              : std_logic;
+    signal shift_PISO                : std_logic;
+    signal OFM_NL_cnt_finished       : std_logic;
+    signal OFM_NL_NoC_m_cnt_finished : std_logic;
+
+    -- SRAM_OFM
+    signal ofmap : std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
 
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is
         port (
-            clk             : in std_logic;
-            reset           : in std_logic;
-            NL_start        : in std_logic;
-            NL_ready        : out std_logic;
-            NL_finished     : out std_logic;
-            M_cap           : in std_logic_vector (7 downto 0);
-            C_cap           : in std_logic_vector (7 downto 0);
-            r               : in std_logic_vector (7 downto 0);
-            p               : in std_logic_vector (7 downto 0);
-            RS              : in std_logic_vector (7 downto 0);
-            HW_p            : in std_logic_vector (7 downto 0);
-            EF              : in std_logic_vector (7 downto 0);
-            c               : out std_logic_vector (7 downto 0);
-            m               : out std_logic_vector (7 downto 0);
-            rc              : out std_logic_vector (7 downto 0);
-            r_p             : out std_logic_vector (7 downto 0);
-            pm              : out std_logic_vector (7 downto 0);
-            s               : out std_logic_vector (7 downto 0);
-            w_p             : out std_logic_vector (7 downto 0);
-            h_p             : out std_logic_vector (7 downto 0);
-            M_div_pt        : in std_logic_vector (7 downto 0);
-            NoC_ACK_flag    : in std_logic;
-            IFM_NL_ready    : out std_logic;
-            IFM_NL_finished : out std_logic;
-            IFM_NL_busy     : out std_logic;
-            WB_NL_ready     : out std_logic;
-            WB_NL_finished  : out std_logic;
-            WB_NL_busy      : out std_logic;
-            pass_flag       : out std_logic;
-            shift_PISO      : in std_logic
+            clk                       : in std_logic;
+            reset                     : in std_logic;
+            NL_start                  : in std_logic;
+            NL_ready                  : out std_logic;
+            NL_finished               : out std_logic;
+            M_cap                     : in std_logic_vector (7 downto 0);
+            C_cap                     : in std_logic_vector (7 downto 0);
+            r                         : in std_logic_vector (7 downto 0);
+            p                         : in std_logic_vector (7 downto 0);
+            RS                        : in std_logic_vector (7 downto 0);
+            HW_p                      : in std_logic_vector (7 downto 0);
+            EF                        : in std_logic_vector (7 downto 0);
+            c                         : out std_logic_vector (7 downto 0);
+            m                         : out std_logic_vector (7 downto 0);
+            rc                        : out std_logic_vector (7 downto 0);
+            r_p                       : out std_logic_vector (7 downto 0);
+            pm                        : out std_logic_vector (7 downto 0);
+            s                         : out std_logic_vector (7 downto 0);
+            w_p                       : out std_logic_vector (7 downto 0);
+            h_p                       : out std_logic_vector (7 downto 0);
+            M_div_pt                  : in std_logic_vector (7 downto 0);
+            NoC_ACK_flag              : in std_logic;
+            IFM_NL_ready              : out std_logic;
+            IFM_NL_finished           : out std_logic;
+            IFM_NL_busy               : out std_logic;
+            WB_NL_ready               : out std_logic;
+            WB_NL_finished            : out std_logic;
+            WB_NL_busy                : out std_logic;
+            pass_flag                 : out std_logic;
+            shift_PISO                : in std_logic;
+            OFM_NL_cnt_finished       : out std_logic;
+            OFM_NL_NoC_m_cnt_finished : out std_logic;
+            NoC_c                     : out std_logic_vector (7 downto 0);
+            OFM_NL_Busy               : out std_logic
         );
     end component;
 
@@ -131,12 +142,19 @@ architecture structural of TOP is
         );
     end component;
 
-    -- component OFMAP_SRAM_INTERFACE is
-    -- port(clk                : in std_logic;
-    --      reset              : in std_logic
-    --      -- ...
-    --     );
-    -- end component;
+    -- component OFMAP_SRAM is
+    component SRAM_OFM is
+        port (
+            clk                       : in std_logic;
+            reset                     : in std_logic;
+            NoC_c                     : in std_logic_vector (7 downto 0);
+            OFM_NL_cnt_finished       : in std_logic;
+            OFM_NL_NoC_m_cnt_finished : in std_logic;
+            ofmap                     : in std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
+            shift_PISO                : in std_logic;
+            OFM_NL_Busy               : in std_logic
+        );
+    end component;
 
     component NOC is
         generic (
@@ -176,12 +194,12 @@ architecture structural of TOP is
             X : natural := X
         );
         port (
-            clk               : in  std_logic;
-            reset             : in  std_logic;
-            r                 : in  std_logic_vector (7 downto 0);
-            EF                : in  std_logic_vector (7 downto 0);
-            ofmap_p           : in  psum_array(0 to (X - 1));
-            PISO_Buffer_start : in  std_logic;
+            clk               : in std_logic;
+            reset             : in std_logic;
+            r                 : in std_logic_vector (7 downto 0);
+            EF                : in std_logic_vector (7 downto 0);
+            ofmap_p           : in psum_array(0 to (X - 1));
+            PISO_Buffer_start : in std_logic;
             ofmap             : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
             NoC_ACK_flag      : out std_logic;
             shift_PISO        : out std_logic
@@ -221,36 +239,40 @@ begin
     -- SYSTEM CONTROLLER
     SYS_CTR_TOP_inst : SYS_CTR_TOP
     port map(
-        clk             => clk,
-        reset           => reset,
-        NL_start        => NL_start,
-        NL_ready        => NL_ready_tmp,
-        NL_finished     => NL_finished_tmp,
-        M_cap           => M_cap,
-        C_cap           => C_cap,
-        r               => r,
-        p               => p,
-        RS              => RS,
-        HW_p            => HW_p,
-        EF              => EF,
-        c               => c_tmp,
-        m               => m_tmp,
-        rc              => rc_tmp,
-        r_p             => r_p_tmp,
-        pm              => pm_tmp,
-        s               => s_tmp,
-        w_p             => w_p_tmp,
-        h_p             => h_p_tmp,
-        M_div_pt        => M_div_pt,
-        NoC_ACK_flag    => NoC_ACK_flag,
-        IFM_NL_ready    => IFM_NL_ready_tmp,
-        IFM_NL_finished => IFM_NL_finished_tmp,
-        IFM_NL_busy     => IFM_NL_busy_tmp,
-        WB_NL_ready     => WB_NL_ready_tmp,
-        WB_NL_finished  => WB_NL_finished_tmp,
-        WB_NL_busy      => WB_NL_busy_tmp,
-        pass_flag       => pass_flag_tmp,
-        shift_PISO      => shift_PISO
+        clk                       => clk,
+        reset                     => reset,
+        NL_start                  => NL_start,
+        NL_ready                  => NL_ready_tmp,
+        NL_finished               => NL_finished_tmp,
+        M_cap                     => M_cap,
+        C_cap                     => C_cap,
+        r                         => r,
+        p                         => p,
+        RS                        => RS,
+        HW_p                      => HW_p,
+        EF                        => EF,
+        c                         => c_tmp,
+        m                         => m_tmp,
+        rc                        => rc_tmp,
+        r_p                       => r_p_tmp,
+        pm                        => pm_tmp,
+        s                         => s_tmp,
+        w_p                       => w_p_tmp,
+        h_p                       => h_p_tmp,
+        M_div_pt                  => M_div_pt,
+        NoC_ACK_flag              => NoC_ACK_flag,
+        IFM_NL_ready              => IFM_NL_ready_tmp,
+        IFM_NL_finished           => IFM_NL_finished_tmp,
+        IFM_NL_busy               => IFM_NL_busy_tmp,
+        WB_NL_ready               => WB_NL_ready_tmp,
+        WB_NL_finished            => WB_NL_finished_tmp,
+        WB_NL_busy                => WB_NL_busy_tmp,
+        pass_flag                 => pass_flag_tmp,
+        shift_PISO                => shift_PISO,
+        OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
+        OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished,
+        NoC_c                     => NoC_c,
+        OFM_NL_Busy               => OFM_NL_Busy_tmp
     );
 
     -- SRAM_WB
@@ -322,18 +344,23 @@ begin
         EF                => EF,
         ofmap_p           => ofmap_p,
         PISO_Buffer_start => PISO_Buffer_start,
-        ofmap             => open,
+        ofmap             => ofmap,
         NoC_ACK_flag      => NoC_ACK_flag,
         shift_PISO        => shift_PISO
     );
 
-    -- -- OFMAP SRAM INTERFACE
-    -- OFMAP_SRAM_INTERFACE_inst : OFMAP_SRAM_INTERFACE
-    -- port map (
-    --     clk             =>  clk,
-    --     reset           =>  reset
-    --     -- ..
-    -- );
+    -- SRAM_OFM
+    SRAM_OFM_inst : SRAM_OFM
+    port map(
+        clk                       => clk,
+        reset                     => reset,
+        NoC_c                     => NoC_c,
+        OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
+        OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished,
+        ofmap                     => ofmap,
+        shift_PISO                => shift_PISO,
+        OFM_NL_Busy               => OFM_NL_Busy_tmp
+    );
 
     -- -- BIAS ADDITION
     -- BIAS_ADDITION_inst : BIAS_ADDITION

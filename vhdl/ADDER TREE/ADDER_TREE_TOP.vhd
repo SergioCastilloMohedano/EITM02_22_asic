@@ -26,7 +26,7 @@ entity ADDER_TREE_TOP is
 
         -- To Sys Controller
         NoC_ACK_flag : out std_logic;
-        shift_PISO   : out std_logic
+        shift_PISO   : out std_logic -- also to OFMAP SRAM (enable signal)
     );
 end ADDER_TREE_TOP;
 

@@ -49,7 +49,6 @@ architecture behavioral of PE_CTR is
     ------------ CONTROL PATH SIGNALS ------------
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
-    signal NoC_ACK_counter_tmp                     : std_logic_vector (4 downto 0);
     signal start_inter_PE_acc                      : std_logic;
     signal intra_cnt_done_reg, intra_cnt_done_next : std_logic;
     signal inter_cnt_done_tmp_1                    : std_logic;
@@ -81,7 +80,6 @@ architecture behavioral of PE_CTR is
     signal ifm_addr_write_reg, ifm_addr_write_next   : std_logic_vector (bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
     signal w_addr_read_reg, w_addr_read_next         : natural range 0 to (NUM_REGS_W_REG_FILE - 1);
     signal ifm_addr_read_reg, ifm_addr_read_next     : natural range 0 to (NUM_REGS_IFM_REG_FILE - 1);
-    signal NoC_ACK_counter_reg, NoC_ACK_counter_next : std_logic_vector (4 downto 0);
     signal intra_w_p_reg, intra_w_p_next             : natural range 0 to 255;
     signal intra_s_reg, intra_s_next                 : natural range 0 to 255;
     signal intra_p_reg, intra_p_next                 : natural range 0 to 255;
@@ -146,7 +144,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, pass_flag_tmp, NoC_ACK_counter_tmp, intra_s_reg, intra_cnt_done_reg, inter_cnt_done, hold_cnt_done, j_cnt_done, stall_cnt_done)
+    asmd_ctrl : process (state_reg, pass_flag_tmp, intra_s_reg, intra_cnt_done_reg, inter_cnt_done, hold_cnt_done, j_cnt_done, stall_cnt_done)
     begin
         case state_reg is
             when s_init =>
@@ -200,11 +198,7 @@ begin
                     state_next <= s_stall;
                 end if;
             when s_finished =>
-                if NoC_ACK_counter_tmp = std_logic_vector(to_unsigned(0, 5)) then
-                    state_next <= s_idle_writing;
-                else
-                    state_next <= s_finished;
-                end if;
+                state_next <= s_idle_writing;
             when others =>
                 state_next <= s_init;
         end case;
@@ -232,7 +226,6 @@ begin
             if reset = '1' then
                 ifm_addr_write_reg  <= (others => '0');
                 w_addr_write_reg    <= (others => '0');
-                NoC_ACK_counter_reg <= (others => '0');
                 intra_cnt_done_reg  <= '0';
                 intra_s_reg         <= 0;
                 intra_w_p_reg       <= 0;
@@ -246,7 +239,6 @@ begin
             else
                 ifm_addr_write_reg  <= ifm_addr_write_next;
                 w_addr_write_reg    <= w_addr_write_next;
-                NoC_ACK_counter_reg <= NoC_ACK_counter_next;
                 intra_cnt_done_reg  <= intra_cnt_done_next;
                 intra_s_reg         <= intra_s_next;
                 intra_w_p_reg       <= intra_w_p_next;
@@ -304,8 +296,6 @@ begin
     -------------------------------------------------------
 
     -- data path : status (inputs to control path to modify next state logic)
-    NoC_ACK_counter_tmp <= NoC_ACK_counter_reg;
-
     intra_cnt_done_next <= '1' when ((intra_s_reg = (RS_tmp - 1)) and (intra_w_p_reg = (HW_p_tmp - RS_tmp)) and (intra_p_reg = (p_tmp - 1))) else
                            '0' when state_reg = s_finished else
                            intra_cnt_done_reg;
@@ -329,12 +319,10 @@ begin
     stall_cnt_done <= '1' when (stall_cnt_reg = stall_cnt) else '0';
 
     -- data path : mux routing and logic
-    data_mux : process (state_reg, pass_flag_tmp, PE_ARRAY_RF_write_start_tmp, ifm_PE_enable_tmp, w_PE_enable_tmp, NoC_ACK_counter_reg, w_addr_write_reg, ifm_addr_write_reg, intra_s_reg, intra_w_p_reg, intra_p_reg, intra_s_out, intra_w_p_out, intra_p_out, w_addr_read_reg, ifm_addr_read_reg, w_addr_read_out, ifm_addr_read_out, inter_r_p_reg, inter_r_p_out, hold_cnt_reg, hold_cnt_out, stall_cnt_reg, stall_cnt_out, j_cnt_reg, j_cnt_out)
+    data_mux : process (state_reg, pass_flag_tmp, PE_ARRAY_RF_write_start_tmp, ifm_PE_enable_tmp, w_PE_enable_tmp, w_addr_write_reg, ifm_addr_write_reg, intra_s_reg, intra_w_p_reg, intra_p_reg, intra_s_out, intra_w_p_out, intra_p_out, w_addr_read_reg, ifm_addr_read_reg, w_addr_read_out, ifm_addr_read_out, inter_r_p_reg, inter_r_p_out, hold_cnt_reg, hold_cnt_out, stall_cnt_reg, stall_cnt_out, j_cnt_reg, j_cnt_out)
     begin
         case state_reg is
             when s_init =>
-
-                NoC_ACK_counter_next <= (others => '0');
 
                 ifm_addr_write_next <= (others => '0');
                 w_addr_write_next   <= (others => '0');
@@ -356,9 +344,6 @@ begin
                 stall_cnt_next <= 0;
 
             when s_idle_writing =>
-
-                NoC_ACK_counter_next    <= (others => '0');
-                NoC_ACK_counter_next(0) <= '1';
 
                 ifm_we_rf_tmp <= '0';
                 w_we_rf_tmp   <= '0';
@@ -401,8 +386,6 @@ begin
 
             when s_intra_PE_acc =>
 
-                NoC_ACK_counter_next <= NoC_ACK_counter_reg;
-
                 ifm_addr_write_next <= ifm_addr_write_reg;
                 w_addr_write_next   <= w_addr_write_reg;
                 ifm_we_rf_tmp       <= '0';
@@ -423,8 +406,6 @@ begin
                 stall_cnt_next <= stall_cnt_reg;
 
             when s_inter_PE_acc =>
-
-                NoC_ACK_counter_next <= NoC_ACK_counter_reg;
 
                 ifm_addr_write_next <= ifm_addr_write_reg;
                 w_addr_write_next   <= w_addr_write_reg;
@@ -447,8 +428,6 @@ begin
 
             when s_hold =>
 
-                NoC_ACK_counter_next <= NoC_ACK_counter_reg;
-
                 ifm_addr_write_next <= ifm_addr_write_reg;
                 w_addr_write_next   <= w_addr_write_reg;
                 ifm_we_rf_tmp       <= '0';
@@ -469,8 +448,6 @@ begin
                 stall_cnt_next <= stall_cnt_reg;
 
             when s_reset_acc =>
-
-                NoC_ACK_counter_next <= NoC_ACK_counter_reg;
 
                 ifm_addr_write_next <= ifm_addr_write_reg;
                 w_addr_write_next   <= w_addr_write_reg;
@@ -493,8 +470,6 @@ begin
 
             when s_stall =>
 
-                NoC_ACK_counter_next <= NoC_ACK_counter_reg;
-
                 ifm_addr_write_next <= ifm_addr_write_reg;
                 w_addr_write_next   <= w_addr_write_reg;
                 ifm_we_rf_tmp       <= '0';
@@ -516,8 +491,6 @@ begin
 
             when s_finished =>
 
-                NoC_ACK_counter_next <= std_logic_vector(unsigned(NoC_ACK_counter_reg) + 1);
-
                 ifm_addr_write_next <= ifm_addr_write_reg;
                 w_addr_write_next   <= w_addr_write_reg;
                 ifm_we_rf_tmp       <= '0';
@@ -538,8 +511,6 @@ begin
                 stall_cnt_next <= stall_cnt_reg;
 
             when others =>
-
-                NoC_ACK_counter_next <= NoC_ACK_counter_reg;
 
                 ifm_addr_write_next <= ifm_addr_write_reg;
                 w_addr_write_next   <= w_addr_write_reg;
