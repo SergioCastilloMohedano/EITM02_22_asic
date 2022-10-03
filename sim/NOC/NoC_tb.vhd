@@ -31,6 +31,7 @@ architecture sim of NOC_tb is
     constant NUM_REGS_W_REG_FILE   : natural       := natural(p * RS); -- p*S = 8*3 = 24
     constant hw_log2_r             : integer_array := (0, 1, 2);
     constant hw_log2_EF            : integer_array := (5, 4, 3); -- for E = (32, 16, 8)
+    constant EOM_ADDR_WB_SRAM      : natural       := 82329;
     signal clk                     : std_logic     := '1';
     signal reset                   : std_logic     := '1';
 
@@ -57,7 +58,8 @@ architecture sim of NOC_tb is
             hw_log2_r             : integer_array := (0, 1, 2);
             hw_log2_EF            : integer_array := (5, 4, 3);
             NUM_REGS_IFM_REG_FILE : natural       := 32; -- Emax (conv0 and conv1)
-            NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
+            NUM_REGS_W_REG_FILE   : natural       := 24; -- p*S = 8*3 = 24
+            EOM_ADDR_WB_SRAM      : natural       := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
         );
         port (
             clk         : in std_logic;
@@ -93,7 +95,8 @@ begin
         hw_log2_r             => (0, 1, 2),
         hw_log2_EF            => (5, 4, 3),
         NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE, -- Emax (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE -- p*S = 8*3 = 24
+        NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE, -- p*S = 8*3 = 24
+        EOM_ADDR_WB_SRAM      => EOM_ADDR_WB_SRAM
     )
     port map(
         clk          => clk,

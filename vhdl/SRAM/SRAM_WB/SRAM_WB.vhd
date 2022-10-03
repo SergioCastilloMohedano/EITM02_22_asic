@@ -4,14 +4,23 @@ use ieee.numeric_std.all;
 use work.thesis_pkg.all;
 
 entity SRAM_WB is
+    generic (
+        -- HW Parameters, at synthesis time.
+        EOM_ADDR_WB_SRAM : natural := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+    );
     port (
         clk   : in std_logic;
         reset : in std_logic;
-        -- To/From Front-End Read Interface
+        -- Sys. Ctr. Signals
         WB_NL_ready    : in std_logic;
         WB_NL_finished : in std_logic;
-        wb_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
-        -- To/From Front-End Write Interface
+        NoC_c_bias     : in std_logic_vector (7 downto 0);
+        NoC_pm_bias    : in std_logic_vector (7 downto 0);
+        OFM_NL_Busy    : in std_logic;
+        -- Front-End Read Interface
+        w_out : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        b_out : out std_logic_vector (15 downto 0)
+        -- Front-End Write Interface
         -- ..
     );
 end SRAM_WB;
@@ -21,24 +30,34 @@ architecture structural of SRAM_WB is
     -- SIGNAL DECLARATIONS
     signal WB_NL_ready_tmp    : std_logic;
     signal WB_NL_finished_tmp : std_logic;
-    signal wb_out_tmp         : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-    signal wb_tmp             : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-    signal RE_tmp             : std_logic;
-    signal clkb_tmp           : std_logic;
-    signal rstb_tmp           : std_logic;
-    signal addrb_tmp          : std_logic_vector (16 downto 0);
-    signal doutb_tmp          : std_logic_vector (15 downto 0);
-    signal enb_tmp            : std_logic;
+    signal w_out_tmp          : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal b_out_tmp          : std_logic_vector (15 downto 0);
+    signal wb_tmp             : std_logic_vector (15 downto 0);
+    signal en_w_read_tmp      : std_logic;
+    signal en_b_read_tmp      : std_logic;
+    signal NoC_pm_tmp         : std_logic_vector (7 downto 0);
+
+    signal addrb_tmp : std_logic_vector (16 downto 0);
+    signal doutb_tmp : std_logic_vector (15 downto 0);
+    signal enb_tmp   : std_logic;
 
     -- COMPONENT DECLARATIONS
     component SRAM_WB_FRONT_END_READ is
         port (
+            clk            : in std_logic;
+            reset          : in std_logic;
             WB_NL_ready    : in std_logic;
             WB_NL_finished : in std_logic;
-            wb_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            NoC_c_bias     : in std_logic_vector (7 downto 0);
+            NoC_pm_bias    : in std_logic_vector (7 downto 0);
+            OFM_NL_Busy    : in std_logic;
+            w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            b_out          : out std_logic_vector (15 downto 0);
             -- Back-End (BE) Interface Ports
-            wb_BE : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            RE_BE : out std_logic
+            wb_BE     : in std_logic_vector (15 downto 0);
+            en_w_read : out std_logic;
+            en_b_read : out std_logic;
+            NoC_pm_BE : out std_logic_vector (7 downto 0)
         );
     end component;
 
@@ -50,21 +69,22 @@ architecture structural of SRAM_WB is
     --    end component;
 
     component SRAM_WB_BACK_END is
+        generic (
+            EOM_ADDR_WB_SRAM : natural := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+        );
         port (
             clk   : in std_logic;
             reset : in std_logic;
             -- Front-End Interface Ports
-            wb_FE : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            RE_FE : in std_logic;
+            wb_FE     : out std_logic_vector (15 downto 0);
+            en_w_read : in std_logic;
+            en_b_read : in std_logic;
+            NoC_pm_FE : in std_logic_vector (7 downto 0);
             -- SRAM Wrapper Ports (READ)
-            clkb  : out std_logic;
-            rstb  : out std_logic;
             addrb : out std_logic_vector (16 downto 0);
             doutb : in std_logic_vector (15 downto 0);
             enb   : out std_logic
             -- SRAM Wrapper Ports (WRITE)
-            --        clka : out std_logic;
-            --        rsta : out std_logic;
             --        addra : out std_logic_vector (16 downto 0);
             --        dina : in std_logic_vector (15 downto 0);
             --        ena : out std_logic;
@@ -94,38 +114,49 @@ begin
     -- SRAM_WB_FRONT_END_READ
     SRAM_WB_FRONT_END_READ_inst : SRAM_WB_FRONT_END_READ
     port map(
+        clk            => clk,
+        reset          => reset,
         WB_NL_ready    => WB_NL_ready_tmp,
         WB_NL_finished => WB_NL_finished_tmp,
-        wb_out         => wb_out_tmp,
+        NoC_c_bias     => NoC_c_bias,
+        NoC_pm_bias    => NoC_pm_bias,
+        OFM_NL_Busy    => OFM_NL_Busy,
+        w_out          => w_out_tmp,
+        b_out          => b_out_tmp,
         -- Back-End (BE) Interface Ports
-        wb_BE => wb_tmp,
-        RE_BE => RE_tmp
+        wb_BE     => wb_tmp,
+        en_w_read => en_w_read_tmp,
+        en_b_read => en_b_read_tmp,
+        NoC_pm_BE => NoC_pm_tmp
     );
 
     -- SRAM_WB_BACK_END
     SRAM_WB_BACK_END_inst : SRAM_WB_BACK_END
+    generic map(
+        EOM_ADDR_WB_SRAM => EOM_ADDR_WB_SRAM
+    )
     port map(
-        clk   => clk,
-        reset => reset,
-        wb_FE => wb_tmp,
-        RE_FE => RE_tmp,
-        clkb  => clkb_tmp,
-        rstb  => rstb_tmp,
-        addrb => addrb_tmp,
-        doutb => doutb_tmp,
-        enb   => enb_tmp
+        clk       => clk,
+        reset     => reset,
+        wb_FE     => wb_tmp,
+        en_w_read => en_w_read_tmp,
+        en_b_read => en_b_read_tmp,
+        NoC_pm_FE => NoC_pm_tmp,
+        addrb     => addrb_tmp,
+        doutb     => doutb_tmp,
+        enb       => enb_tmp
     );
 
     -- blk_mem_gen_1
     blk_mem_gen_1_inst : blk_mem_gen_1
     port map(
-        clka      => '0',
+        clka      => clk,
         ena       => '0',
         wea => (others => '0'),
         addra => (others => '0'),
         dina => (others => '0'),
-        clkb      => clkb_tmp,
-        rstb      => rstb_tmp,
+        clkb      => clk,
+        rstb      => reset,
         enb       => enb_tmp,
         addrb     => addrb_tmp,
         doutb     => doutb_tmp,
@@ -136,5 +167,7 @@ begin
     -- PORT ASSIGNATIONS
     WB_NL_ready_tmp    <= WB_NL_ready;
     WB_NL_finished_tmp <= WB_NL_finished;
-    wb_out             <= wb_out_tmp;
+    w_out              <= w_out_tmp;
+    b_out              <= b_out_tmp;
+
 end architecture;

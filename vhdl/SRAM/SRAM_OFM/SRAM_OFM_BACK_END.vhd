@@ -126,9 +126,7 @@ begin
     end process;
 
     -- control path : output logic
-    -- IFM_NL_ready_tmp    <= '1' when state_reg = s_idle else '0';
-    -- IFM_NL_finished_tmp <= '1' when state_reg = s_finished else '0';
-    -- IFM_NL_busy_tmp     <= '1' when state_reg = s_IFM_NL else '0';
+    -- ..
 
     -- data path : data registers
     data_reg : process (clk, reset)
@@ -150,6 +148,7 @@ begin
 
     addr_ofm_read_tmp <= (others => '0'); -- tbd
     addr_ofm_read_out <= addr_ofm_read_tmp;
+
     -- data path : status (inputs to control path to modify next state logic)
     -- ..
 
@@ -192,17 +191,6 @@ begin
                 addr_ofm_read_next  <= addr_ofm_read_reg;
         end case;
     end process;
-
-    -- Registers to delay PORTA Signals 1cc when reading back from PORTB, syncronizes accumulation process
-    -- delay_reg : process (clk)
-    -- begin
-    --     if rising_edge(clk) then
-    --         addr_ofm_write_reg_delay <= addr_ofm_write_reg;
-    --         ofm_FE_in_tmp_delay      <= ofm_FE_in_tmp;
-    --         en_ofm_in_tmp_delay      <= en_ofm_in_tmp;
-    --         WE_tmp_delay             <= WE_tmp;
-    --     end if;
-    -- end process;
 
     -- PORT Assignations
     WE_tmp(0)                     <= WE;

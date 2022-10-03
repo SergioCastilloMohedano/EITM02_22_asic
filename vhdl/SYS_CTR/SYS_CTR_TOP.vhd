@@ -68,7 +68,9 @@ entity SYS_CTR_TOP is
         OFM_NL_cnt_finished       : out std_logic;
         OFM_NL_NoC_m_cnt_finished : out std_logic;
         NoC_c                     : out std_logic_vector (7 downto 0);
-        OFM_NL_Busy               : out std_logic
+        OFM_NL_Busy               : out std_logic;
+        NoC_c_bias                : out std_logic_vector (7 downto 0);
+        NoC_pm_bias               : out std_logic_vector (7 downto 0)
     );
 end SYS_CTR_TOP;
 
@@ -167,7 +169,9 @@ architecture architectural of SYS_CTR_TOP is
             NoC_e                     : out std_logic_vector (7 downto 0);
             shift_PISO                : in std_logic;
             OFM_NL_cnt_finished       : out std_logic;
-            OFM_NL_NoC_m_cnt_finished : out std_logic
+            OFM_NL_NoC_m_cnt_finished : out std_logic;
+            NoC_c_bias                : out std_logic_vector (7 downto 0);
+            NoC_pm_bias               : out std_logic_vector (7 downto 0)
         );
     end component;
 
@@ -305,7 +309,9 @@ begin
         NoC_e                     => NoC_e_tmp,
         shift_PISO                => shift_PISO,
         OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
-        OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished
+        OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished,
+        NoC_c_bias                => NoC_c_bias,
+        NoC_pm_bias               => NoC_pm_bias
     );
 
     -- PORT Assignations

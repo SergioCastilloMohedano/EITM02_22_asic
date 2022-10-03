@@ -16,7 +16,10 @@ entity SRAM_OFM is
 
         -- From Adder Tree Top
         ofmap      : in std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
-        shift_PISO : in std_logic -- (enable signal)
+        shift_PISO : in std_logic; -- (enable signal)
+
+        -- From WB SRAM
+        bias : in std_logic_vector (15 downto 0)
     );
 end SRAM_OFM;
 
@@ -39,15 +42,20 @@ architecture structural of SRAM_OFM is
     -- COMPONENT DECLARATIONS
     component SRAM_OFM_FRONT_END_ACC is
         port (
+            -- From Sys. Controller
             OFM_NL_Busy : in std_logic;
-            shift_PISO  : in std_logic;
             NoC_c       : in std_logic_vector (7 downto 0);
+            -- From PISO Buffer
+            shift_PISO  : in std_logic;
+            ofm_in      : in std_logic_vector (OFMAP_P_BITWIDTH - 1 downto 0);
+            -- From/To Back-End Interface
             en_ofm_in   : out std_logic;
             en_ofm_sum  : out std_logic;
             WE          : out std_logic;
-            ofm_in      : in std_logic_vector (OFMAP_P_BITWIDTH - 1 downto 0);
             ofm_sum     : in std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
-            ofm_BE      : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0)
+            ofm_BE      : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+            -- From WB SRAM
+            bias        : in std_logic_vector (15 downto 0)
         );
     end component;
 
@@ -101,14 +109,15 @@ begin
     SRAM_OFM_FRONT_END_ACC_inst : SRAM_OFM_FRONT_END_ACC
     port map(
         OFM_NL_Busy => OFM_NL_Busy,
-        shift_PISO  => shift_PISO,
         NoC_c       => NoC_c,
+        shift_PISO  => shift_PISO,
+        ofm_in      => ofmap,
         en_ofm_in   => en_ofm_in_tmp,
         en_ofm_sum  => en_ofm_sum_tmp,
         WE          => WE_tmp,
-        ofm_in      => ofmap,
         ofm_sum     => ofm_sum_tmp,
-        ofm_BE      => ofm_acc_tmp
+        ofm_BE      => ofm_acc_tmp,
+        bias        => bias
     );
 
     -- SRAM_OFM_BACK_END

@@ -11,7 +11,8 @@ entity TOP is
         hw_log2_r             : integer_array := (0, 1, 2);
         hw_log2_EF            : integer_array := (5, 4, 3);
         NUM_REGS_IFM_REG_FILE : natural       := 32; -- Emax (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
+        NUM_REGS_W_REG_FILE   : natural       := 24; -- p*S = 8*3 = 24
+        EOM_ADDR_WB_SRAM      : natural       := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
     );
     port (
         clk         : in std_logic;
@@ -60,9 +61,12 @@ architecture structural of TOP is
     signal pass_flag_tmp       : std_logic;
     signal NoC_c               : std_logic_vector (7 downto 0);
     signal OFM_NL_busy_tmp     : std_logic;
+    signal NoC_c_bias_tmp      : std_logic_vector (7 downto 0);
+    signal NoC_pm_bias_tmp      : std_logic_vector (7 downto 0);
 
     -- SRAM_WB
     signal w_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal b_tmp : std_logic_vector (15 downto 0);
 
     -- SRAM_IFM
     signal ifm_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
@@ -114,17 +118,26 @@ architecture structural of TOP is
             OFM_NL_cnt_finished       : out std_logic;
             OFM_NL_NoC_m_cnt_finished : out std_logic;
             NoC_c                     : out std_logic_vector (7 downto 0);
-            OFM_NL_Busy               : out std_logic
+            OFM_NL_Busy               : out std_logic;
+            NoC_c_bias                : out std_logic_vector (7 downto 0); -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
+            NoC_pm_bias               : out std_logic_vector (7 downto 0)  -- same as NoC_pm but...
         );
     end component;
 
     component SRAM_WB is
+        generic (
+            EOM_ADDR_WB_SRAM : natural := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+        );
         port (
             clk            : in std_logic;
             reset          : in std_logic;
             WB_NL_ready    : in std_logic;
             WB_NL_finished : in std_logic;
-            wb_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
+            NoC_c_bias     : in std_logic_vector (7 downto 0);
+            NoC_pm_bias    : in std_logic_vector (7 downto 0);
+            OFM_NL_Busy    : in std_logic;
+            w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            b_out          : out std_logic_vector (15 downto 0)
         );
     end component;
 
@@ -152,7 +165,8 @@ architecture structural of TOP is
             OFM_NL_NoC_m_cnt_finished : in std_logic;
             ofmap                     : in std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
             shift_PISO                : in std_logic;
-            OFM_NL_Busy               : in std_logic
+            OFM_NL_Busy               : in std_logic;
+            bias                      : in std_logic_vector (15 downto 0)
         );
     end component;
 
@@ -205,13 +219,6 @@ architecture structural of TOP is
             shift_PISO        : out std_logic
         );
     end component;
-
-    -- component BIAS_ADDITION is
-    -- port(clk                : in std_logic;
-    --      reset              : in std_logic
-    --      -- ...
-    --     );
-    -- end component;
 
     -- component RELU is
     -- port(clk                : in std_logic;
@@ -272,17 +279,26 @@ begin
         OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
         OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished,
         NoC_c                     => NoC_c,
-        OFM_NL_Busy               => OFM_NL_Busy_tmp
+        OFM_NL_Busy               => OFM_NL_Busy_tmp,
+        NoC_c_bias                => NoC_c_bias_tmp,
+        NoC_pm_bias               => NoC_pm_bias_tmp
     );
 
     -- SRAM_WB
     SRAM_WB_inst : SRAM_WB
+    generic map(
+        EOM_ADDR_WB_SRAM => EOM_ADDR_WB_SRAM
+    )
     port map(
         clk            => clk,
         reset          => reset,
         WB_NL_ready    => WB_NL_ready_tmp,
         WB_NL_finished => WB_NL_finished_tmp,
-        wb_out         => w_tmp
+        NoC_c_bias     => NoC_c_bias_tmp,
+        NoC_pm_bias    => NoC_pm_bias_tmp,
+        OFM_NL_Busy    => OFM_NL_Busy_tmp,
+        w_out          => w_tmp,
+        b_out          => b_tmp
     );
 
     -- SRAM_IFM
@@ -359,16 +375,9 @@ begin
         OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished,
         ofmap                     => ofmap,
         shift_PISO                => shift_PISO,
-        OFM_NL_Busy               => OFM_NL_Busy_tmp
+        OFM_NL_Busy               => OFM_NL_Busy_tmp,
+        bias                      => b_tmp
     );
-
-    -- -- BIAS ADDITION
-    -- BIAS_ADDITION_inst : BIAS_ADDITION
-    -- port map (
-    --     clk             =>  clk,
-    --     reset           =>  reset
-    --     -- ..
-    -- );
 
     -- -- RELU
     -- RELU_inst : RELU
