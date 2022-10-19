@@ -64,8 +64,8 @@ architecture dataflow of SRAM_WB_FRONT_END_READ is
 begin
 
     NoC_pm_BE_tmp <= NoC_pm_bias;
-    w_out_tmp     <= wb_BE_tmp(7 downto 0) when (en_w_read_tmp_2 = '1') else (others => '0'); -- 8 MSBs (I'm taking now 8lsb for testing)
-    b_out_tmp     <= wb_BE_tmp             when (en_b_read_tmp   = '1') else (others => '0');
+    w_out_tmp     <= wb_BE_tmp(15 downto 8) when (en_w_read_tmp_2 = '1') else (others => '0'); -- 8 MSBs <3.13> -> <3.5>
+    b_out_tmp     <= wb_BE_tmp              when (en_b_read_tmp   = '1') else (others => '0');
 
     NoC_c_eqz     <= '1' when (NoC_c_tmp = 0) else '0';
 

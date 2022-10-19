@@ -11,7 +11,7 @@ package thesis_pkg is
     constant COMP_BITWIDTH  : natural := 8; -- determines computing resolution of the accelerator
     constant PSUM_BITWIDTH  : natural := 20; -- determines bitwidth of the psum considering worst case scenario accumulations -> ceil(log2(R*S*2^8*2^8)) = ceil(19.1) = 20
     constant OFMAP_P_BITWIDTH : natural := 22; -- Bitwidth of Adder Tree -> ceil(log2(r*R*S*(COMP_BITWIDTH^2))) -> r = 4 -> 20 + 2
-    constant OFMAP_BITWIDTH : natural := 26; -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario -> max(ceil(log2(Cconv*R*S*COMP_BITWIDTH^2) , ceillog2(Cfc*COMP_BITWIDTH^2))
+    constant OFMAP_BITWIDTH : natural := 26; -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario -> max(ceil(log2(Cconv*R*S*COMP_BITWIDTH^2) , ceil(log2(Cfc*COMP_BITWIDTH^2)))
     type std_logic_vector_array is array(natural range <>) of std_logic_vector(COMP_BITWIDTH - 1 downto 0);
     type std_logic_vector_2D_array is array(natural range <>) of std_logic_vector_array;
     type std_logic_array is array(natural range <>) of std_logic;
@@ -64,26 +64,7 @@ package thesis_pkg is
     -- result.
     --------------------------------------------------------------------------------------
     -- **** COMPONENT DECLARATIONS ****
-    -- Button debouncing 
-    component debouncer
-        port (
-            clk        : in std_logic;
-            reset      : in std_logic;
-            button_in  : in std_logic;
-            button_out : out std_logic
-        );
-    end component;
 
-    -- D-flipflop
-    component dff
-        generic (W : integer);
-        port (
-            clk   : in std_logic;
-            reset : in std_logic;
-            d     : in std_logic_vector(W - 1 downto 0);
-            q     : out std_logic_vector(W - 1 downto 0)
-        );
-    end component;
 
     -- Risign Edge Detector
     component rising_edge_detector
@@ -104,14 +85,6 @@ package thesis_pkg is
             output : out std_logic
         );
     end component falling_edge_detector;
-
-    -- mod3 8-bit Operator
-    component mod3
-        port (
-            input  : in unsigned(7 downto 0);
-            output : out unsigned(7 downto 0)
-        );
-    end component;
 
     -- monostable
     --------------------------------------------------------------------------------------
@@ -169,6 +142,7 @@ package thesis_pkg is
     end component;
 
 end thesis_pkg;
+
 package body thesis_pkg is
 
     -- **** FUNCTIONS DEFINITIONS ****
@@ -250,85 +224,6 @@ package body thesis_pkg is
 
     end function ceil_log2div;
 end thesis_pkg;
-
--------------------------------------------------------------------------------
--- debouncer component: There is no need to use this component, thogh if you get
---                      unwanted moving between states of the FSM because of pressing
---                      push-button this component might be useful.
--------------------------------------------------------------------------------
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-entity debouncer is
-    port (
-        clk        : in std_logic;
-        reset      : in std_logic;
-        button_in  : in std_logic;
-        button_out : out std_logic
-    );
-end debouncer;
-
-architecture behavioral of debouncer is
-
-    signal count      : unsigned(19 downto 0); -- Range to count 20ms with 50 MHz clock
-    signal button_tmp : std_logic;
-
-begin
-
-    process (clk, reset)
-    begin
-        if clk'event and clk = '1' then
-            if reset = '1' then
-                count <= (others => '0');
-            else
-                count      <= count + 1;
-                button_tmp <= button_in;
-
-                if (count = 0) then
-                    button_out <= button_tmp;
-                end if;
-            end if;
-        end if;
-    end process;
-
-end behavioral;
-
-------------------------------------------------------------------------------
--- component dff - D-FlipFlop 
--------------------------------------------------------------------------------
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-entity dff is
-    generic (
-        W : integer
-    );
-    port (
-        clk   : in std_logic;
-        reset : in std_logic;
-        d     : in std_logic_vector(W - 1 downto 0);
-        q     : out std_logic_vector(W - 1 downto 0)
-    );
-end dff;
-
-architecture behavioral of dff is
-
-begin
-
-    process (clk, reset)
-    begin
-        if clk'event and clk = '1' then
-            if reset = '1' then
-                q <= (others => '0');
-            else
-                q <= d;
-            end if;
-        end if;
-    end process;
-
-end behavioral;
 
 ------------------------------------------------------------------------------
 -- Component rising edge detector
@@ -518,121 +413,6 @@ begin
 end behavioral;
 
 ------------------------------------------------------------------------------
--- Component mod3 calculator
--------------------------------------------------------------------------------
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-entity mod3 is
-    port (
-        input  : in unsigned(7 downto 0);
-        output : out unsigned(7 downto 0)
-    );
-end mod3;
-
-architecture behavioral of mod3 is
-
-    component mod3_sub_module
-        port (
-            input  : in unsigned(7 downto 0);
-            data   : in unsigned(7 downto 0);
-            output : out unsigned(7 downto 0)
-        );
-    end component;
-
-    signal sig12, sig23, sig34, sig45, sig56, sig67, data1, data2, data3, data4, data5, data6, data7 : unsigned(7 downto 0);
-
-begin
-
-    data1 <= to_unsigned(192, 8);
-    data2 <= to_unsigned(96, 8);
-    data3 <= to_unsigned(48, 8);
-    data4 <= to_unsigned(24, 8);
-    data5 <= to_unsigned(12, 8);
-    data6 <= to_unsigned(6, 8);
-    data7 <= to_unsigned(3, 8);
-
-    module_1 : mod3_sub_module
-    port map(
-        input  => input,
-        data   => data1,
-        output => sig12
-    );
-
-    module_2 : mod3_sub_module
-    port map(
-        input  => sig12,
-        data   => data2,
-        output => sig23
-    );
-
-    module_3 : mod3_sub_module
-    port map(
-        input  => sig23,
-        data   => data3,
-        output => sig34
-    );
-
-    module_4 : mod3_sub_module
-    port map(
-        input  => sig34,
-        data   => data4,
-        output => sig45
-    );
-
-    module_5 : mod3_sub_module
-    port map(
-        input  => sig45,
-        data   => data5,
-        output => sig56
-    );
-
-    module_6 : mod3_sub_module
-    port map(
-        input  => sig56,
-        data   => data6,
-        output => sig67
-    );
-
-    module_7 : mod3_sub_module
-    port map(
-        input  => sig67,
-        data   => data7,
-        output => output
-    );
-
-end behavioral;
-
-------------------------------------------------------------------------------
--- Component sub module of mod 3
-------------------------------------------------------------------------------
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-
-entity mod3_sub_module is
-    port (
-        input  : in unsigned(7 downto 0);
-        data   : in unsigned(7 downto 0);
-        output : out unsigned(7 downto 0)
-    );
-end mod3_sub_module;
-
-architecture behavioral of mod3_sub_module is
-begin
-    process (input)
-    begin
-        if input >= data then
-            output <= input - data;
-        else
-            output <= input;
-        end if;
-    end process;
-
-end behavioral;
-
-------------------------------------------------------------------------------
 -- Ceil of log 2 div
 ------------------------------------------------------------------------------
 library ieee;
@@ -660,6 +440,7 @@ begin
     z   <= tmp;
 
 end architecture;
+
 ------------------------------------------------------------------------------
 -- Generic MUX
 ------------------------------------------------------------------------------

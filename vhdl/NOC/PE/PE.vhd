@@ -52,23 +52,24 @@ architecture structural of PE is
     signal w_we_rf   : std_logic;
 
     -- Multiplier Signals
-    signal ifm_mult   : std_logic_vector(COMP_BITWIDTH - 1 downto 0);
-    signal w_mult     : std_logic_vector(COMP_BITWIDTH - 1 downto 0);
-    signal mult_out   : unsigned(PSUM_BITWIDTH - 1 downto 0);
-    signal mult_zeros : unsigned((PSUM_BITWIDTH - 2 * COMP_BITWIDTH) - 1 downto 0);
+    signal ifm_mult         : std_logic_vector(COMP_BITWIDTH - 1 downto 0);
+    signal w_mult           : std_logic_vector(COMP_BITWIDTH - 1 downto 0);
+    signal mult_out         : signed(PSUM_BITWIDTH - 1 downto 0);
+    signal mult_result      : signed((2 * COMP_BITWIDTH) - 1 downto 0);
+    signal sign_extension   : signed((PSUM_BITWIDTH - (2 * COMP_BITWIDTH)) - 1 downto 0);
 
     -- Adder Signals
-    signal adder_in_1 : unsigned(PSUM_BITWIDTH - 1 downto 0);
-    signal adder_in_2 : unsigned(PSUM_BITWIDTH - 1 downto 0);
-    signal adder_out  : unsigned(PSUM_BITWIDTH - 1 downto 0);
+    signal adder_in_1 : signed(PSUM_BITWIDTH - 1 downto 0);
+    signal adder_in_2 : signed(PSUM_BITWIDTH - 1 downto 0);
+    signal adder_out  : signed(PSUM_BITWIDTH - 1 downto 0);
 
     -- MUX control Signals
     signal inter_PE_acc : std_logic;
     signal reset_acc    : std_logic;
 
     -- psum registers Signals
-    signal in_psum_reg                       : unsigned(PSUM_BITWIDTH - 1 downto 0);
-    signal accumulator_reg, accumulator_next : unsigned(PSUM_BITWIDTH - 1 downto 0);
+    signal in_psum_reg                       : signed(PSUM_BITWIDTH - 1 downto 0);
+    signal accumulator_reg, accumulator_next : signed(PSUM_BITWIDTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
     component REG_FILE is
@@ -203,15 +204,16 @@ begin
                 in_psum_reg     <= (others => '0');
             else
                 accumulator_reg <= accumulator_next; -- Acc. reg.
-                in_psum_reg     <= unsigned(psum_in); -- In psum reg.
+                in_psum_reg     <= signed(psum_in); -- In psum reg.
             end if;
         end if;
     end process;
 
     -- Combinational Logic --
     -- Multiplier
-    mult_zeros <= (others => '0');
-    mult_out   <= mult_zeros & (unsigned(ifm_mult) * unsigned(w_mult));
+    mult_result    <= (signed(ifm_mult) * signed(w_mult));
+    sign_extension <= (others => mult_result(mult_result'length - 1));
+    mult_out       <= sign_extension & mult_result;
 
     -- Inter-PE Acc. MUX
     adder_in_1 <= mult_out when inter_PE_acc = '0' else in_psum_reg;

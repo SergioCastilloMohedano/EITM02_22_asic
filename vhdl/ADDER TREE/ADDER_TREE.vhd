@@ -71,27 +71,16 @@ architecture behavioral of ADDER_TREE is
     signal PISO_Buffer_start_reg_2, PISO_Buffer_start_next_2 : std_logic;
 
     -- Other Signals
-    signal zeroes : std_logic_vector (0 to ((OFMAP_P_BITWIDTH - PSUM_BITWIDTH) - 1));
-    signal r_tmp  : natural range 0 to 255;
-
-    -- COMPONENT DECLARATIONS
-    component PISO_BUFFER is
-        port (
-            clk       : in std_logic;
-            reset     : in std_logic;
-            ofmap_p_1 : in ofmap_p_array (0 to (X - 1));
-            ofmap_p_2 : in ofmap_p_array (0 to ((X/2) - 1));
-            ofmap_p_4 : in ofmap_p_array (0 to ((X/4) - 1));
-            ofmap     : out std_logic_vector((OFMAP_BITWIDTH - 1) downto 0)
-        );
-    end component;
+    type sign_array is array (0 to (X - 1)) of std_logic_vector (((OFMAP_P_BITWIDTH - PSUM_BITWIDTH) - 1) downto 0);
+    signal sign_extension : sign_array;
+    signal r_tmp          : natural range 0 to 255;
 
 begin
 
     -- Input
-    zeroes <= (others => '0');
     loop_0 : for i in 0 to (X - 1) generate
-        ofmap_p_bus_0(i) <= zeroes & ofmap_p(i);
+        sign_extension(i) <= (others => ofmap_p(i)(ofmap_p(i)'length - 1));
+        ofmap_p_bus_0(i)  <= sign_extension(i) & ofmap_p(i);
     end generate loop_0;
 
     -- Demux - Stage 1
@@ -106,8 +95,8 @@ begin
 
     -- Adders Stage 1
     loop_adders_stage_1 : for i in 0 to ((X/4) - 1) generate
-        ofmap_p_add_1_out(i) <= std_logic_vector(unsigned(ofmap_p_add_1_in_1(i)) + unsigned(ofmap_p_add_1_in_2(i)));
-        ofmap_p_add_2_out(i) <= std_logic_vector(unsigned(ofmap_p_add_2_in_1(i)) + unsigned(ofmap_p_add_2_in_2(i)));
+        ofmap_p_add_1_out(i) <= std_logic_vector(signed(ofmap_p_add_1_in_1(i)) + signed(ofmap_p_add_1_in_2(i)));
+        ofmap_p_add_2_out(i) <= std_logic_vector(signed(ofmap_p_add_2_in_1(i)) + signed(ofmap_p_add_2_in_2(i)));
     end generate loop_adders_stage_1;
 
     -- Register Buses - Stage 1
@@ -134,7 +123,7 @@ begin
 
     -- Adder Stage 2
     loop_adders_stage_2 : for i in 0 to ((X/4) - 1) generate
-        ofmap_p_add_3_out(i) <= std_logic_vector(unsigned(ofmap_p_add_3_in_1(i)) + unsigned(ofmap_p_add_3_in_2(i)));
+        ofmap_p_add_3_out(i) <= std_logic_vector(signed(ofmap_p_add_3_in_1(i)) + signed(ofmap_p_add_3_in_2(i)));
     end generate loop_adders_stage_2;
 
     -- Register Bus - Stage 2

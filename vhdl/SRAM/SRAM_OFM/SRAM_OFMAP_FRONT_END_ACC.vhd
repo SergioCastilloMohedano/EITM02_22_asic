@@ -36,6 +36,10 @@ architecture dataflow of SRAM_OFM_FRONT_END_ACC is
     signal ofm_adder_in_tmp : natural;
     signal ofm_in_tmp_delay : natural;
     signal bias_tmp         : natural;
+    -- bias 16<3.13> & ofmap 26<18.8>
+    -- Aling binary point: 13 - 8 = 5
+    -- Disregard 5 LSBs of fractional part of bias.
+    signal bias_align       : std_logic_vector ((15 - 5) downto 0);
 
 begin
 
@@ -49,13 +53,16 @@ begin
     WE_tmp         <= shift_PISO;
 
     -- PORT Assignations
-    ofm_BE      <= std_logic_vector(to_unsigned(ofm_BE_tmp, ofm_BE'length));
-    ofm_in_tmp  <= to_integer(unsigned(ofm_in));
-    ofm_sum_tmp <= to_integer(unsigned(ofm_sum));
+    ofm_BE      <= std_logic_vector(to_signed(ofm_BE_tmp, ofm_BE'length));
+    ofm_in_tmp  <= to_integer(signed(ofm_in));
+    ofm_sum_tmp <= to_integer(signed(ofm_sum));
     NoC_c_tmp   <= to_integer(unsigned(NoC_c));
     en_ofm_in   <= en_ofm_in_tmp;
     en_ofm_sum  <= en_ofm_sum_tmp;
     WE          <= WE_tmp;
-    bias_tmp    <= to_integer(unsigned(bias));
+    -- fl_wb_comp = fl_wb - COMP_BITWIDTH = 13 - 8 = 5
+    -- fl_ofm = fl_ifm + fl_wb_comp = 3 + 5 = 8
+    bias_align  <= bias(15 downto 5);
+    bias_tmp    <= to_integer(signed(bias_align));
 
 end architecture;

@@ -80,9 +80,6 @@ architecture behavioral of SRAM_WB_BACK_END is
     signal addr_w_read_reg  : unsigned (16 downto 0);
     signal addr_w_read_next : unsigned (16 downto 0);
 
-    -- signal addr_cnt_reg : unsigned (16 downto 0);
-    -- signal addr_cnt_next : unsigned (16 downto 0);
-
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
     -- ..
 
