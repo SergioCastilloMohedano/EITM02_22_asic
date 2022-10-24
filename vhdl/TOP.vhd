@@ -10,9 +10,14 @@ entity TOP is
         Y                     : natural       := 3;
         hw_log2_r             : integer_array := (0, 1, 2);
         hw_log2_EF            : integer_array := (5, 4, 3);
-        NUM_REGS_IFM_REG_FILE : natural       := 32; -- Emax (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24; -- p*S = 8*3 = 24
-        EOM_ADDR_WB_SRAM      : natural       := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+        NUM_REGS_IFM_REG_FILE : natural       := 32;             -- Emax (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
+        EOM_ADDR_WB_SRAM      : natural       := 82329;          -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+        ws                    : natural       := OFMAP_BITWIDTH; -- bitwidth of input value -- 26 fpga, 32 asic
+        fl                    : natural       := 8;              -- length of fractional part of input value
+        ws_sr                 : natural       := 8;              -- bitwidth of output value
+        fl_sr                 : natural       := 3;              -- length of fractional part of output value
+        residuals             : natural       := 5               -- fl - fl_sr;
     );
     port (
         clk         : in std_logic;
@@ -60,9 +65,10 @@ architecture structural of TOP is
     signal WB_NL_busy_tmp      : std_logic;
     signal pass_flag_tmp       : std_logic;
     signal NoC_c               : std_logic_vector (7 downto 0);
-    signal OFM_NL_busy_tmp     : std_logic;
+    signal OFM_NL_Write_tmp    : std_logic;
+    signal OFM_NL_Read_tmp     : std_logic;
     signal NoC_c_bias_tmp      : std_logic_vector (7 downto 0);
-    signal NoC_pm_bias_tmp      : std_logic_vector (7 downto 0);
+    signal NoC_pm_bias_tmp     : std_logic_vector (7 downto 0);
 
     -- SRAM_WB
     signal w_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
@@ -80,7 +86,8 @@ architecture structural of TOP is
     signal OFM_NL_NoC_m_cnt_finished : std_logic;
 
     -- SRAM_OFM
-    signal ofmap : std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
+    signal ofmap     : std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
+    signal ofmap_out : std_logic_vector((OFMAP_BITWIDTH - 1) downto 0);
 
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is
@@ -118,7 +125,8 @@ architecture structural of TOP is
             OFM_NL_cnt_finished       : out std_logic;
             OFM_NL_NoC_m_cnt_finished : out std_logic;
             NoC_c                     : out std_logic_vector (7 downto 0);
-            OFM_NL_Busy               : out std_logic;
+            OFM_NL_Write              : out std_logic;
+            OFM_NL_Read               : out std_logic;
             NoC_c_bias                : out std_logic_vector (7 downto 0); -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
             NoC_pm_bias               : out std_logic_vector (7 downto 0)  -- same as NoC_pm but...
         );
@@ -135,7 +143,7 @@ architecture structural of TOP is
             WB_NL_finished : in std_logic;
             NoC_c_bias     : in std_logic_vector (7 downto 0);
             NoC_pm_bias    : in std_logic_vector (7 downto 0);
-            OFM_NL_Busy    : in std_logic;
+            OFM_NL_Write   : in std_logic;
             w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             b_out          : out std_logic_vector (15 downto 0)
         );
@@ -163,10 +171,12 @@ architecture structural of TOP is
             NoC_c                     : in std_logic_vector (7 downto 0);
             OFM_NL_cnt_finished       : in std_logic;
             OFM_NL_NoC_m_cnt_finished : in std_logic;
+            OFM_NL_Write              : in std_logic;
+            OFM_NL_Read               : in std_logic;
             ofmap                     : in std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
             shift_PISO                : in std_logic;
-            OFM_NL_Busy               : in std_logic;
-            bias                      : in std_logic_vector (15 downto 0)
+            bias                      : in std_logic_vector (15 downto 0);
+            ofm                       : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -177,7 +187,7 @@ architecture structural of TOP is
             hw_log2_r             : integer_array := hw_log2_r;
             hw_log2_EF            : integer_array := hw_log2_EF;
             NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE; -- Emax (conv0 and conv1)
-            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE -- p*S = 8*3 = 24
+            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE    -- p*S = 8*3 = 24
         );
         port (
             clk               : in std_logic;
@@ -220,21 +230,24 @@ architecture structural of TOP is
         );
     end component;
 
-    -- component RELU is
-    -- port(clk                : in std_logic;
-    --      reset              : in std_logic
-    --      -- ...
-    --     );
-    -- end component;
+    component SR is
+        generic (
+            ws        : natural := OFMAP_BITWIDTH; -- bitwidth of input value -- 26 fpga, 32 asic
+            fl        : natural := 8;              -- length of fractional part of input value
+            ws_sr     : natural := 8;              -- bitwidth of output value
+            fl_sr     : natural := 3;              -- length of fractional part of output value
+            residuals : natural := 5               -- fl - fl_sr;
+        );
+        port (
+            clk       : in std_logic;
+            reset     : in std_logic;
+            value_in  : in std_logic_vector ((ws - 1) downto 0);
+            value_out : out std_logic_vector ((ws_sr - 1) downto 0);
+            enable_sr : in std_logic -- enabling reading from ofmap means we can start stochastic rounding
+        );
+    end component;
 
     -- component POOLING is
-    -- port(clk                : in std_logic;
-    --      reset              : in std_logic
-    --      -- ...
-    --     );
-    -- end component;
-
-    -- component STOCHASTIC_ROUNDING is
     -- port(clk                : in std_logic;
     --      reset              : in std_logic
     --      -- ...
@@ -279,7 +292,8 @@ begin
         OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
         OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished,
         NoC_c                     => NoC_c,
-        OFM_NL_Busy               => OFM_NL_Busy_tmp,
+        OFM_NL_Write              => OFM_NL_Write_tmp,
+        OFM_NL_Read               => OFM_NL_Read_tmp,
         NoC_c_bias                => NoC_c_bias_tmp,
         NoC_pm_bias               => NoC_pm_bias_tmp
     );
@@ -296,7 +310,7 @@ begin
         WB_NL_finished => WB_NL_finished_tmp,
         NoC_c_bias     => NoC_c_bias_tmp,
         NoC_pm_bias    => NoC_pm_bias_tmp,
-        OFM_NL_Busy    => OFM_NL_Busy_tmp,
+        OFM_NL_Write   => OFM_NL_Write_tmp,
         w_out          => w_tmp,
         b_out          => b_tmp
     );
@@ -373,30 +387,33 @@ begin
         NoC_c                     => NoC_c,
         OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
         OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished,
+        OFM_NL_Write              => OFM_NL_Write_tmp,
+        OFM_NL_Read               => OFM_NL_Read_tmp,
         ofmap                     => ofmap,
         shift_PISO                => shift_PISO,
-        OFM_NL_Busy               => OFM_NL_Busy_tmp,
-        bias                      => b_tmp
+        bias                      => b_tmp,
+        ofm                       => ofmap_out
     );
 
-    -- -- RELU
-    -- RELU_inst : RELU
-    -- port map (
-    --     clk             =>  clk,
-    --     reset           =>  reset
-    --     -- ..
-    -- );
+    -- STOCHASTIC ROUNDING / ReLU
+    STOCHASTIC_ROUNDING_inst : SR
+    generic map(
+        ws        => ws,
+        fl        => fl,
+        ws_sr     => ws_sr,
+        fl_sr     => fl_sr,
+        residuals => residuals
+    )
+    port map (
+        clk       => clk,
+        reset     => reset,
+        value_in  => ofmap_out,
+        value_out => open,
+        enable_sr => OFM_NL_Read_tmp
+    );
 
     -- -- POOLING
     -- POOLING_inst : POOLING
-    -- port map (
-    --     clk             =>  clk,
-    --     reset           =>  reset
-    --     -- ..
-    -- );
-
-    -- -- STOCHASTIC ROUNDING
-    -- STOCHASTIC_ROUNDING_inst : STOCHASTIC_ROUNDING
     -- port map (
     --     clk             =>  clk,
     --     reset           =>  reset

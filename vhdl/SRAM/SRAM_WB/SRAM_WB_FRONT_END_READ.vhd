@@ -34,7 +34,7 @@ entity SRAM_WB_FRONT_END_READ is
         WB_NL_finished : in std_logic; -- WB NL has finished. Do not read SRAM anymore.
         NoC_c_bias     : in std_logic_vector (7 downto 0);
         NoC_pm_bias    : in std_logic_vector (7 downto 0);
-        OFM_NL_Busy    : in std_logic;
+        OFM_NL_Write    : in std_logic;
         w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         b_out          : out std_logic_vector (15 downto 0);
         -- Back-End (BE) Interface Ports
@@ -83,7 +83,7 @@ begin
     en_w_read_tmp_2 <= en_w_read_next or en_w_read_reg; --extend ctrl signal 1cc to allow last value from reading pass from going to PE Array.
     en_w_read_tmp   <= en_w_read_next;
 
-    en_b_read_tmp <= '1' when ((NoC_c_eqz and OFM_NL_Busy) = '1') else '0';
+    en_b_read_tmp <= '1' when ((NoC_c_eqz and OFM_NL_Write) = '1') else '0';
 
     -- PORT Assignations
     NoC_pm_BE <= NoC_pm_BE_tmp;

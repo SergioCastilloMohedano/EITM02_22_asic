@@ -24,7 +24,6 @@ architecture dataflow of SR is
 
     -- signal declarations
     signal w_LFSR_Data     : std_logic_vector(residuals - 1 downto 0);
-    -- signal mask_sr         : std_logic_vector(residuals - 1 downto 0);
     signal value_out_add   : signed ((ws - 1) downto 0); 
     signal value_out_shift : signed ((ws - 1) downto 0); 
     signal value_out_tmp   : signed ((ws_sr - 1) downto 0);
@@ -66,8 +65,6 @@ begin
         o_LFSR_Done => open
     );
 
-    -- mask_sr <= std_logic_vector(shift_left(to_signed(1, residuals'length), residuals) - 1);
-
     value_out_add <= signed(w_LFSR_Data) + signed(value_in);
 
     value_out_shift <= shift_right(value_out_add, residuals);
@@ -77,7 +74,5 @@ begin
                      value_out_shift(((ws - fl) - (ws_sr - fl_sr) - residuals - 1) downto 0);
 
     value_out <= std_logic_vector(value_out_tmp);
-
-
 
 end architecture;

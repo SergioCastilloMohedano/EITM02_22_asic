@@ -6,7 +6,7 @@ use work.thesis_pkg.all;
 entity SRAM_OFM_FRONT_END_ACC is
     port (
         -- From Sys. Controller
-        OFM_NL_Busy : in std_logic;
+        OFM_NL_Write : in std_logic;
         NoC_c       : in std_logic_vector (7 downto 0);
         -- From PISO Buffer
         shift_PISO  : in std_logic;
@@ -48,7 +48,7 @@ begin
     ofm_BE_tmp_2 <= ofm_in_tmp   when (NoC_c_nez = '0') else (ofm_in_tmp + ofm_sum_tmp);
     ofm_BE_tmp   <= ofm_BE_tmp_2 when (NoC_c_nez = '1') else (ofm_BE_tmp_2 + bias_tmp);
 
-    en_ofm_in_tmp  <= OFM_NL_Busy;
+    en_ofm_in_tmp  <= OFM_NL_Write;
     en_ofm_sum_tmp <= NoC_c_nez;
     WE_tmp         <= shift_PISO;
 

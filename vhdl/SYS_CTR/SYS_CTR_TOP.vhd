@@ -68,7 +68,8 @@ entity SYS_CTR_TOP is
         OFM_NL_cnt_finished       : out std_logic;
         OFM_NL_NoC_m_cnt_finished : out std_logic;
         NoC_c                     : out std_logic_vector (7 downto 0);
-        OFM_NL_Busy               : out std_logic;
+        OFM_NL_Write              : out std_logic;
+        OFM_NL_Read               : out std_logic;
         NoC_c_bias                : out std_logic_vector (7 downto 0);
         NoC_pm_bias               : out std_logic_vector (7 downto 0)
     );
@@ -79,29 +80,30 @@ architecture architectural of SYS_CTR_TOP is
     -- COMPONENT DECLARATIONS
     component SYS_CTR_MAIN_NL is
         port (
-            clk             : in std_logic;
-            reset           : in std_logic;
-            NL_start        : in std_logic;
-            NL_ready        : out std_logic;
-            NL_finished     : out std_logic;
-            M_cap           : in std_logic_vector (7 downto 0);
-            C_cap           : in std_logic_vector (7 downto 0);
-            r               : in std_logic_vector (7 downto 0);
-            p               : in std_logic_vector (7 downto 0);
-            c               : out std_logic_vector (7 downto 0);
-            m               : out std_logic_vector (7 downto 0);
-            rc              : out std_logic_vector (7 downto 0);
-            NoC_ACK_flag    : in std_logic;
-            IFM_NL_ready    : in std_logic;
-            IFM_NL_finished : in std_logic;
-            WB_NL_ready     : in std_logic;
-            WB_NL_finished  : in std_logic;
-            IFM_NL_start    : out std_logic;
-            WB_NL_start     : out std_logic;
-            pass_flag       : in std_logic;
-            OFM_NL_ready    : in std_logic;
-            OFM_NL_finished : in std_logic;
-            OFM_NL_start    : out std_logic
+            clk                       : in std_logic;
+            reset                     : in std_logic;
+            NL_start                  : in std_logic;
+            NL_ready                  : out std_logic;
+            NL_finished               : out std_logic;
+            M_cap                     : in std_logic_vector (7 downto 0);
+            C_cap                     : in std_logic_vector (7 downto 0);
+            r                         : in std_logic_vector (7 downto 0);
+            p                         : in std_logic_vector (7 downto 0);
+            c                         : out std_logic_vector (7 downto 0);
+            m                         : out std_logic_vector (7 downto 0);
+            rc                        : out std_logic_vector (7 downto 0);
+            NoC_ACK_flag              : in std_logic;
+            IFM_NL_ready              : in std_logic;
+            IFM_NL_finished           : in std_logic;
+            WB_NL_ready               : in std_logic;
+            WB_NL_finished            : in std_logic;
+            IFM_NL_start              : out std_logic;
+            WB_NL_start               : out std_logic;
+            pass_flag                 : in std_logic;
+            OFM_NL_ready              : in std_logic;
+            OFM_NL_finished           : in std_logic;
+            OFM_NL_start              : out std_logic;
+            OFM_NL_NoC_m_cnt_finished : in std_logic
         );
     end component;
 
@@ -157,7 +159,8 @@ architecture architectural of SYS_CTR_TOP is
             OFM_NL_start              : in std_logic;
             OFM_NL_ready              : out std_logic;
             OFM_NL_finished           : out std_logic;
-            OFM_NL_busy               : out std_logic;
+            OFM_NL_Write              : out std_logic;
+            OFM_NL_Read               : out std_logic;
             C_cap                     : in std_logic_vector (7 downto 0);
             M_cap                     : in std_logic_vector (7 downto 0);
             EF                        : in std_logic_vector (7 downto 0);
@@ -209,10 +212,11 @@ architecture architectural of SYS_CTR_TOP is
 
     -- SYS_CTR_OFM_NL Intermediate Signals
     --    signal NoC_c_tmp        : std_logic_vector (7 downto 0);
-    signal NoC_pm_tmp       : std_logic_vector (7 downto 0);
-    signal NoC_f_tmp        : std_logic_vector (7 downto 0);
-    signal NoC_e_tmp        : std_logic_vector (7 downto 0);
-    signal OFM_NL_start_tmp : std_logic;
+    signal NoC_pm_tmp                    : std_logic_vector (7 downto 0);
+    signal NoC_f_tmp                     : std_logic_vector (7 downto 0);
+    signal NoC_e_tmp                     : std_logic_vector (7 downto 0);
+    signal OFM_NL_start_tmp              : std_logic;
+    signal OFM_NL_NoC_m_cnt_finished_tmp : std_logic;
     ----------------------------------------------
 
 begin
@@ -220,29 +224,30 @@ begin
     -- SYS_CTR_MAIN_NL
     SYS_CTR_MAIN_NL_inst : SYS_CTR_MAIN_NL
     port map(
-        clk             => clk,
-        reset           => reset,
-        NL_start        => NL_start,
-        NL_ready        => NL_ready_tmp,
-        NL_finished     => NL_finished_tmp,
-        M_cap           => M_cap,
-        C_cap           => C_cap,
-        r               => r,
-        p               => p,
-        c               => c_tmp,
-        m               => m_tmp,
-        rc              => rc_tmp,
-        NoC_ACK_flag    => NoC_ACK_flag,
-        IFM_NL_ready    => IFM_NL_ready_tmp,
-        IFM_NL_finished => IFM_NL_finished_tmp,
-        WB_NL_ready     => WB_NL_ready_tmp,
-        WB_NL_finished  => WB_NL_finished_tmp,
-        IFM_NL_start    => IFM_NL_start_tmp,
-        WB_NL_start     => WB_NL_start_tmp,
-        pass_flag       => pass_flag_tmp,
-        OFM_NL_ready    => OFM_NL_ready_tmp,
-        OFM_NL_finished => OFM_NL_finished_tmp,
-        OFM_NL_start    => OFM_NL_start_tmp
+        clk                       => clk,
+        reset                     => reset,
+        NL_start                  => NL_start,
+        NL_ready                  => NL_ready_tmp,
+        NL_finished               => NL_finished_tmp,
+        M_cap                     => M_cap,
+        C_cap                     => C_cap,
+        r                         => r,
+        p                         => p,
+        c                         => c_tmp,
+        m                         => m_tmp,
+        rc                        => rc_tmp,
+        NoC_ACK_flag              => NoC_ACK_flag,
+        IFM_NL_ready              => IFM_NL_ready_tmp,
+        IFM_NL_finished           => IFM_NL_finished_tmp,
+        WB_NL_ready               => WB_NL_ready_tmp,
+        WB_NL_finished            => WB_NL_finished_tmp,
+        IFM_NL_start              => IFM_NL_start_tmp,
+        WB_NL_start               => WB_NL_start_tmp,
+        pass_flag                 => pass_flag_tmp,
+        OFM_NL_ready              => OFM_NL_ready_tmp,
+        OFM_NL_finished           => OFM_NL_finished_tmp,
+        OFM_NL_start              => OFM_NL_start_tmp,
+        OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished_tmp
     );
     -- SYS_CTR_WB_NL
     SYS_CTR_WB_NL_inst : SYS_CTR_WB_NL
@@ -297,7 +302,8 @@ begin
         OFM_NL_start              => OFM_NL_start_tmp,
         OFM_NL_ready              => OFM_NL_ready_tmp,
         OFM_NL_finished           => OFM_NL_finished_tmp,
-        OFM_NL_busy               => OFM_NL_Busy,
+        OFM_NL_Write              => OFM_NL_Write,
+        OFM_NL_Read               => OFM_NL_Read,
         C_cap                     => C_cap,
         M_cap                     => M_cap,
         EF                        => EF,
@@ -309,28 +315,29 @@ begin
         NoC_e                     => NoC_e_tmp,
         shift_PISO                => shift_PISO,
         OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
-        OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished,
+        OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished_tmp,
         NoC_c_bias                => NoC_c_bias,
         NoC_pm_bias               => NoC_pm_bias
     );
 
     -- PORT Assignations
-    NL_ready        <= NL_ready_tmp;
-    NL_finished     <= NL_finished_tmp;
-    m               <= m_tmp;
-    c               <= c_tmp;
-    rc              <= rc_tmp;
-    r_p             <= r_p_tmp;
-    pm              <= pm_tmp;
-    s               <= s_tmp;
-    h_p             <= h_p_tmp;
-    w_p             <= w_p_tmp;
-    IFM_NL_ready    <= IFM_NL_ready_tmp;
-    IFM_NL_finished <= IFM_NL_finished_tmp;
-    IFM_NL_busy     <= IFM_NL_busy_tmp;
-    WB_NL_ready     <= WB_NL_ready_tmp;
-    WB_NL_finished  <= WB_NL_finished_tmp;
-    WB_NL_busy      <= WB_NL_busy_tmp;
-    pass_flag       <= pass_flag_tmp;
+    NL_ready                  <= NL_ready_tmp;
+    NL_finished               <= NL_finished_tmp;
+    m                         <= m_tmp;
+    c                         <= c_tmp;
+    rc                        <= rc_tmp;
+    r_p                       <= r_p_tmp;
+    pm                        <= pm_tmp;
+    s                         <= s_tmp;
+    h_p                       <= h_p_tmp;
+    w_p                       <= w_p_tmp;
+    IFM_NL_ready              <= IFM_NL_ready_tmp;
+    IFM_NL_finished           <= IFM_NL_finished_tmp;
+    IFM_NL_busy               <= IFM_NL_busy_tmp;
+    WB_NL_ready               <= WB_NL_ready_tmp;
+    WB_NL_finished            <= WB_NL_finished_tmp;
+    WB_NL_busy                <= WB_NL_busy_tmp;
+    pass_flag                 <= pass_flag_tmp;
+    OFM_NL_NoC_m_cnt_finished <= OFM_NL_NoC_m_cnt_finished_tmp;
 
 end architecture;

@@ -64,7 +64,6 @@ architecture behavioral of SRAM_OFM_BACK_END is
     signal addr_ofm_write_out : unsigned (13 downto 0);
     signal addr_ofm_write_tmp : unsigned (13 downto 0);
     signal addr_ofm_read_out  : unsigned (13 downto 0);
-    signal addr_ofm_read_tmp  : unsigned (13 downto 0);
 
     ---- Data Outputs
     signal ofm_sum_tmp    : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
@@ -99,7 +98,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, en_ofm_in_tmp, OFM_NL_cnt_finished_tmp)
+    asmd_ctrl : process (state_reg, en_ofm_in_tmp, OFM_NL_cnt_finished_tmp, OFM_NL_NoC_m_cnt_finished_tmp)
     begin
         case state_reg is
             when s_init =>
@@ -117,7 +116,11 @@ begin
                     state_next <= s_OFM_Write;
                 end if;
             when s_OFM_Read =>
-                state_next <= s_finished;
+                if (OFM_NL_NoC_m_cnt_finished_tmp = '0') then
+                    state_next <= s_OFM_Read;
+                else
+                    state_next <= s_finished;
+                end if;
             when s_finished =>
                 state_next <= s_idle;
             when others =>
@@ -146,8 +149,7 @@ begin
     addr_ofm_write_tmp <= (others => '0') when (OFM_NL_NoC_m_cnt_finished_tmp = '1') else addr_ofm_write_reg + 1;
     addr_ofm_write_out <= addr_ofm_write_tmp when (WE_tmp(0) = '1') else addr_ofm_write_reg;
 
-    addr_ofm_read_tmp <= (others => '0'); -- tbd
-    addr_ofm_read_out <= addr_ofm_read_tmp;
+    addr_ofm_read_out <= (others => '0') when (OFM_NL_NoC_m_cnt_finished_tmp = '1') else (addr_ofm_read_reg + 1);
 
     -- data path : status (inputs to control path to modify next state logic)
     -- ..
@@ -161,7 +163,7 @@ begin
     addrb_tmp <= addr_ofm_write_next when (state_reg = s_OFM_Write) else
                  addr_ofm_read_reg when (state_reg = s_OFM_Read) else
                  (others => '0');
-    ofm_FE_out_tmp <= doutb when (state_reg = s_OFM_Read) else (others  => '0');
+    ofm_FE_out_tmp <= doutb when ((state_reg = s_OFM_Read) or (state_reg = s_finished)) else (others  => '0');
     ofm_sum_tmp    <= doutb when (state_reg = s_OFM_Write) else (others => '0');
     enb_tmp        <= en_ofm_sum when (state_reg = s_OFM_Write) else
                       en_ofm_out when (state_reg = s_OFM_Read) else

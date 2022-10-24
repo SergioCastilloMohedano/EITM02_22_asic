@@ -12,14 +12,18 @@ entity SRAM_OFM is
         NoC_c                     : in std_logic_vector (7 downto 0);
         OFM_NL_cnt_finished       : in std_logic; -- reset address back to 0 when all ofmaps of current layer have been processed.
         OFM_NL_NoC_m_cnt_finished : in std_logic;
-        OFM_NL_Busy               : in std_logic;
+        OFM_NL_Write              : in std_logic;
+        OFM_NL_Read              : in std_logic;
 
         -- From Adder Tree Top
         ofmap      : in std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
         shift_PISO : in std_logic; -- (enable signal)
 
         -- From WB SRAM
-        bias : in std_logic_vector (15 downto 0)
+        bias : in std_logic_vector (15 downto 0);
+
+        -- To Stochastic Rounding / ReLU Block
+        ofm : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0)
     );
 end SRAM_OFM;
 
@@ -38,12 +42,14 @@ architecture structural of SRAM_OFM is
     signal en_ofm_in_tmp  : std_logic;
     signal en_ofm_sum_tmp : std_logic;
     signal WE_tmp         : std_logic;
+    signal en_ofm_out_tmp : std_logic;
+    signal ofm_FE_out_tmp : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
     component SRAM_OFM_FRONT_END_ACC is
         port (
             -- From Sys. Controller
-            OFM_NL_Busy : in std_logic;
+            OFM_NL_Write : in std_logic;
             NoC_c       : in std_logic_vector (7 downto 0);
             -- From PISO Buffer
             shift_PISO  : in std_logic;
@@ -56,6 +62,17 @@ architecture structural of SRAM_OFM is
             ofm_BE      : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
             -- From WB SRAM
             bias        : in std_logic_vector (15 downto 0)
+        );
+    end component;
+
+    component SRAM_OFM_FRONT_END_OUT is
+        port (
+            -- From Sys. Controller
+            OFM_NL_Read : in std_logic;
+            -- From/To Back-End Interface
+            en_ofm_out  : out std_logic;
+            ofm_BE      : in std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+            ofm         : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -108,7 +125,7 @@ begin
     -- SRAM_OFM_FRONT_END_ACC
     SRAM_OFM_FRONT_END_ACC_inst : SRAM_OFM_FRONT_END_ACC
     port map(
-        OFM_NL_Busy => OFM_NL_Busy,
+        OFM_NL_Write => OFM_NL_Write,
         NoC_c       => NoC_c,
         shift_PISO  => shift_PISO,
         ofm_in      => ofmap,
@@ -119,6 +136,16 @@ begin
         ofm_BE      => ofm_acc_tmp,
         bias        => bias
     );
+
+    -- SRAM_OFM_FRONT_END_OUT
+    SRAM_OFM_FRONT_END_OUT_inst : SRAM_OFM_FRONT_END_OUT
+    port map (
+        OFM_NL_Read => OFM_NL_Read,
+        en_ofm_out  => en_ofm_out_tmp,
+        ofm_BE      => ofm_FE_out_tmp,
+        ofm         => ofm
+        );
+
 
     -- SRAM_OFM_BACK_END
     SRAM_OFM_BACK_END_inst : SRAM_OFM_BACK_END
@@ -132,8 +159,8 @@ begin
         en_ofm_in                 => en_ofm_in_tmp,
         en_ofm_sum                => en_ofm_sum_tmp,
         WE                        => WE_tmp,
-        ofm_FE_out                => open, --tbd
-        en_ofm_out                => '1', --tbd
+        ofm_FE_out                => ofm_FE_out_tmp,
+        en_ofm_out                => en_ofm_out_tmp,
         addra                     => addra_tmp,
         dina                      => dina_tmp,
         ena                       => ena_tmp,

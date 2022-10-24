@@ -35,36 +35,37 @@ use ieee.numeric_std.all;
 
 entity SYS_CTR_MAIN_NL is
     port (
-        clk             : in std_logic;
-        reset           : in std_logic;
-        NL_start        : in std_logic;
-        NL_ready        : out std_logic;
-        NL_finished     : out std_logic;
-        M_cap           : in std_logic_vector (7 downto 0);
-        C_cap           : in std_logic_vector (7 downto 0);
-        r               : in std_logic_vector (7 downto 0);
-        p               : in std_logic_vector (7 downto 0);
-        c               : out std_logic_vector (7 downto 0);
-        m               : out std_logic_vector (7 downto 0);
-        rc              : out std_logic_vector (7 downto 0);
-        NoC_ACK_flag    : in std_logic;
-        IFM_NL_ready    : in std_logic;
-        IFM_NL_finished : in std_logic;
-        WB_NL_ready     : in std_logic;
-        WB_NL_finished  : in std_logic;
-        IFM_NL_start    : out std_logic;
-        WB_NL_start     : out std_logic;
-        pass_flag       : in std_logic;
-        OFM_NL_ready    : in std_logic;
-        OFM_NL_finished : in std_logic;
-        OFM_NL_start    : out std_logic
+        clk                       : in std_logic;
+        reset                     : in std_logic;
+        NL_start                  : in std_logic;
+        NL_ready                  : out std_logic;
+        NL_finished               : out std_logic;
+        M_cap                     : in std_logic_vector (7 downto 0);
+        C_cap                     : in std_logic_vector (7 downto 0);
+        r                         : in std_logic_vector (7 downto 0);
+        p                         : in std_logic_vector (7 downto 0);
+        c                         : out std_logic_vector (7 downto 0);
+        m                         : out std_logic_vector (7 downto 0);
+        rc                        : out std_logic_vector (7 downto 0);
+        NoC_ACK_flag              : in std_logic;
+        IFM_NL_ready              : in std_logic;
+        IFM_NL_finished           : in std_logic;
+        WB_NL_ready               : in std_logic;
+        WB_NL_finished            : in std_logic;
+        IFM_NL_start              : out std_logic;
+        WB_NL_start               : out std_logic;
+        pass_flag                 : in std_logic;
+        OFM_NL_ready              : in std_logic;
+        OFM_NL_finished           : in std_logic;
+        OFM_NL_start              : out std_logic;
+        OFM_NL_NoC_m_cnt_finished : in std_logic
     );
 end SYS_CTR_MAIN_NL;
 
 architecture behavioral of SYS_CTR_MAIN_NL is
 
     -- Enumeration type for the states and state_type signals
-    type state_type is (s_init, s_idle, s_start, s_wait_1, s_wait_2, s_NL, s_finished, s_NoC_ACK);
+    type state_type is (s_init, s_idle, s_start, s_wait_1, s_wait_2, s_NL, s_finished, s_NoC_ACK, s_OFM_READ);
     signal state_next, state_reg : state_type;
 
     -- ************** FSMD SIGNALS **************
@@ -149,7 +150,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, NL_start_tmp, WB_NL_finished_tmp, IFM_NL_finished_tmp, WB_NL_ready_tmp, IFM_NL_ready_tmp, NL_cnt_done_reg, IFM_NL_flag_tmp, pass_flag_tmp, NoC_ACK_flag_tmp)
+    asmd_ctrl : process (state_reg, NL_start_tmp, WB_NL_finished_tmp, IFM_NL_finished_tmp, WB_NL_ready_tmp, IFM_NL_ready_tmp, NL_cnt_done_reg, IFM_NL_flag_tmp, pass_flag_tmp, NoC_ACK_flag_tmp, OFM_NL_NoC_m_cnt_finished)
     begin
         case state_reg is
             when s_init =>
@@ -196,7 +197,7 @@ begin
                 if OFM_NL_finished = '1' then
                     if NoC_ACK_flag_tmp = '1' then
                         if NL_cnt_done_reg = '1' then
-                            state_next <= s_finished;
+                            state_next <= s_OFM_READ;
                         else
                             state_next <= s_start;
                         end if;
@@ -205,6 +206,12 @@ begin
                     end if;
                 else
                     state_next <= s_NoC_ACK;
+                end if;
+            when s_OFM_READ =>
+                if (OFM_NL_NoC_m_cnt_finished = '1') then
+                    state_next <= s_finished;
+                else
+                    state_next <= s_OFM_READ;
                 end if;
             when s_finished =>
                 state_next <= s_idle;
