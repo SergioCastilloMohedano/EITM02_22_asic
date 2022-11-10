@@ -70,7 +70,6 @@ entity SYS_CTR_TOP is
         NoC_c                     : out std_logic_vector (7 downto 0);
         OFM_NL_Write              : out std_logic;
         OFM_NL_Read               : out std_logic;
-        NoC_c_bias                : out std_logic_vector (7 downto 0);
         NoC_pm_bias               : out std_logic_vector (7 downto 0)
     );
 end SYS_CTR_TOP;
@@ -173,7 +172,6 @@ architecture architectural of SYS_CTR_TOP is
             shift_PISO                : in std_logic;
             OFM_NL_cnt_finished       : out std_logic;
             OFM_NL_NoC_m_cnt_finished : out std_logic;
-            NoC_c_bias                : out std_logic_vector (7 downto 0);
             NoC_pm_bias               : out std_logic_vector (7 downto 0)
         );
     end component;
@@ -316,7 +314,6 @@ begin
         shift_PISO                => shift_PISO,
         OFM_NL_cnt_finished       => OFM_NL_cnt_finished,
         OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished_tmp,
-        NoC_c_bias                => NoC_c_bias,
         NoC_pm_bias               => NoC_pm_bias
     );
 

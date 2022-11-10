@@ -67,7 +67,6 @@ architecture structural of TOP is
     signal NoC_c               : std_logic_vector (7 downto 0);
     signal OFM_NL_Write_tmp    : std_logic;
     signal OFM_NL_Read_tmp     : std_logic;
-    signal NoC_c_bias_tmp      : std_logic_vector (7 downto 0);
     signal NoC_pm_bias_tmp     : std_logic_vector (7 downto 0);
 
     -- SRAM_WB
@@ -127,8 +126,7 @@ architecture structural of TOP is
             NoC_c                     : out std_logic_vector (7 downto 0);
             OFM_NL_Write              : out std_logic;
             OFM_NL_Read               : out std_logic;
-            NoC_c_bias                : out std_logic_vector (7 downto 0); -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
-            NoC_pm_bias               : out std_logic_vector (7 downto 0)  -- same as NoC_pm but...
+            NoC_pm_bias               : out std_logic_vector (7 downto 0)  -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
         );
     end component;
 
@@ -141,7 +139,7 @@ architecture structural of TOP is
             reset          : in std_logic;
             WB_NL_ready    : in std_logic;
             WB_NL_finished : in std_logic;
-            NoC_c_bias     : in std_logic_vector (7 downto 0);
+            NoC_c     : in std_logic_vector (7 downto 0);
             NoC_pm_bias    : in std_logic_vector (7 downto 0);
             OFM_NL_Write   : in std_logic;
             w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
@@ -294,7 +292,6 @@ begin
         NoC_c                     => NoC_c,
         OFM_NL_Write              => OFM_NL_Write_tmp,
         OFM_NL_Read               => OFM_NL_Read_tmp,
-        NoC_c_bias                => NoC_c_bias_tmp,
         NoC_pm_bias               => NoC_pm_bias_tmp
     );
 
@@ -308,7 +305,7 @@ begin
         reset          => reset,
         WB_NL_ready    => WB_NL_ready_tmp,
         WB_NL_finished => WB_NL_finished_tmp,
-        NoC_c_bias     => NoC_c_bias_tmp,
+        NoC_c     => NoC_c,
         NoC_pm_bias    => NoC_pm_bias_tmp,
         OFM_NL_Write   => OFM_NL_Write_tmp,
         w_out          => w_tmp,

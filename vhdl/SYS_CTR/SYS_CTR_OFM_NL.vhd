@@ -23,7 +23,6 @@ entity SYS_CTR_OFM_NL is
         shift_PISO                : in std_logic;
         OFM_NL_cnt_finished       : out std_logic;
         OFM_NL_NoC_m_cnt_finished : out std_logic;
-        NoC_c_bias                : out std_logic_vector (7 downto 0);
         NoC_pm_bias               : out std_logic_vector (7 downto 0)
     );
 end SYS_CTR_OFM_NL;
@@ -231,7 +230,6 @@ begin
     shift_PISO_tmp            <= shift_PISO;
     OFM_NL_cnt_finished       <= OFM_NL_cnt_finished_tmp;
     OFM_NL_NoC_m_cnt_finished <= OFM_NL_NoC_m_cnt_finished_tmp;
-    NoC_c_bias                <= std_logic_vector(to_unsigned(NoC_c_next, NoC_c_bias'length));
     NoC_pm_bias               <= std_logic_vector(to_unsigned(NoC_pm_next, NoC_pm_bias'length));
 
 end architecture;

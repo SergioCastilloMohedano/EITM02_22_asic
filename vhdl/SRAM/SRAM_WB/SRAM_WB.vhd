@@ -14,9 +14,9 @@ entity SRAM_WB is
         -- Sys. Ctr. Signals
         WB_NL_ready    : in std_logic;
         WB_NL_finished : in std_logic;
-        NoC_c_bias     : in std_logic_vector (7 downto 0);
+        NoC_c          : in std_logic_vector (7 downto 0);
         NoC_pm_bias    : in std_logic_vector (7 downto 0);
-        OFM_NL_Write    : in std_logic;
+        OFM_NL_Write   : in std_logic;
         -- Front-End Read Interface
         w_out : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         b_out : out std_logic_vector (15 downto 0)
@@ -48,9 +48,9 @@ architecture structural of SRAM_WB is
             reset          : in std_logic;
             WB_NL_ready    : in std_logic;
             WB_NL_finished : in std_logic;
-            NoC_c_bias     : in std_logic_vector (7 downto 0);
+            NoC_c          : in std_logic_vector (7 downto 0);
             NoC_pm_bias    : in std_logic_vector (7 downto 0);
-            OFM_NL_Write    : in std_logic;
+            OFM_NL_Write   : in std_logic;
             w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             b_out          : out std_logic_vector (15 downto 0);
             -- Back-End (BE) Interface Ports
@@ -118,9 +118,9 @@ begin
         reset          => reset,
         WB_NL_ready    => WB_NL_ready_tmp,
         WB_NL_finished => WB_NL_finished_tmp,
-        NoC_c_bias     => NoC_c_bias,
+        NoC_c          => NoC_c,
         NoC_pm_bias    => NoC_pm_bias,
-        OFM_NL_Write    => OFM_NL_Write,
+        OFM_NL_Write   => OFM_NL_Write,
         w_out          => w_out_tmp,
         b_out          => b_out_tmp,
         -- Back-End (BE) Interface Ports

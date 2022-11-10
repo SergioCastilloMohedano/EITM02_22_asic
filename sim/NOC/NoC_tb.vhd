@@ -14,10 +14,10 @@ architecture sim of NOC_tb is
 
     constant X                     : natural       := 32;
     constant Y                     : natural       := 3;
-    constant M_cap                 : natural       := 32;
-    constant C_cap                 : natural       := 16;
+    constant M_cap                 : natural       := 16;
+    constant C_cap                 : natural       := 3;
     constant RS                    : natural       := 3;
-    constant HW                    : natural       := 16;
+    constant HW                    : natural       := 32;
     constant HW_p                  : natural       := HW + 2;
     constant EF                    : natural       := HW;
     constant EF_log2               : natural       := natural(log2(real(EF)));
@@ -27,11 +27,13 @@ architecture sim of NOC_tb is
     constant t                     : natural       := 1;             -- it must always be 1
     constant M_div_pt              : natural       := M_cap/(p * t); --M/p*t
     constant HYP_BITWIDTH          : natural       := 8;
-    constant NUM_REGS_IFM_REG_FILE : natural       := X;               -- Emax (conv0 and conv1)
+--    constant NUM_REGS_IFM_REG_FILE : natural       := X;               -- Emax (conv0 and conv1)
+    constant NUM_REGS_IFM_REG_FILE : natural       := 34; -- W' max (conv0 and conv1)
     constant NUM_REGS_W_REG_FILE   : natural       := natural(p * RS); -- p*S = 8*3 = 24
     constant hw_log2_r             : integer_array := (0, 1, 2);
     constant hw_log2_EF            : integer_array := (5, 4, 3); -- for E = (32, 16, 8)
-    constant EOM_ADDR_WB_SRAM      : natural       := 82329;
+--    constant EOM_ADDR_WB_SRAM      : natural       := 82329;
+    constant EOM_ADDR_WB_SRAM      : natural       := 432+16-1; -- For conv0 testing
     constant ws                    : natural       := OFMAP_BITWIDTH; -- bitwidth of input value -- 26 fpga, 32 asic
     constant fl                    : natural       := 8;              -- length of fractional part of input value
     constant ws_sr                 : natural       := COMP_BITWIDTH;  -- bitwidth of output value

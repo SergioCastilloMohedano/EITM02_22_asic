@@ -32,9 +32,9 @@ entity SRAM_WB_FRONT_END_READ is
         reset          : in std_logic;
         WB_NL_ready    : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
         WB_NL_finished : in std_logic; -- WB NL has finished. Do not read SRAM anymore.
-        NoC_c_bias     : in std_logic_vector (7 downto 0);
+        NoC_c          : in std_logic_vector (7 downto 0);
         NoC_pm_bias    : in std_logic_vector (7 downto 0);
-        OFM_NL_Write    : in std_logic;
+        OFM_NL_Write   : in std_logic;
         w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         b_out          : out std_logic_vector (15 downto 0);
         -- Back-End (BE) Interface Ports
@@ -49,6 +49,7 @@ architecture dataflow of SRAM_WB_FRONT_END_READ is
 
     signal NoC_pm_BE_tmp      : std_logic_vector (7 downto 0);
     signal w_out_tmp          : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal w_out_tmp_2        : std_logic_vector (15 downto 0);
     signal b_out_tmp          : std_logic_vector (15 downto 0);
     signal WB_NL_ready_tmp    : std_logic;
     signal WB_NL_finished_tmp : std_logic;
@@ -60,14 +61,16 @@ architecture dataflow of SRAM_WB_FRONT_END_READ is
     signal en_w_read_next     : std_logic;
     signal en_b_read_tmp      : std_logic;
     signal NoC_c_eqz          : std_logic;
+    signal rounding           : std_logic_vector (15 downto 0) := "0000000010000000";
 
 begin
 
     NoC_pm_BE_tmp <= NoC_pm_bias;
-    w_out_tmp     <= wb_BE_tmp(15 downto 8) when (en_w_read_tmp_2 = '1') else (others => '0'); -- 8 MSBs <3.13> -> <3.5>
-    b_out_tmp     <= wb_BE_tmp              when (en_b_read_tmp   = '1') else (others => '0');
+    w_out_tmp_2   <= std_logic_vector(signed(wb_BE_tmp) + signed(rounding));                     -- Round To Nearest, from <3.13> to <3.5>, add "1" in 8th (13 - 5) LSB.
+    w_out_tmp     <= w_out_tmp_2(15 downto 8) when (en_w_read_tmp_2 = '1') else (others => '0'); -- 8 MSBs <3.13> -> <3.5>
+    b_out_tmp     <= wb_BE_tmp when (en_b_read_tmp = '1') else (others                  => '0');
 
-    NoC_c_eqz     <= '1' when (NoC_c_tmp = 0) else '0';
+    NoC_c_eqz <= '1' when (NoC_c_tmp = 0) else '0';
 
     en_w_read_next <= '1' when ((WB_NL_ready nor WB_NL_finished) = '1') else '0';
     en_w_read_reg_proc : process (clk, reset)
@@ -90,7 +93,7 @@ begin
     w_out     <= w_out_tmp;
     b_out     <= b_out_tmp;
     wb_BE_tmp <= wb_BE;
-    NoC_c_tmp <= to_integer(unsigned(NoC_c_bias));
+    NoC_c_tmp <= to_integer(unsigned(NoC_c));
     en_w_read <= en_w_read_tmp;
     en_b_read <= en_b_read_tmp;
 
