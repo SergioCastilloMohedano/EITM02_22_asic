@@ -150,7 +150,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, NL_start_tmp, WB_NL_finished_tmp, IFM_NL_finished_tmp, WB_NL_ready_tmp, IFM_NL_ready_tmp, NL_cnt_done_reg, IFM_NL_flag_tmp, pass_flag_tmp, NoC_ACK_flag_tmp, OFM_NL_NoC_m_cnt_finished)
+    asmd_ctrl : process (state_reg, NL_start_tmp, WB_NL_finished_tmp, IFM_NL_finished_tmp, WB_NL_ready_tmp, IFM_NL_ready_tmp, NL_cnt_done_reg, IFM_NL_flag_tmp, pass_flag_tmp, OFM_NL_finished, NoC_ACK_flag_tmp, OFM_NL_NoC_m_cnt_finished)
     begin
         case state_reg is
             when s_init =>

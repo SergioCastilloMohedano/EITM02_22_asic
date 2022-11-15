@@ -88,6 +88,9 @@ architecture structural of TOP is
     signal ofmap     : std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
     signal ofmap_out : std_logic_vector((OFMAP_BITWIDTH - 1) downto 0);
 
+    -- SR
+    signal sr_out : std_logic_vector((COMP_BITWIDTH - 1) downto 0);
+
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is
         port (
@@ -126,7 +129,7 @@ architecture structural of TOP is
             NoC_c                     : out std_logic_vector (7 downto 0);
             OFM_NL_Write              : out std_logic;
             OFM_NL_Read               : out std_logic;
-            NoC_pm_bias               : out std_logic_vector (7 downto 0)  -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
+            NoC_pm_bias               : out std_logic_vector (7 downto 0) -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
         );
     end component;
 
@@ -139,7 +142,7 @@ architecture structural of TOP is
             reset          : in std_logic;
             WB_NL_ready    : in std_logic;
             WB_NL_finished : in std_logic;
-            NoC_c     : in std_logic_vector (7 downto 0);
+            NoC_c          : in std_logic_vector (7 downto 0);
             NoC_pm_bias    : in std_logic_vector (7 downto 0);
             OFM_NL_Write   : in std_logic;
             w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
@@ -245,12 +248,20 @@ architecture structural of TOP is
         );
     end component;
 
-    -- component POOLING is
-    -- port(clk                : in std_logic;
-    --      reset              : in std_logic
-    --      -- ...
-    --     );
-    -- end component;
+    component POOLING_TOP is
+        generic (
+            X : natural := 32
+        );
+        port (
+            clk        : in std_logic;
+            reset      : in std_logic;
+            M_cap      : in std_logic_vector (7 downto 0);
+            EF         : in std_logic_vector (7 downto 0);
+            en_pooling : in std_logic;
+            value_in   : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            value_out  : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
+        );
+    end component;
 
 begin
 
@@ -305,7 +316,7 @@ begin
         reset          => reset,
         WB_NL_ready    => WB_NL_ready_tmp,
         WB_NL_finished => WB_NL_finished_tmp,
-        NoC_c     => NoC_c,
+        NoC_c          => NoC_c,
         NoC_pm_bias    => NoC_pm_bias_tmp,
         OFM_NL_Write   => OFM_NL_Write_tmp,
         w_out          => w_tmp,
@@ -401,23 +412,31 @@ begin
         fl_sr     => fl_sr,
         residuals => residuals
     )
-    port map (
+    port map(
         clk       => clk,
         reset     => reset,
         value_in  => ofmap_out,
-        value_out => open,
+        value_out => sr_out,
         enable_sr => OFM_NL_Read_tmp
     );
 
-    -- -- POOLING
-    -- POOLING_inst : POOLING
-    -- port map (
-    --     clk             =>  clk,
-    --     reset           =>  reset
-    --     -- ..
-    -- );
+    -- POOLING
+    POOLING_inst : POOLING_TOP
+    generic map(
+        X => X
+    )
+    port map(
+        clk        => clk,
+        reset      => reset,
+        M_cap      => M_cap,
+        EF         => EF,
+        en_pooling => OFM_NL_Read_tmp,
+        value_in   => sr_out,
+        value_out  => open
+    );
 
     -- PORT Assignations
     NL_ready    <= NL_ready_tmp;
     NL_finished <= NL_finished_tmp;
+
 end architecture;
