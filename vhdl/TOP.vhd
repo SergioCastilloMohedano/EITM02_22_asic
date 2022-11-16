@@ -68,6 +68,9 @@ architecture structural of TOP is
     signal OFM_NL_Write_tmp    : std_logic;
     signal OFM_NL_Read_tmp     : std_logic;
     signal NoC_pm_bias_tmp     : std_logic_vector (7 downto 0);
+    signal NoC_pm_tmp          : std_logic_vector (7 downto 0);
+    signal NoC_e_tmp           : std_logic_vector (7 downto 0);
+    signal NoC_f_tmp           : std_logic_vector (7 downto 0);
 
     -- SRAM_WB
     signal w_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
@@ -129,7 +132,10 @@ architecture structural of TOP is
             NoC_c                     : out std_logic_vector (7 downto 0);
             OFM_NL_Write              : out std_logic;
             OFM_NL_Read               : out std_logic;
-            NoC_pm_bias               : out std_logic_vector (7 downto 0) -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
+            NoC_pm_bias               : out std_logic_vector (7 downto 0); -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
+            NoC_pm                    : out std_logic_vector (7 downto 0);
+            NoC_f                     : out std_logic_vector (7 downto 0);
+            NoC_e                     : out std_logic_vector (7 downto 0)
         );
     end component;
 
@@ -257,6 +263,9 @@ architecture structural of TOP is
             reset      : in std_logic;
             M_cap      : in std_logic_vector (7 downto 0);
             EF         : in std_logic_vector (7 downto 0);
+            NoC_pm     : in std_logic_vector (7 downto 0);
+            NoC_f      : in std_logic_vector (7 downto 0);
+            NoC_e      : in std_logic_vector (7 downto 0);
             en_pooling : in std_logic;
             value_in   : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             value_out  : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
@@ -303,7 +312,10 @@ begin
         NoC_c                     => NoC_c,
         OFM_NL_Write              => OFM_NL_Write_tmp,
         OFM_NL_Read               => OFM_NL_Read_tmp,
-        NoC_pm_bias               => NoC_pm_bias_tmp
+        NoC_pm_bias               => NoC_pm_bias_tmp,
+        NoC_pm                    => NoC_pm_tmp,
+        NoC_f                     => NoC_f_tmp,
+        NoC_e                     => NoC_e_tmp
     );
 
     -- SRAM_WB
@@ -430,6 +442,9 @@ begin
         reset      => reset,
         M_cap      => M_cap,
         EF         => EF,
+        NoC_pm     => NoC_pm_tmp,
+        NoC_f      => NoC_f_tmp,
+        NoC_e      => NoC_e_tmp,
         en_pooling => OFM_NL_Read_tmp,
         value_in   => sr_out,
         value_out  => open

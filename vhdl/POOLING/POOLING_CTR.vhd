@@ -15,6 +15,9 @@ entity POOLING_CTR is
         en_pooling : in std_logic;
         M_cap      : in std_logic_vector (7 downto 0);
         EF         : in std_logic_vector (7 downto 0);
+        NoC_pm     : in std_logic_vector (7 downto 0);
+        NoC_f      : in std_logic_vector (7 downto 0);
+        NoC_e      : in std_logic_vector (7 downto 0);
 
         -- To Pooling Logic.
         rf_addr   : out std_logic_vector(bit_size(X/2) - 1 downto 0);
@@ -52,11 +55,11 @@ architecture behavioral of POOLING_CTR is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal e_cnt_reg, e_cnt_next : natural range 0 to 255;
-    signal f_cnt_reg, f_cnt_next : natural range 0 to 255;
-    signal m_cnt_reg, m_cnt_next : natural range 0 to 255;
-    signal we_rf_reg, we_rf_next : std_logic;
-    signal re_rf_reg, re_rf_next : std_logic;
+    signal e_cnt_reg, e_cnt_next     : natural range 0 to 255;
+    signal f_cnt_reg, f_cnt_next     : natural range 0 to 255;
+    signal m_cnt_reg, m_cnt_next     : natural range 0 to 255;
+    signal we_rf_reg, we_rf_next     : std_logic;
+    signal re_rf_reg, re_rf_next     : std_logic;
     signal rf_addr_reg, rf_addr_next : std_logic_vector(bit_size(X/2) - 1 downto 0);
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
@@ -64,9 +67,7 @@ architecture behavioral of POOLING_CTR is
     signal EF_tmp    : natural range 0 to 255;
 
     ---- Functional Units Intermediate Signals
-    signal e_cnt_out            : natural range 0 to 255;
-    signal f_cnt_out, f_cnt_tmp : natural range 0 to 255;
-    signal m_cnt_out, m_cnt_tmp : natural range 0 to 255;
+    -- ..
 
     ---- Data Outputs
 
@@ -134,35 +135,31 @@ begin
     begin
         if rising_edge(clk) then
             if reset = '1' then
-                m_cnt_reg <= 0;
-                f_cnt_reg <= 0;
-                e_cnt_reg <= 0;
+                m_cnt_reg     <= 0;
+                f_cnt_reg     <= 0;
+                e_cnt_reg     <= 0;
                 r1_r2_ctr_reg <= '0';
                 r3_rf_ctr_reg <= '0';
-                we_rf_reg <= '0';
-                re_rf_reg <= '0';
-                rf_addr_reg <= (others => '0');
+                we_rf_reg     <= '0';
+                re_rf_reg     <= '0';
+                rf_addr_reg   <= (others => '0');
             else
-                m_cnt_reg <= m_cnt_next;
-                f_cnt_reg <= f_cnt_next;
-                e_cnt_reg <= e_cnt_next;
+                m_cnt_reg     <= m_cnt_next;
+                f_cnt_reg     <= f_cnt_next;
+                e_cnt_reg     <= e_cnt_next;
                 r1_r2_ctr_reg <= r1_r2_ctr_next;
                 r3_rf_ctr_reg <= r3_rf_ctr_next;
-                we_rf_reg <= we_rf_next;
-                re_rf_reg <= re_rf_next;
-                rf_addr_reg <= rf_addr_next;
+                we_rf_reg     <= we_rf_next;
+                re_rf_reg     <= re_rf_next;
+                rf_addr_reg   <= rf_addr_next;
             end if;
         end if;
     end process;
 
     -- data path : functional units (perform necessary arithmetic operations)
-    e_cnt_out <= e_cnt_reg + 1 when (e_cnt_reg < (EF_tmp - 1)) else 0;
-
-    f_cnt_tmp <= f_cnt_reg + 1 when (f_cnt_reg < (EF_tmp - 1)) else 0;
-    f_cnt_out <= f_cnt_tmp when (e_cnt_reg = (EF_tmp - 1)) else f_cnt_reg;
-
-    m_cnt_tmp <= m_cnt_reg + 1 when (m_cnt_reg < (M_cap_tmp - 1)) else 0;
-    m_cnt_out <= m_cnt_tmp when ((e_cnt_reg = (EF_tmp - 1)) and (f_cnt_reg = (EF_tmp - 1))) else m_cnt_reg;
+    e_cnt_next <= to_integer(unsigned(NoC_e)) when (en_pooling = '1') else 0;
+    f_cnt_next <= to_integer(unsigned(NoC_f)) when (en_pooling = '1') else 0;
+    m_cnt_next <= to_integer(unsigned(NoC_pm)) when (en_pooling = '1') else 0;
 
     r1_r2_ctr_next <= not r1_r2_ctr_reg when ((state_reg = s_buffering) or (state_reg = s_out)) else '0';
     r3_rf_ctr_next <= '1' when (state_reg = s_out) else '0';
@@ -174,54 +171,30 @@ begin
     en_out_tmp       <= re_rf_reg when rising_edge(clk);
 
     -- data path : mux routing
-    data_mux : process (state_reg, e_cnt_reg, f_cnt_reg, m_cnt_reg, e_cnt_out, f_cnt_out, m_cnt_out)
+    data_mux : process (state_reg, e_cnt_reg)
     begin
         case state_reg is
             when s_init =>
-                e_cnt_next <= e_cnt_reg;
-                f_cnt_next <= f_cnt_reg;
-                m_cnt_next <= m_cnt_reg;
-
                 we_rf_next <= '0';
                 re_rf_next <= '0';
 
             when s_idle =>
-                e_cnt_next <= e_cnt_reg;
-                f_cnt_next <= f_cnt_reg;
-                m_cnt_next <= m_cnt_reg;
-
                 we_rf_next <= '0';
                 re_rf_next <= '0';
 
             when s_buffering =>
-                e_cnt_next <= e_cnt_out;
-                f_cnt_next <= f_cnt_out;
-                m_cnt_next <= m_cnt_out;
-
                 we_rf_next <= '1' when to_unsigned(e_cnt_reg, EF'length)(0) = '1' else '0';
                 re_rf_next <= '0';
 
             when s_out =>
-                e_cnt_next <= e_cnt_out;
-                f_cnt_next <= f_cnt_out;
-                m_cnt_next <= m_cnt_out;
-
                 we_rf_next <= '0';
                 re_rf_next <= '1' when to_unsigned(e_cnt_reg, EF'length)(0) = '1' else '0';
 
             when s_finished =>
-                e_cnt_next <= e_cnt_reg;
-                f_cnt_next <= f_cnt_reg;
-                m_cnt_next <= m_cnt_reg;
-
                 we_rf_next <= '0';
                 re_rf_next <= '0';
 
             when others =>
-                e_cnt_next <= e_cnt_reg;
-                f_cnt_next <= f_cnt_reg;
-                m_cnt_next <= m_cnt_reg;
-
                 we_rf_next <= '0';
                 re_rf_next <= '0';
 

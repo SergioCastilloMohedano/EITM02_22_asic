@@ -70,7 +70,10 @@ entity SYS_CTR_TOP is
         NoC_c                     : out std_logic_vector (7 downto 0);
         OFM_NL_Write              : out std_logic;
         OFM_NL_Read               : out std_logic;
-        NoC_pm_bias               : out std_logic_vector (7 downto 0)
+        NoC_pm_bias               : out std_logic_vector (7 downto 0);
+        NoC_pm                    : out std_logic_vector (7 downto 0);
+        NoC_f                     : out std_logic_vector (7 downto 0);
+        NoC_e                     : out std_logic_vector (7 downto 0)
     );
 end SYS_CTR_TOP;
 
@@ -336,5 +339,8 @@ begin
     WB_NL_busy                <= WB_NL_busy_tmp;
     pass_flag                 <= pass_flag_tmp;
     OFM_NL_NoC_m_cnt_finished <= OFM_NL_NoC_m_cnt_finished_tmp;
+    NoC_pm                    <= NoC_pm_tmp;
+    NoC_e                     <= NoC_e_tmp;
+    NoC_f                     <= NoC_f_tmp;
 
 end architecture;

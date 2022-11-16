@@ -12,6 +12,9 @@ entity POOLING_TOP is
         reset      : in std_logic;
         M_cap      : in std_logic_vector (7 downto 0);
         EF         : in std_logic_vector (7 downto 0);
+        NoC_pm     : in std_logic_vector (7 downto 0);
+        NoC_f      : in std_logic_vector (7 downto 0);
+        NoC_e      : in std_logic_vector (7 downto 0);
         en_pooling : in std_logic;
         value_in   : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         value_out  : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
@@ -36,6 +39,9 @@ architecture structural of POOLING_TOP is
             en_pooling : in std_logic;
             M_cap      : in std_logic_vector (7 downto 0);
             EF         : in std_logic_vector (7 downto 0);
+            NoC_pm     : in std_logic_vector (7 downto 0);
+            NoC_f      : in std_logic_vector (7 downto 0);
+            NoC_e      : in std_logic_vector (7 downto 0);
             rf_addr    : out std_logic_vector(bit_size(X/2) - 1 downto 0);
             we_rf      : out std_logic;
             re_rf      : out std_logic;
@@ -72,6 +78,9 @@ begin
         en_pooling => en_pooling,
         M_cap      => M_cap,
         EF         => EF,
+        NoC_pm     => NoC_pm,
+        NoC_f      => NoC_f,
+        NoC_e      => NoC_e,
         rf_addr    => rf_addr,
         we_rf      => we_rf,
         re_rf      => re_rf,
