@@ -36,8 +36,8 @@ entity SRAM_IFM_FRONT_END_READ is
         IFM_NL_finished : in std_logic; -- IFM NL has finished. Do not read SRAM anymore.
         ifm_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
         -- Back-End (BE) Interface Ports
-        ifm_BE : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-        RE_BE  : out std_logic -- Read Enable, active high
+        ifm_BE_r : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        RE_BE    : out std_logic -- Read Enable, active high
     );
 end SRAM_IFM_FRONT_END_READ;
 
@@ -53,8 +53,8 @@ architecture dataflow of SRAM_IFM_FRONT_END_READ is
     signal h_ctrl  : std_logic;
     signal w_ctrl  : std_logic;
 
-    signal ifm_out_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-    signal ifm_BE_tmp  : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal ifm_out_tmp  : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal ifm_BE_r_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
 
     signal RE_BE_tmp : std_logic;
 
@@ -64,7 +64,7 @@ begin
     h_ctrl <= '1' when ((h_p_tmp < p) or (h_p_tmp > (HW_tmp - 1 + p))) else '0';
     w_ctrl <= '1' when ((w_p_tmp < p) or (w_p_tmp > (HW_tmp - 1 + p))) else '0';
 
-    ifm_out_tmp <= ifm_BE_tmp;
+    ifm_out_tmp <= ifm_BE_r_tmp;
     RE_BE_tmp   <= '1' when (((not(h_ctrl or w_ctrl)) and (IFM_NL_ready_tmp nor IFM_NL_finished_tmp)) = '1') else '0';
 
     -- PORT Assignations
@@ -73,7 +73,7 @@ begin
     HW_tmp              <= to_integer(unsigned(HW));
     IFM_NL_ready_tmp    <= IFM_NL_ready;
     IFM_NL_finished_tmp <= IFM_NL_finished;
-    ifm_BE_tmp          <= ifm_BE;
+    ifm_BE_r_tmp        <= ifm_BE_r;
     ifm_out             <= ifm_out_tmp;
     RE_BE               <= RE_BE_tmp;
 

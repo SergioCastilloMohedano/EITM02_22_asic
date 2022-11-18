@@ -94,6 +94,13 @@ architecture structural of TOP is
     -- SR
     signal sr_out : std_logic_vector((COMP_BITWIDTH - 1) downto 0);
 
+    -- Pooling
+    signal pooling_ack_tmp : std_logic;
+    signal pooling_out     : std_logic_vector((COMP_BITWIDTH - 1) downto 0);
+    signal en_w_IFM_tmp    : std_logic;
+    signal p_en_w_IFM_tmp  : std_logic;
+    signal is_pooling_tmp  : std_logic := '1'; -- to be changed later within the system controller.
+
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is
         port (
@@ -166,7 +173,12 @@ architecture structural of TOP is
             RS              : in std_logic_vector (7 downto 0);
             IFM_NL_ready    : in std_logic;
             IFM_NL_finished : in std_logic;
-            ifm_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
+            ifm_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            is_pooling      : in std_logic;
+            en_w_IFM        : in std_logic;
+            pooling_ack     : in std_logic;
+            pooling_IFM     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            sr_IFM          : in std_logic_vector (COMP_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -259,16 +271,18 @@ architecture structural of TOP is
             X : natural := 32
         );
         port (
-            clk        : in std_logic;
-            reset      : in std_logic;
-            M_cap      : in std_logic_vector (7 downto 0);
-            EF         : in std_logic_vector (7 downto 0);
-            NoC_pm     : in std_logic_vector (7 downto 0);
-            NoC_f      : in std_logic_vector (7 downto 0);
-            NoC_e      : in std_logic_vector (7 downto 0);
-            en_pooling : in std_logic;
-            value_in   : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            value_out  : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
+            clk         : in std_logic;
+            reset       : in std_logic;
+            M_cap       : in std_logic_vector (7 downto 0);
+            EF          : in std_logic_vector (7 downto 0);
+            NoC_pm      : in std_logic_vector (7 downto 0);
+            NoC_f       : in std_logic_vector (7 downto 0);
+            NoC_e       : in std_logic_vector (7 downto 0);
+            en_pooling  : in std_logic;
+            value_in    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            value_out   : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            pooling_ack : out std_logic;
+            en_w_IFM    : out std_logic
         );
     end component;
 
@@ -346,7 +360,13 @@ begin
         RS              => RS,
         IFM_NL_ready    => IFM_NL_ready_tmp,
         IFM_NL_finished => IFM_NL_finished_tmp,
-        ifm_out         => ifm_tmp
+        ifm_out         => ifm_tmp,
+        is_pooling      => is_pooling_tmp,
+        en_w_IFM        => en_w_IFM_tmp,
+        pooling_ack     => pooling_ack_tmp,
+        pooling_IFM     => pooling_out,
+        sr_IFM          => sr_out
+
     );
 
     -- NOC
@@ -438,17 +458,20 @@ begin
         X => X
     )
     port map(
-        clk        => clk,
-        reset      => reset,
-        M_cap      => M_cap,
-        EF         => EF,
-        NoC_pm     => NoC_pm_tmp,
-        NoC_f      => NoC_f_tmp,
-        NoC_e      => NoC_e_tmp,
-        en_pooling => OFM_NL_Read_tmp,
-        value_in   => sr_out,
-        value_out  => open
+        clk         => clk,
+        reset       => reset,
+        M_cap       => M_cap,
+        EF          => EF,
+        NoC_pm      => NoC_pm_tmp,
+        NoC_f       => NoC_f_tmp,
+        NoC_e       => NoC_e_tmp,
+        en_pooling  => OFM_NL_Read_tmp,
+        value_in    => sr_out,
+        value_out   => pooling_out,
+        pooling_ack => pooling_ack_tmp,
+        en_w_IFM    => p_en_w_IFM_tmp
     );
+    en_w_IFM_tmp <= p_en_w_IFM_tmp when (is_pooling_tmp = '1') else OFM_NL_Read_tmp;
 
     -- PORT Assignations
     NL_ready    <= NL_ready_tmp;

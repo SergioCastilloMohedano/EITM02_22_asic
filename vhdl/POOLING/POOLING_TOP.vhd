@@ -8,28 +8,32 @@ entity POOLING_TOP is
         X : natural := 32
     );
     port (
-        clk        : in std_logic;
-        reset      : in std_logic;
-        M_cap      : in std_logic_vector (7 downto 0);
-        EF         : in std_logic_vector (7 downto 0);
-        NoC_pm     : in std_logic_vector (7 downto 0);
-        NoC_f      : in std_logic_vector (7 downto 0);
-        NoC_e      : in std_logic_vector (7 downto 0);
-        en_pooling : in std_logic;
-        value_in   : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-        value_out  : out std_logic_vector (COMP_BITWIDTH - 1 downto 0)
+        clk         : in std_logic;
+        reset       : in std_logic;
+        M_cap       : in std_logic_vector (7 downto 0);
+        EF          : in std_logic_vector (7 downto 0);
+        NoC_pm      : in std_logic_vector (7 downto 0);
+        NoC_f       : in std_logic_vector (7 downto 0);
+        NoC_e       : in std_logic_vector (7 downto 0);
+        en_pooling  : in std_logic;
+        value_in    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        value_out   : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        pooling_ack : out std_logic;
+        en_w_IFM    : out std_logic
     );
 end POOLING_TOP;
 
 architecture structural of POOLING_TOP is
 
     -- SIGNAL DECLARATIONS
-    signal rf_addr   : std_logic_vector(bit_size(X/2) - 1 downto 0);
-    signal we_rf     : std_logic;
-    signal re_rf     : std_logic;
-    signal r1_r2_ctr : std_logic;
-    signal r3_rf_ctr : std_logic;
-    signal en_out    : std_logic;
+    signal rf_addr        : std_logic_vector(bit_size(X/2) - 1 downto 0);
+    signal we_rf          : std_logic;
+    signal re_rf          : std_logic;
+    signal r1_r2_ctr      : std_logic;
+    signal r3_rf_ctr      : std_logic;
+    signal en_out         : std_logic;
+    signal en_w_IFM_tmp   : std_logic;
+    signal en_w_IFM_tmp_2 : std_logic;
 
     -- COMPONENT DECLARATIONS
     component POOLING_CTR is
@@ -105,4 +109,11 @@ begin
         r3_rf_ctr => r3_rf_ctr,
         en_out    => en_out
     );
+
+    -- PORT ASSIGNATIONS
+    pooling_ack  <= en_out;
+    en_w_IFM_tmp_2 <= en_pooling;
+    en_w_IFM_tmp <= en_w_IFM_tmp_2 when rising_edge(clk); -- 2cc delay to ifm_en_w signal to align with dataflow
+    en_w_IFM     <= en_w_IFM_tmp when rising_edge(clk);
+
 end architecture;
