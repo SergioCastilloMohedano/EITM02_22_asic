@@ -35,12 +35,12 @@ architecture structural of SRAM_IFM is
     signal ifm_out_tmp         : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal ifm_r_tmp           : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal RE_tmp              : std_logic;
-    signal addrb_tmp           : std_logic_vector (14 downto 0);
+    signal addrb_tmp           : std_logic_vector (11 downto 0);
     signal doutb_tmp           : std_logic_vector (31 downto 0);
     signal enb_tmp             : std_logic;
     signal ena_tmp             : std_logic;
     signal wea_tmp             : std_logic_vector (3 downto 0);
-    signal addra_tmp           : std_logic_vector(14 downto 0);
+    signal addra_tmp           : std_logic_vector(11 downto 0);
     signal dina_tmp            : std_logic_vector(31 downto 0);
     signal ifm_w_tmp           : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
     signal en_w_tmp            : std_logic;
@@ -89,11 +89,11 @@ architecture structural of SRAM_IFM is
             en_w     : in std_logic;
             WE_FE    : in std_logic;
             -- SRAM Wrapper Ports (READ)
-            addrb : out std_logic_vector (14 downto 0);
+            addrb : out std_logic_vector (11 downto 0);
             doutb : in std_logic_vector (31 downto 0);
             enb   : out std_logic;
             -- SRAM Wrapper Ports (WRITE)
-            addra : out std_logic_vector (14 downto 0);
+            addra : out std_logic_vector (11 downto 0);
             dina  : out std_logic_vector (31 downto 0);
             ena   : out std_logic;
             wea   : out std_logic_vector (3 downto 0)
@@ -105,12 +105,12 @@ architecture structural of SRAM_IFM is
             clka      : in std_logic;
             ena       : in std_logic;
             wea       : in std_logic_vector(3 downto 0);
-            addra     : in std_logic_vector(14 downto 0);
+            addra     : in std_logic_vector(11 downto 0);
             dina      : in std_logic_vector(31 downto 0);
             clkb      : in std_logic;
             rstb      : in std_logic;
             enb       : in std_logic;
-            addrb     : in std_logic_vector(14 downto 0);
+            addrb     : in std_logic_vector(11 downto 0);
             doutb     : out std_logic_vector(31 downto 0);
             rsta_busy : out std_logic;
             rstb_busy : out std_logic

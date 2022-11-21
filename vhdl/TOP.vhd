@@ -99,7 +99,7 @@ architecture structural of TOP is
     signal pooling_out     : std_logic_vector((COMP_BITWIDTH - 1) downto 0);
     signal en_w_IFM_tmp    : std_logic;
     signal p_en_w_IFM_tmp  : std_logic;
-    signal is_pooling_tmp  : std_logic := '1'; -- to be changed later within the system controller.
+    signal is_pooling_tmp  : std_logic := '0'; -- to be changed later within the system controller.
 
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is

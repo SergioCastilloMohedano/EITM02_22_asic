@@ -41,12 +41,12 @@ entity SRAM_IFM_BACK_END is
         WE_FE    : in std_logic;
 
         -- SRAM Wrapper Ports (READ)
-        addrb : out std_logic_vector (14 downto 0);
+        addrb : out std_logic_vector (11 downto 0);
         doutb : in std_logic_vector (31 downto 0);
         enb   : out std_logic;
 
         -- SRAM Wrapper Ports (WRITE)
-        addra : out std_logic_vector (14 downto 0);
+        addra : out std_logic_vector (11 downto 0);
         dina  : out std_logic_vector (31 downto 0);
         ena   : out std_logic;
         wea   : out std_logic_vector (3 downto 0)
@@ -76,8 +76,8 @@ architecture behavioral of SRAM_IFM_BACK_END is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal addr_r_reg, addr_r_next   : unsigned (14 downto 0);
-    signal addr_w_reg, addr_w_next   : unsigned (14 downto 0);
+    signal addr_r_reg, addr_r_next   : unsigned (11 downto 0);
+    signal addr_w_reg, addr_w_next   : unsigned (11 downto 0);
     signal wea_reg, wea_next         : std_logic_vector (3 downto 0);
     signal wea_cnt_reg, wea_cnt_next : unsigned (2 downto 0);
     signal dina_tmp                  : std_logic_vector (31 downto 0);
