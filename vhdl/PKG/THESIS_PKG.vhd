@@ -8,6 +8,7 @@ use ieee.numeric_std.all;
 package thesis_pkg is
 
     -- **** TYPE DECLARATIONS ****
+    constant ACT_BITWIDTH : natural := 16;
     constant COMP_BITWIDTH  : natural := 8; -- determines computing resolution of the accelerator
     constant PSUM_BITWIDTH  : natural := 20; -- determines bitwidth of the psum considering worst case scenario accumulations -> ceil(log2(R*S*2^8*2^8)) = ceil(19.1) = 20
     constant OFMAP_P_BITWIDTH : natural := 22; -- Bitwidth of Adder Tree -> ceil(log2(r*R*S*(COMP_BITWIDTH^2))) -> r = 4 -> 20 + 2

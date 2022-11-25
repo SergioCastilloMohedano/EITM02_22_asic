@@ -32,31 +32,39 @@ entity SRAM_IFM_BACK_END is
         reset : in std_logic;
 
         -- Front-End Interface Ports (READ)
-        ifm_FE_r : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        ifm_FE_r : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         RE_FE    : in std_logic; -- Read Enable, active high
 
         -- Front-End Interface Ports (WRITE)
-        ifm_FE_w : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        ifm_FE_w : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         en_w     : in std_logic;
         WE_FE    : in std_logic;
 
-        -- SRAM Wrapper Ports (READ)
-        addrb : out std_logic_vector (11 downto 0);
-        doutb : in std_logic_vector (31 downto 0);
-        enb   : out std_logic;
+        -- -- SRAM Wrapper Ports (READ)
+        -- addrb : out std_logic_vector (11 downto 0);
+        -- doutb : in std_logic_vector (31 downto 0);
+        -- enb   : out std_logic;
 
-        -- SRAM Wrapper Ports (WRITE)
-        addra : out std_logic_vector (11 downto 0);
-        dina  : out std_logic_vector (31 downto 0);
-        ena   : out std_logic;
-        wea   : out std_logic_vector (3 downto 0)
+        -- -- SRAM Wrapper Ports (WRITE)
+        -- addra : out std_logic_vector (11 downto 0);
+        -- dina  : out std_logic_vector (31 downto 0);
+        -- ena   : out std_logic;
+        -- wea   : out std_logic_vector (3 downto 0)
+
+        -- SRAM Wrapper Ports (ASIC)
+        A     : out std_logic_vector(12 downto 0);
+        CSN   : out std_logic;
+        D     : out std_logic_vector (31 downto 0);
+        INITN : in std_logic;
+        Q     : in std_logic_vector (31 downto 0);
+        WEN   : out std_logic
     );
 end SRAM_IFM_BACK_END;
 
 architecture behavioral of SRAM_IFM_BACK_END is
 
     -- Enumeration type for the states and state_type signals
-    type state_type is (s_init, s_idle, s_0, s_1, s_2, s_3, s_write, s_finished);
+    type state_type is (s_init, s_idle, s_0, s_1, s_write, s_finished);
     signal state_next, state_reg : state_type;
 
     ------------ CONTROL PATH SIGNALS ------------
@@ -76,25 +84,26 @@ architecture behavioral of SRAM_IFM_BACK_END is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal addr_r_reg, addr_r_next   : unsigned (11 downto 0);
-    signal addr_w_reg, addr_w_next   : unsigned (11 downto 0);
-    signal wea_reg, wea_next         : std_logic_vector (3 downto 0);
-    signal wea_cnt_reg, wea_cnt_next : unsigned (2 downto 0);
-    signal dina_tmp                  : std_logic_vector (31 downto 0);
-    signal dina_zeroes               : std_logic_vector (31 downto 0) := (others => '0');
+    signal addr_r_reg, addr_r_next   : unsigned (12 downto 0);
+    signal addr_w_reg, addr_w_next   : unsigned (12 downto 0);
+    signal buff_reg, buff_next       : std_logic_vector (31 downto 0);
+    signal wea_cnt_reg, wea_cnt_next : unsigned (1 downto 0);
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
     -- ..
 
     ---- Functional Units Intermediate Signals
-    signal wea_cnt_out, wea_cnt_tmp : unsigned (2 downto 0);
+    signal wea_cnt_out, wea_cnt_tmp : unsigned (1 downto 0);
+    signal WEN_tmp                  : std_logic;
 
     ---- Data Outputs
-    signal ifm_FE_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-    signal enb_tmp    : std_logic;
+    signal ifm_FE_r_tmp          : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+    signal CSN_r, CSN_w, CSN_tmp : std_logic;
+    signal A_tmp                 : unsigned (12 downto 0);
+    signal Q_tmp                 : std_logic_vector (31 downto 0);
 
     -- SRAM_IFM_BACK_END Intermediate Signals
-    signal doutb_tmp : std_logic_vector (31 downto 0);
+    -- ..
 
 begin
 
@@ -129,10 +138,6 @@ begin
             when s_0 =>
                 state_next <= s_1;
             when s_1 =>
-                state_next <= s_2;
-            when s_2 =>
-                state_next <= s_3;
-            when s_3 =>
                 if (RE_tmp = '1') then
                     state_next <= s_0;
                 else
@@ -160,101 +165,89 @@ begin
             if reset = '1' then
                 addr_r_reg  <= (others => '0');
                 addr_w_reg  <= (others => '0');
-                wea_reg     <= "1000";
+                buff_reg    <= (others => '0');
                 wea_cnt_reg <= (others => '0');
 
             else
                 addr_r_reg  <= addr_r_next;
                 addr_w_reg  <= addr_w_next;
-                wea_reg     <= wea_next;
+                buff_reg    <= buff_next;
                 wea_cnt_reg <= wea_cnt_next;
             end if;
         end if;
     end process;
 
     -- data path : out logic
-    enb_tmp <= '1' when (RE_tmp = '1') and ((state_reg = s_idle) or (state_reg = s_3)) else '0';
+    CSN_r <= '0' when (RE_tmp = '1') and ((state_reg = s_idle) or (state_reg = s_1)) else '1';
+
+    CSN_tmp <= CSN_w when (state_reg = s_write) else CSN_r;
+
+    A_tmp <= addr_w_reg when (state_reg = s_write) else addr_r_reg;
 
     -- data path : functional units
-    wea_cnt_tmp <= (others => '0') when wea_cnt_reg = 3 else wea_cnt_reg + to_unsigned(1, wea_cnt_reg'length);
+    wea_cnt_tmp <= (others => '0') when wea_cnt_reg = 1 else wea_cnt_reg + to_unsigned(1, wea_cnt_reg'length);
     wea_cnt_out <= wea_cnt_tmp when WE_FE = '1' else wea_cnt_reg;
 
-    wea_next <= wea_reg(0) & wea_reg(3 downto 1) when (WE_FE = '1') else wea_reg;
+    WEN_tmp <= '0' when wea_cnt_reg = 1 else '1';
 
-    with wea_reg select dina_tmp <=
-        ifm_FE_w & dina_zeroes(23 downto 0)                             when "1000",
-        dina_zeroes(31 downto 24) & ifm_FE_w & dina_zeroes(15 downto 0) when "0100",
-        dina_zeroes(31 downto 16) & ifm_FE_w & dina_zeroes(7 downto 0)  when "0010",
-        dina_zeroes(31 downto 8)  & ifm_FE_w                            when "0001",
-        (others => '0')                                                 when others;
+    with wea_cnt_reg select buff_next <=
+        ifm_FE_w & buff_reg(15 downto 0)  when "00",
+        buff_reg(31 downto 16) & ifm_FE_w when "01",
+        (others => '0')                   when others;
 
     -- data path : mux routing
-    data_mux : process (state_reg, doutb_tmp, addr_r_reg, wea_cnt_reg, wea_cnt_out, addr_w_reg, WE_FE)
+    data_mux : process (state_reg, Q_tmp, addr_r_reg, wea_cnt_reg, wea_cnt_out, addr_w_reg, WE_FE)
     begin
         case state_reg is
-            when s_init            =>
-                ifm_FE_tmp  <= (others => '0');
-                addr_r_next <= addr_r_reg;
+            when s_init             =>
+                ifm_FE_r_tmp <= (others => '0');
+                addr_r_next  <= addr_r_reg;
 
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
 
-            when s_idle            =>
-                ifm_FE_tmp  <= (others => '0');
-                addr_r_next <= addr_r_reg;
+            when s_idle             =>
+                ifm_FE_r_tmp <= (others => '0');
+                addr_r_next  <= addr_r_reg;
 
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
 
             when s_0 =>
-                ifm_FE_tmp  <= doutb_tmp (31 downto 24);
-                addr_r_next <= addr_r_reg;
+                ifm_FE_r_tmp <= Q_tmp (31 downto 16);
+                addr_r_next  <= addr_r_reg + 1;
 
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
 
             when s_1 =>
-                ifm_FE_tmp  <= doutb_tmp (23 downto 16);
-                addr_r_next <= addr_r_reg;
+                ifm_FE_r_tmp <= Q_tmp (15 downto 0);
+                addr_r_next  <= addr_r_reg;
 
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
 
-            when s_2 =>
-                ifm_FE_tmp  <= doutb_tmp (15 downto 8);
-                addr_r_next <= addr_r_reg + 1;
-
-                wea_cnt_next <= wea_cnt_reg;
-                addr_w_next  <= addr_w_reg;
-
-            when s_3 =>
-                ifm_FE_tmp  <= doutb_tmp (7 downto 0);
-                addr_r_next <= addr_r_reg;
-
-                wea_cnt_next <= wea_cnt_reg;
-                addr_w_next  <= addr_w_reg;
-
-            when s_write           =>
-                ifm_FE_tmp  <= (others => '0');
-                addr_r_next <= addr_r_reg;
+            when s_write            =>
+                ifm_FE_r_tmp <= (others => '0');
+                addr_r_next  <= addr_r_reg;
 
                 wea_cnt_next <= wea_cnt_out;
 
-                if ((wea_cnt_reg = 3) and (WE_FE = '1')) then
+                if ((wea_cnt_reg = 1) and (WE_FE = '1')) then
                     addr_w_next <= addr_w_reg + 1;
                 else
                     addr_w_next <= addr_w_reg;
                 end if;
 
-            when s_finished        =>
-                ifm_FE_tmp  <= (others => '0');
-                addr_r_next <= (others => '0');
+            when s_finished         =>
+                ifm_FE_r_tmp <= (others => '0');
+                addr_r_next  <= (others => '0');
 
                 wea_cnt_next <= (others => '0');
                 addr_w_next  <= (others => '0');
-            when others            =>
-                ifm_FE_tmp  <= (others => '0');
-                addr_r_next <= addr_r_reg;
+            when others             =>
+                ifm_FE_r_tmp <= (others => '0');
+                addr_r_next  <= addr_r_reg;
 
                 wea_cnt_next <= wea_cnt_reg;
                 addr_w_next  <= addr_w_reg;
@@ -262,17 +255,18 @@ begin
         end case;
     end process;
 
-    -- PORT Assignations
-    RE_tmp    <= RE_FE;
-    addrb     <= std_logic_vector(addr_r_reg);
-    enb       <= enb_tmp;
-    doutb_tmp <= doutb;
-    ifm_FE_r  <= ifm_FE_tmp;
+    ---- PORT Assignations
+    -- Front End (READ)
+    RE_tmp   <= RE_FE;
+    ifm_FE_r <= ifm_FE_r_tmp;
 
-    addra <= std_logic_vector(addr_w_reg);
-    dina  <= dina_tmp;
-    ena   <= en_w;
-    wea   <= wea_reg;
+    -- Front End (WRITE)
+    CSN_w <= not(en_w);
 
-
-    end architecture;
+    -- SRAM (ASIC)
+    CSN   <= CSN_tmp;
+    Q_tmp <= Q;
+    A     <= std_logic_vector(A_tmp);
+    D     <= buff_reg;
+    WEN   <= WEN_tmp;
+end architecture;

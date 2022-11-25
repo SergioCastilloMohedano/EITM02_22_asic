@@ -9,10 +9,10 @@ entity SRAM_IFM_FRONT_END_WRITE is
         is_pooling  : in std_logic;
         en_w_IFM    : in std_logic;
         pooling_ack : in std_logic;
-        pooling_IFM : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-        sr_IFM      : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        pooling_IFM : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+        sr_IFM      : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         -- Back-End (BE) Interface Ports
-        ifm_BE_w : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        ifm_BE_w : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         en_w     : out std_logic;
         WE_BE    : out std_logic
     );
@@ -22,7 +22,7 @@ architecture dataflow of SRAM_IFM_FRONT_END_WRITE is
 
     signal WE_tmp       : std_logic;
     signal en_w_tmp     : std_logic;
-    signal ifm_w_tmp    : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal ifm_w_tmp    : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
     signal en_w_IFM_tmp : std_logic;
 
 begin

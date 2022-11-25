@@ -10,7 +10,7 @@ entity NOC is
         Y                     : natural       := 3;
         hw_log2_r             : integer_array := (0, 1, 2);
         hw_log2_EF            : integer_array := (5, 4, 3);
-        NUM_REGS_IFM_REG_FILE : natural       := X; -- Emax (conv0 and conv1)
+        NUM_REGS_IFM_REG_FILE : natural       := 34; -- Emax (conv0 and conv1)
         NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
     );
     port (
