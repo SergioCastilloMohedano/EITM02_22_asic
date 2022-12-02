@@ -11,9 +11,10 @@ entity TOP is
         Y                     : natural       := 3;
         hw_log2_r             : integer_array := (0, 1, 2);
         hw_log2_EF            : integer_array := (5, 4, 3);
-        NUM_REGS_IFM_REG_FILE : natural       := 32;             -- Emax (conv0 and conv1)
+        NUM_REGS_IFM_REG_FILE : natural       := 34;             -- Emax (conv0 and conv1)
         NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
-        EOM_ADDR_WB_SRAM      : natural       := 82329;          -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+        -- EOM_ADDR_WB_SRAM      : natural       := 82329;          -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+        ADDR_4K_CFG           : natural       := 4042;           -- First Address of the reserved space for config. parameters.
         ws                    : natural       := OFMAP_BITWIDTH; -- bitwidth of input value -- 26 fpga, 32 asic
         fl                    : natural       := 8;              -- length of fractional part of input value
         ws_sr                 : natural       := 8;              -- bitwidth of output value
@@ -37,7 +38,6 @@ entity TOP is
         HW_p     : in std_logic_vector (7 downto 0);
         HW       : in std_logic_vector (7 downto 0);
         M_div_pt : in std_logic_vector (7 downto 0);
-        --        NoC_ACK_flag : in std_logic;
         EF_log2 : in std_logic_vector (7 downto 0);
         r_log2  : in std_logic_vector (7 downto 0)
         ---------------------------------------------------------------------------
@@ -74,11 +74,11 @@ architecture structural of TOP is
     signal NoC_f_tmp           : std_logic_vector (7 downto 0);
 
     -- SRAM_WB
-    signal w_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-    signal b_tmp : std_logic_vector (15 downto 0);
+    signal w_tmp : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+    signal b_tmp : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
 
     -- SRAM_IFM
-    signal ifm_tmp : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal ifm_tmp : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
 
     -- PE ARRAY
     signal ofmap_p                   : psum_array(0 to (X - 1));
@@ -97,7 +97,7 @@ architecture structural of TOP is
 
     -- Pooling
     signal pooling_ack_tmp : std_logic;
-    signal pooling_out     : std_logic_vector((COMP_BITWIDTH - 1) downto 0);
+    signal pooling_out     : std_logic_vector((ACT_BITWIDTH - 1) downto 0);
     signal en_w_IFM_tmp    : std_logic;
     signal p_en_w_IFM_tmp  : std_logic;
     signal is_pooling_tmp  : std_logic := '0'; -- to be changed later within the system controller.
@@ -149,7 +149,8 @@ architecture structural of TOP is
 
     component SRAM_WB is
         generic (
-            EOM_ADDR_WB_SRAM : natural := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+            -- EOM_ADDR_WB_SRAM : natural := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
+            ADDR_4K_CFG : natural := 4042           -- First Address of the reserved space for config. parameters.
         );
         port (
             clk            : in std_logic;
@@ -159,8 +160,8 @@ architecture structural of TOP is
             NoC_c          : in std_logic_vector (7 downto 0);
             NoC_pm_bias    : in std_logic_vector (7 downto 0);
             OFM_NL_Write   : in std_logic;
-            w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            b_out          : out std_logic_vector (15 downto 0)
+            w_out          : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+            b_out          : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -174,11 +175,11 @@ architecture structural of TOP is
             RS              : in std_logic_vector (7 downto 0);
             IFM_NL_ready    : in std_logic;
             IFM_NL_finished : in std_logic;
-            ifm_out         : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            ifm_out         : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             is_pooling      : in std_logic;
             en_w_IFM        : in std_logic;
             pooling_ack     : in std_logic;
-            pooling_IFM     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            pooling_IFM     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             sr_IFM          : in std_logic_vector (COMP_BITWIDTH - 1 downto 0)
         );
     end component;
@@ -195,7 +196,7 @@ architecture structural of TOP is
             OFM_NL_Read               : in std_logic;
             ofmap                     : in std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
             shift_PISO                : in std_logic;
-            bias                      : in std_logic_vector (15 downto 0);
+            bias                      : in std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
             ofm                       : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0)
         );
     end component;
@@ -226,8 +227,8 @@ architecture structural of TOP is
             WB_NL_busy        : in std_logic;
             IFM_NL_busy       : in std_logic;
             pass_flag         : in std_logic;
-            ifm_sram          : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            w_sram            : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            ifm_sram          : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+            w_sram            : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
             ofmap_p           : out psum_array(0 to (X - 1));
             PISO_Buffer_start : out std_logic
         );
@@ -280,8 +281,8 @@ architecture structural of TOP is
             NoC_f       : in std_logic_vector (7 downto 0);
             NoC_e       : in std_logic_vector (7 downto 0);
             en_pooling  : in std_logic;
-            value_in    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            value_out   : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            value_in    : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+            value_out   : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             pooling_ack : out std_logic;
             en_w_IFM    : out std_logic
         );
@@ -336,7 +337,7 @@ begin
     -- SRAM_WB
     SRAM_WB_inst : SRAM_WB
     generic map(
-        EOM_ADDR_WB_SRAM => EOM_ADDR_WB_SRAM
+        ADDR_4K_CFG => ADDR_4K_CFG
     )
     port map(
         clk            => clk,

@@ -37,7 +37,7 @@ architecture dataflow of POOLING is
     signal value_out_tmp             : signed(COMP_BITWIDTH - 1 downto 0);
 
     -- COMPONENT DECLARATIONS
-    component REG_FILE is
+    component REG_FILE_ACT is
         generic (
             REGISTER_INPUTS : boolean := false;
             NUM_REGS        : natural := X/2
@@ -51,14 +51,14 @@ architecture dataflow of POOLING is
             wr_data     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
             re          : in std_logic;
             rd_data     : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            registers   : out std_logic_vector_array(0 to (NUM_REGS - 1));
+            registers   : out act_array(0 to (NUM_REGS - 1));
             reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
         );
     end component;
 
 begin
 
-    REG_FILE_pooling_inst : REG_FILE
+    REG_FILE_pooling_inst : REG_FILE_ACT
     generic map(
         REGISTER_INPUTS => false,
         NUM_REGS        => X/2 -- half of biggest E of layers' network

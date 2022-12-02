@@ -10,12 +10,22 @@ package thesis_pkg is
     -- **** TYPE DECLARATIONS ****
     constant ACT_BITWIDTH : natural := 16;
     constant WEIGHT_BITWIDTH : natural := 8;
+    constant BIAS_BITWIDTH : natural := 16;
+    constant PSUM_BITWIDTH  : natural := 28; -- determines bitwidth of the psum considering worst case scenario accumulations -> ceil(log2(R*S*2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH)) = ceil(27.17) = 28
+    constant OFMAP_P_BITWIDTH : natural := 30; -- Bitwidth of Adder Tree -> ceil(log2(r*R*S*(COMP_BITWIDTH^2))) -> r = 4 -> 28 + 2
+    constant OFMAP_BITWIDTH : natural := 34; -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario -> max(ceil(log2(Cconv*R*S*COMP_BITWIDTH^2) = 34 , ceil(log2(Cfc*COMP_BITWIDTH^2)))
+
+
     constant COMP_BITWIDTH  : natural := 8; -- determines computing resolution of the accelerator
-    constant PSUM_BITWIDTH  : natural := 20; -- determines bitwidth of the psum considering worst case scenario accumulations -> ceil(log2(R*S*2^8*2^8)) = ceil(19.1) = 20
-    constant OFMAP_P_BITWIDTH : natural := 22; -- Bitwidth of Adder Tree -> ceil(log2(r*R*S*(COMP_BITWIDTH^2))) -> r = 4 -> 20 + 2
-    constant OFMAP_BITWIDTH : natural := 26; -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario -> max(ceil(log2(Cconv*R*S*COMP_BITWIDTH^2) , ceil(log2(Cfc*COMP_BITWIDTH^2)))
+
+    type weight_array is array (natural range <>) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
+    type weight_2D_array is array (natural range <>) of weight_array;
+    type act_array is array (natural range <>) of std_logic_vector(ACT_BITWIDTH - 1 downto 0);
+    type act_2D_array is array (natural range <>) of act_array;
+
     type std_logic_vector_array is array(natural range <>) of std_logic_vector(COMP_BITWIDTH - 1 downto 0);
     type std_logic_vector_2D_array is array(natural range <>) of std_logic_vector_array;
+    
     type std_logic_array is array(natural range <>) of std_logic;
     type std_logic_2D_array is array(natural range <>) of std_logic_array;
     type integer_array is array(natural range <>) of integer;

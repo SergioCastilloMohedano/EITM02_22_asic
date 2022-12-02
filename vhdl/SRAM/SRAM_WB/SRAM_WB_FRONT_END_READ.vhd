@@ -35,10 +35,10 @@ entity SRAM_WB_FRONT_END_READ is
         NoC_c          : in std_logic_vector (7 downto 0);
         NoC_pm_bias    : in std_logic_vector (7 downto 0);
         OFM_NL_Write   : in std_logic;
-        w_out          : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-        b_out          : out std_logic_vector (15 downto 0);
+        w_out          : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+        b_out          : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
         -- Back-End (BE) Interface Ports
-        wb_BE     : in std_logic_vector (15 downto 0);
+        wb_BE     : in std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
         en_w_read : out std_logic;
         en_b_read : out std_logic;
         NoC_pm_BE : out std_logic_vector (7 downto 0)
@@ -48,28 +48,25 @@ end SRAM_WB_FRONT_END_READ;
 architecture dataflow of SRAM_WB_FRONT_END_READ is
 
     signal NoC_pm_BE_tmp      : std_logic_vector (7 downto 0);
-    signal w_out_tmp          : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-    signal w_out_tmp_2        : std_logic_vector (15 downto 0);
-    signal b_out_tmp          : std_logic_vector (15 downto 0);
+    signal w_out_tmp          : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+    signal b_out_tmp          : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
     signal WB_NL_ready_tmp    : std_logic;
     signal WB_NL_finished_tmp : std_logic;
     signal NoC_c_tmp          : natural;
-    signal wb_BE_tmp          : std_logic_vector (15 downto 0);
+    signal wb_BE_tmp          : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
     signal en_w_read_tmp      : std_logic;
     signal en_w_read_tmp_2    : std_logic;
     signal en_w_read_reg      : std_logic;
     signal en_w_read_next     : std_logic;
     signal en_b_read_tmp      : std_logic;
     signal NoC_c_eqz          : std_logic;
-    signal rounding           : std_logic_vector (15 downto 0) := "0000000010000000";
 
 begin
 
     NoC_pm_BE_tmp <= NoC_pm_bias;
-    w_out_tmp_2   <= std_logic_vector(signed(wb_BE_tmp) + signed(rounding));                     -- Round To Nearest, from <3.13> to <3.5>, add "1" in 8th (13 - 5) LSB.
-    w_out_tmp     <= w_out_tmp_2(15 downto 8) when (en_w_read_tmp_2 = '1') else (others => '0'); -- 8 MSBs <3.13> -> <3.5>
-    b_out_tmp     <= wb_BE_tmp when (en_b_read_tmp = '1') else (others                  => '0');
-
+    w_out_tmp     <= wb_BE_tmp(BIAS_BITWIDTH - 1 downto (BIAS_BITWIDTH - WEIGHT_BITWIDTH)) when (en_w_read_tmp_2 = '1') else (others => '0'); -- 8 MSBs <3.5>
+    b_out_tmp     <= wb_BE_tmp when (en_b_read_tmp = '1') else (others => '0');
+    
     NoC_c_eqz <= '1' when (NoC_c_tmp = 0) else '0';
 
     en_w_read_next <= '1' when ((WB_NL_ready nor WB_NL_finished) = '1') else '0';

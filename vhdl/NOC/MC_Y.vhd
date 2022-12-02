@@ -17,20 +17,20 @@ entity MC_Y is
         WB_NL_busy  : in std_logic;
         IFM_NL_busy : in std_logic;
 
-        ifm_y_in     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-        ifm_y_out    : out std_logic_vector(COMP_BITWIDTH - 1 downto 0);
+        ifm_y_in     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+        ifm_y_out    : out std_logic_vector(ACT_BITWIDTH - 1 downto 0);
         ifm_y_status : out std_logic;
-        w_y_in       : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-        w_y_out      : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        w_y_in       : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+        w_y_out      : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
         w_y_status   : out std_logic
     );
 end MC_Y;
 
 architecture dataflow of MC_Y is
 
-    signal w_y_tmp          : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal w_y_tmp          : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
     signal w_y_status_tmp   : std_logic;
-    signal ifm_y_tmp        : std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+    signal ifm_y_tmp        : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
     signal ifm_y_status_tmp : std_logic;
     signal w_y_ctrl         : std_logic;
     signal ifm_y_ctrl       : std_logic;

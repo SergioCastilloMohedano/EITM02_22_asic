@@ -36,8 +36,8 @@ entity NOC is
         pass_flag   : in std_logic;
 
         -- from SRAMs
-        ifm_sram : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-        w_sram   : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        ifm_sram : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+        w_sram   : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
 
         -- Ofmap Primitives Output Registers (To Adder Tree)
         ofmap_p           : out psum_array(0 to (X - 1));
@@ -50,14 +50,14 @@ architecture structural of NOC is
     -- SIGNAL DEFINITIONS
     -- MC_Y to MC_X
     signal ifm_enable_y_to_x : std_logic_array(0 to (Y - 1));
-    signal ifm_y_to_x        : std_logic_vector_array(0 to (Y - 1));
+    signal ifm_y_to_x        : act_array(0 to (Y - 1));
     signal w_enable_y_to_x   : std_logic_array(0 to (Y - 1));
-    signal w_y_to_x          : std_logic_vector_array(0 to (Y - 1));
+    signal w_y_to_x          : weight_array(0 to (Y - 1));
 
     -- MC_X to PE
-    signal ifm_x_to_PE        : std_logic_vector_2D_array(0 to (X - 1))(0 to (Y - 1));
+    signal ifm_x_to_PE        : act_2D_array(0 to (X - 1))(0 to (Y - 1));
     signal ifm_status_x_to_PE : std_logic_2D_array(0 to (X - 1))(0 to (Y - 1));
-    signal w_x_to_PE          : std_logic_vector_2D_array(0 to (X - 1))(0 to (Y - 1));
+    signal w_x_to_PE          : weight_2D_array(0 to (X - 1))(0 to (Y - 1));
     signal w_status_x_to_PE   : std_logic_2D_array(0 to (X - 1))(0 to (Y - 1));
 
     -- MC_rr to MC_X
@@ -108,9 +108,9 @@ architecture structural of NOC is
             pass_flag : in std_logic;
 
             -- NoC Internal Signals
-            ifm_PE                  : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            ifm_PE                  : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             ifm_PE_enable           : in std_logic;
-            w_PE                    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            w_PE                    : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
             w_PE_enable             : in std_logic;
             psum_in                 : in std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
             psum_out                : out std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
@@ -136,11 +136,11 @@ architecture structural of NOC is
             r_p          : in std_logic_vector (7 downto 0);
             WB_NL_busy   : in std_logic;
             IFM_NL_busy  : in std_logic;
-            ifm_y_in     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            ifm_y_out    : out std_logic_vector(COMP_BITWIDTH - 1 downto 0);
+            ifm_y_in     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+            ifm_y_out    : out std_logic_vector(ACT_BITWIDTH - 1 downto 0);
             ifm_y_status : out std_logic;
-            w_y_in       : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            w_y_out      : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            w_y_in       : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+            w_y_out      : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
             w_y_status   : out std_logic
         );
     end component;
@@ -160,12 +160,12 @@ architecture structural of NOC is
             rc           : in std_logic_vector (7 downto 0);
             rr           : in std_logic_vector (7 downto 0);
             ifm_x_enable : in std_logic;
-            ifm_x_in     : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            ifm_x_out    : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            ifm_x_in     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+            ifm_x_out    : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             ifm_x_status : out std_logic;
             w_x_enable   : in std_logic;
-            w_x_in       : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            w_x_out      : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            w_x_in       : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+            w_x_out      : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
             w_x_status   : out std_logic
         );
     end component;
