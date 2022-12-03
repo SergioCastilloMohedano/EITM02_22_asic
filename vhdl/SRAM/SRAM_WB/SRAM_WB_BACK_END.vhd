@@ -286,7 +286,7 @@ begin
 
 
     -- data path : mux routing
-    data_mux : process (state_reg)
+    data_mux : process (state_reg, addr_block_ctrl_w_reg, addr_block_w_reg, addr_8K_1_w_reg, addr_8K_2_w_reg, addr_4K_w_reg, addr_4K_b_reg, initn_reg, addr_block_w_out, addr_8K_1_w_out, addr_8K_2_w_out, addr_4K_w_out, addr_4K_b_out, initn_cnt_out, initn_out)
     begin
         case state_reg is
             when s_init =>

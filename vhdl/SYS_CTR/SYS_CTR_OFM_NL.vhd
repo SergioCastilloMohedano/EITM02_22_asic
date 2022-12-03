@@ -176,7 +176,7 @@ begin
     OFM_NL_NoC_m_cnt_finished_tmp <= '1' when ((NoC_pm_reg = (M_cap_tmp - 1)) and (NoC_f_reg = (EF_tmp - 1)) and (NoC_e_reg = (EF_tmp - 1))) else '0';
 
     -- data path : mux routing
-    data_mux : process (state_reg, NoC_c_reg, NoC_m_reg, NoC_f_reg, NoC_e_reg, NoC_pm_reg, NoC_c_next, NoC_m_next, NoC_f_next, NoC_e_next, NoC_pm_next, NoC_c_out, NoC_m_out, NoC_f_out, NoC_e_out)
+    data_mux : process (state_reg, NoC_c_reg, NoC_m_reg, NoC_f_reg, NoC_e_reg, NoC_pm_reg, NoC_c_next, NoC_m_next, NoC_f_next, NoC_e_next, NoC_pm_next, NoC_c_out, NoC_m_out, NoC_f_out, NoC_e_out, NoC_pm_out)
     begin
         case state_reg is
             when s_init =>

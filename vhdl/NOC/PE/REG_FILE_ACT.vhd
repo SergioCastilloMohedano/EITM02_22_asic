@@ -6,8 +6,8 @@ use work.thesis_pkg.all;
 entity REG_FILE_ACT is
     generic (
         REGISTER_INPUTS : boolean := true; -- Register the input ports when true
-        NUM_REGS        : natural := 8;
-        BITWIDTH        : natural := 8
+        NUM_REGS        : natural := 34;
+        BITWIDTH        : natural := 16
     );
     port (
         clk   : in std_logic;

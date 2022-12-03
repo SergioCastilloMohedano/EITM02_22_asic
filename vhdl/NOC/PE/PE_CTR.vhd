@@ -144,7 +144,7 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, pass_flag_tmp, intra_s_reg, intra_cnt_done_reg, inter_cnt_done, hold_cnt_done, j_cnt_done, stall_cnt_done)
+    asmd_ctrl : process (state_reg, pass_flag_tmp, intra_s_reg, intra_cnt_done_reg, inter_cnt_done, hold_cnt_done, j_cnt_done, stall_cnt_done, RS_tmp)
     begin
         case state_reg is
             when s_init =>

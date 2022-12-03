@@ -41,7 +41,7 @@ architecture dataflow of SRAM_OFM_FRONT_END_ACC is
     signal bias_tmp         : signed (BIAS_BITWIDTH - 1 downto 0);
 
     -- Bias rounding
-    -- bias 16<3.13> & ofmap 34<23+(3+8).(5+8)>
+    -- bias 16<3.13> & ofmap 34<10+(3+8).(5+8)> = 34<21.13>
     -- Align binary point: 13 - (8+5) = 0 
     -- Operands already aligned, hence there is no need to round the bias
     -- Otherwise, Round To Nearest the corresponding LSBs of fractional part of bias, and disregard them.
@@ -61,8 +61,8 @@ begin
     -- applied to the 34b fixed-point value down to the max(min) value in 32b fixed-point.
     -- min_32b = -2^(32 - 1)    = -2147483648 = b01111...1111;
     -- max_32b = 2^(32 - 1) - 1 =  2147483647 = b10000...0000;
-    ofm_BE_tmp <= to_signed(-2147483648, ofm_BE_tmp'length) when (ofm_BE_tmp_2 < to_signed(-2147483648, ofm_BE_tmp'length)) else
-                  to_signed(2147483647, ofm_BE_tmp'length)  when (ofm_BE_tmp_2 > to_signed(2147483647, ofm_BE_tmp'length)) else
+    ofm_BE_tmp <= to_signed(-2147483648, ofm_BE_tmp'length) when (ofm_BE_tmp_2 < to_signed(-2147483648, ofm_BE_tmp_2'length)) else
+                  to_signed(2147483647, ofm_BE_tmp'length)  when (ofm_BE_tmp_2 > to_signed(2147483647, ofm_BE_tmp_2'length)) else
                   ofm_BE_tmp_2;
 
     en_ofm_in_tmp  <= OFM_NL_Write;

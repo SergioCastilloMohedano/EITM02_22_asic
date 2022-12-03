@@ -92,8 +92,8 @@ architecture structural of TOP is
     signal ofmap     : std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
     signal ofmap_out : std_logic_vector((OFMAP_BITWIDTH - 1) downto 0);
 
-    -- SR
-    signal sr_out : std_logic_vector((COMP_BITWIDTH - 1) downto 0);
+    -- RN
+    signal rn_out : std_logic_vector((ACT_BITWIDTH - 1) downto 0);
 
     -- Pooling
     signal pooling_ack_tmp : std_logic;
@@ -180,7 +180,7 @@ architecture structural of TOP is
             en_w_IFM        : in std_logic;
             pooling_ack     : in std_logic;
             pooling_IFM     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-            sr_IFM          : in std_logic_vector (COMP_BITWIDTH - 1 downto 0)
+            rn_IFM          : in std_logic_vector (ACT_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -251,20 +251,10 @@ architecture structural of TOP is
         );
     end component;
 
-    component SR is
-        generic (
-            ws        : natural := OFMAP_BITWIDTH; -- bitwidth of input value -- 26 fpga, 32 asic
-            fl        : natural := 8;              -- length of fractional part of input value
-            ws_sr     : natural := 8;              -- bitwidth of output value
-            fl_sr     : natural := 3;              -- length of fractional part of output value
-            residuals : natural := 5               -- fl - fl_sr;
-        );
+    component RN_RELU is
         port (
-            clk       : in std_logic;
-            reset     : in std_logic;
-            value_in  : in std_logic_vector ((ws - 1) downto 0);
-            value_out : out std_logic_vector ((ws_sr - 1) downto 0);
-            enable_sr : in std_logic -- enabling reading from ofmap means we can start stochastic rounding
+            value_in  : in std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+            value_out : out std_logic_vector (ACT_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -367,7 +357,7 @@ begin
         en_w_IFM        => en_w_IFM_tmp,
         pooling_ack     => pooling_ack_tmp,
         pooling_IFM     => pooling_out,
-        sr_IFM          => sr_out
+        rn_IFM          => rn_out
 
     );
 
@@ -437,21 +427,11 @@ begin
         ofm                       => ofmap_out
     );
 
-    -- STOCHASTIC ROUNDING / ReLU
-    STOCHASTIC_ROUNDING_inst : SR
-    generic map(
-        ws        => ws,
-        fl        => fl,
-        ws_sr     => ws_sr,
-        fl_sr     => fl_sr,
-        residuals => residuals
-    )
+    -- Round To Nearest / ReLU
+    RN_RELU_inst : RN_RELU
     port map(
-        clk       => clk,
-        reset     => reset,
         value_in  => ofmap_out,
-        value_out => sr_out,
-        enable_sr => OFM_NL_Read_tmp
+        value_out => rn_out
     );
 
     -- POOLING
@@ -468,7 +448,7 @@ begin
         NoC_f       => NoC_f_tmp,
         NoC_e       => NoC_e_tmp,
         en_pooling  => OFM_NL_Read_tmp,
-        value_in    => sr_out,
+        value_in    => rn_out,
         value_out   => pooling_out,
         pooling_ack => pooling_ack_tmp,
         en_w_IFM    => p_en_w_IFM_tmp

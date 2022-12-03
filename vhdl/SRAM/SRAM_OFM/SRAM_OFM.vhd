@@ -38,17 +38,17 @@ architecture structural of SRAM_OFM is
     signal en_ofm_out_tmp : std_logic;
     signal ofm_FE_out_tmp : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
 
-    signal A_8K_3   : std_logic_vector(12 downto 0);
-    signal CSN_8K_3 : std_logic;
-    signal D_8K_3   : std_logic_vector (31 downto 0);
-    signal Q_8K_3   : std_logic_vector (31 downto 0);
-    signal WEN_8K_3 : std_logic;
-    signal A_8K_4   : std_logic_vector(12 downto 0);
-    signal CSN_8K_4 : std_logic;
-    signal D_8K_4   : std_logic_vector (31 downto 0);
-    signal Q_8K_4   : std_logic_vector (31 downto 0);
-    signal WEN_8K_4 : std_logic;
-    signal INITN    : std_logic;
+    -- Port 1 (write)
+    signal A_2K_p1   : std_logic_vector(13 downto 0);
+    signal CSN_2K_p1 : std_logic;
+    signal D_2K_p1   : std_logic_vector (31 downto 0);
+    signal WEN_2K_p1 : std_logic;
+    -- Port 2 (read)
+    signal A_2K_p2   : std_logic_vector(13 downto 0);
+    signal CSN_2K_p2 : std_logic;
+    signal Q_2K_p2   : std_logic_vector (31 downto 0);
+
+    signal INITN : std_logic;
 
     -- COMPONENT DECLARATIONS
     component SRAM_OFM_FRONT_END_ACC is
@@ -98,49 +98,34 @@ architecture structural of SRAM_OFM is
             ofm_FE_out : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
             en_ofm_out : in std_logic;
             -- SRAM Wrapper Ports
-            A_8K_3   : out std_logic_vector(12 downto 0);
-            CSN_8K_3 : out std_logic;
-            D_8K_3   : out std_logic_vector (31 downto 0);
-            Q_8K_3   : in std_logic_vector (31 downto 0);
-            WEN_8K_3 : out std_logic;
-            A_8K_4   : out std_logic_vector(12 downto 0);
-            CSN_8K_4 : out std_logic;
-            D_8K_4   : out std_logic_vector (31 downto 0);
-            Q_8K_4   : in std_logic_vector (31 downto 0);
-            WEN_8K_4 : out std_logic;
-            INITN    : out std_logic
-
+            INITN : out std_logic;
+            -- Port 1 (write)
+            A_2K_p1   : out std_logic_vector(13 downto 0);
+            CSN_2K_p1 : out std_logic;
+            D_2K_p1   : out std_logic_vector (31 downto 0);
+            WEN_2K_p1 : out std_logic;
+            -- Port 2 (read)
+            A_2K_p2    : out std_logic_vector(13 downto 0);
+            CSN_2K_p2  : out std_logic;
+            Q_2K_p2    : in std_logic_vector (31 downto 0)
         );
     end component;
 
-    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+    component SRAM_OFM_WRAPPER_BLOCK
         port (
-            A     : in std_logic_vector(12 downto 0);
-            CK    : in std_logic;
-            CSN   : in std_logic;
-            D     : in std_logic_vector (31 downto 0);
+            clk   : in std_logic;
             INITN : in std_logic;
-            Q     : out std_logic_vector (31 downto 0);
-            WEN   : in std_logic
+            -- Port 1 (write)
+            A_2K_p1   : in std_logic_vector(13 downto 0);
+            CSN_2K_p1 : in std_logic;
+            D_2K_p1   : in std_logic_vector (31 downto 0);
+            WEN_2K_p1 : in std_logic;
+            -- Port 2 (read)
+            A_2K_p2   : in std_logic_vector(13 downto 0);
+            CSN_2K_p2 : in std_logic;
+            Q_2K_p2   : out std_logic_vector (31 downto 0)
         );
     end component;
-
-    -- component blk_mem_gen_2 is
-    --     port (
-    --         clka      : in std_logic;
-    --         ena       : in std_logic;
-    --         wea       : in std_logic_vector(0 downto 0);
-    --         addra     : in std_logic_vector(13 downto 0);
-    --         dina      : in std_logic_vector(OFMAP_BITWIDTH - 1 downto 0);
-    --         clkb      : in std_logic;
-    --         rstb      : in std_logic;
-    --         enb       : in std_logic;
-    --         addrb     : in std_logic_vector(13 downto 0);
-    --         doutb     : out std_logic_vector(OFMAP_BITWIDTH - 1 downto 0);
-    --         rsta_busy : out std_logic;
-    --         rstb_busy : out std_logic
-    --     );
-    -- end component;
 
 begin
 
@@ -181,43 +166,28 @@ begin
         WE                        => WE_tmp,
         ofm_FE_out                => ofm_FE_out_tmp,
         en_ofm_out                => en_ofm_out_tmp,
-        A_8K_3                    => A_8K_3,
-        CK_8K_3                   => clk,
-        CSN_8K_3                  => CSN_8K_3,
-        D_8K_3                    => D_8K_3,
-        Q_8K_3                    => Q_8K_3,
-        WEN_8K_3                  => WEN_8K_3,
-        A_8K_4                    => A_8K_4,
-        CK_8K_4                   => clk,
-        CSN_8K_4                  => CSN_8K_4,
-        D_8K_4                    => D_8K_4,
-        Q_8K_4                    => Q_8K_4,
-        WEN_8K_4                  => WEN_8K_4,
-        INITN                     => INITN
+        INITN                     => INITN,
+        A_2K_p1                   => A_2K_p1,
+        CSN_2K_p1                 => CSN_2K_p1,
+        D_2K_p1                   => D_2K_p1,
+        WEN_2K_p1                 => WEN_2K_p1,
+        A_2K_p2                   => A_2K_p2,
+        CSN_2K_p2                 => CSN_2K_p2,
+        Q_2K_p2                   => Q_2K_p2
     );
 
-    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper 3
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_3 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+    -- SRAM_OFM_WRAPPER_BLOCK
+    SRAM_OFM_WRAPPER_BLOCK_inst : SRAM_OFM_WRAPPER_BLOCK
     port map(
-        A     => A_8K_3,
-        CK    => clk,
-        CSN   => CSN_8K_3,
-        D     => D_8K_3,
-        INITN => INITN,
-        Q     => Q_8K_3,
-        WEN   => WEN_8K_3
-    );
-
-    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper 4
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_4 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
-    port map(
-        A     => A_8K_4,
-        CK    => clk,
-        CSN   => CSN_8K_4,
-        D     => D_8K_4,
-        INITN => INITN,
-        Q     => Q_8K_4,
-        WEN   => WEN_8K_4
+        clk        => clk,
+        INITN      => INITN,
+        A_2K_p1    => A_2K_p1,
+        CSN_2K_p1  => CSN_2K_p1,
+        D_2K_p1    => D_2K_p1,
+        WEN_2K_p1  => WEN_2K_p1,
+        A_2K_p2    => A_2K_p2,
+        CSN_2K_p2  => CSN_2K_p2,
+        Q_2K_p2    => Q_2K_p2
     );
 
     -- PORT ASSIGNATIONS

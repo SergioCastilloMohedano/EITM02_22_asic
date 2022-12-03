@@ -20,197 +20,234 @@ entity SRAM_OFM_BACK_END is
         ofm_FE_out : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
         en_ofm_out : in std_logic;
         -- SRAM Wrapper Ports
-        A_8K_3   : out std_logic_vector(12 downto 0);
-        CSN_8K_3 : out std_logic;
-        D_8K_3   : out std_logic_vector (31 downto 0);
-        Q_8K_3   : in std_logic_vector (31 downto 0);
-        WEN_8K_3 : out std_logic;
-        A_8K_4   : out std_logic_vector(12 downto 0);
-        CSN_8K_4 : out std_logic;
-        D_8K_4   : out std_logic_vector (31 downto 0);
-        Q_8K_4   : in std_logic_vector (31 downto 0);
-        WEN_8K_4 : out std_logic;
-        INITN    : out std_logic
+        INITN : out std_logic;
+        -- Port 1 (write)
+        A_2K_p1   : out std_logic_vector(13 downto 0);
+        CSN_2K_p1 : out std_logic;
+        D_2K_p1   : out std_logic_vector (31 downto 0);
+        WEN_2K_p1 : out std_logic;
+        -- Port 2 (read)
+        A_2K_p2   : out std_logic_vector(13 downto 0);
+        CSN_2K_p2 : out std_logic;
+        Q_2K_p2   : in std_logic_vector (31 downto 0)
     );
 end SRAM_OFM_BACK_END;
 
 architecture behavioral of SRAM_OFM_BACK_END is
 
-        -- Enumeration type for the states and state_type signals
-        type state_type is (s_init, s_idle, s_OFM_Write, s_OFM_Read, s_finished);
-        signal state_next, state_reg : state_type;
+    -- Enumeration type for the states and state_type signals
+    type state_type is (s_init, s_idle, s_OFM_Write, s_OFM_Read, s_finished);
+    signal state_next, state_reg : state_type;
 
-        ------------ CONTROL PATH SIGNALS ------------
-        -------- INPUTS --------
-        ---- Internal Status Signals from the Data Path
-        -- ..
+    ------------ CONTROL PATH SIGNALS ------------
+    -------- INPUTS --------
+    ---- Internal Status Signals from the Data Path
+    -- ..
 
-        ---- External Command Signals to the FSMD
-        signal OFM_NL_cnt_finished_tmp : std_logic;
-        signal en_ofm_in_tmp           : std_logic;
+    ---- External Command Signals to the FSMD
+    signal OFM_NL_cnt_finished_tmp : std_logic;
+    signal en_ofm_in_tmp           : std_logic;
 
-        -------- OUTPUTS --------
-        ---- Internal Control Signals used to control Data Path Operation
-        -- ..
+    -------- OUTPUTS --------
+    ---- Internal Control Signals used to control Data Path Operation
+    -- ..
 
-        ---- External Status Signals to indicate status of the FSMD
+    ---- External Status Signals to indicate status of the FSMD
+    -- ..
 
-        ------------ DATA PATH SIGNALS ------------
-        ---- Data Registers Signals
-        signal addr_ofm_write_reg, addr_ofm_write_next : unsigned (13 downto 0);
-        signal addr_ofm_read_reg, addr_ofm_read_next   : unsigned (13 downto 0);
+    ------------ DATA PATH SIGNALS ------------
+    ---- Data Registers Signals
+    signal addr_ofm_write_reg, addr_ofm_write_next : unsigned (13 downto 0);
+    signal addr_ofm_read_reg, addr_ofm_read_next   : unsigned (13 downto 0);
 
-        ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
-        signal WE_tmp                        : std_logic_vector (0 downto 0);
-        signal OFM_NL_NoC_m_cnt_finished_tmp : std_logic;
+    signal initn_reg, initn_next         : std_logic;
+    signal initn_cnt_reg, initn_cnt_next : unsigned (1 downto 0);
 
-        ---- Functional Units Intermediate Signals
-        signal addr_ofm_write_out : unsigned (13 downto 0);
-        signal addr_ofm_write_tmp : unsigned (13 downto 0);
-        signal addr_ofm_read_out  : unsigned (13 downto 0);
 
-        ---- Data Outputs
-        signal ofm_sum_tmp    : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
-        signal ofm_FE_out_tmp : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
-        signal addra_tmp      : unsigned (13 downto 0);
-        signal dina_tmp       : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
-        signal ena_tmp        : std_logic;
-        signal wea_tmp        : std_logic_vector (0 downto 0);
-        signal addrb_tmp      : unsigned (13 downto 0);
-        signal enb_tmp        : std_logic;
+    ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
+    signal WE_tmp                        : std_logic;
+    signal OFM_NL_NoC_m_cnt_finished_tmp : std_logic;
 
-        signal addr_ofm_write_reg_delay : unsigned (13 downto 0);
-        signal ofm_FE_in_tmp_delay      : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
-        signal en_ofm_in_tmp_delay      : std_logic;
-        signal WE_tmp_delay             : std_logic_vector (0 downto 0);
+    ---- Functional Units Intermediate Signals
+    signal addr_ofm_write_out : unsigned (13 downto 0);
+    signal addr_ofm_write_tmp : unsigned (13 downto 0);
+    signal addr_ofm_read_out  : unsigned (13 downto 0);
 
-        -- Data Inputs
-        signal ofm_FE_in_tmp : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+    signal initn_out     : std_logic;
+    signal initn_cnt_out : unsigned (1 downto 0);
+
+
+    ---- Data Outputs
+    signal ofm_sum_tmp    : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+    signal ofm_FE_out_tmp : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+    signal A_2K_p1_tmp    : unsigned (13 downto 0);
+    signal D_2K_p1_tmp    : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+    signal CSN_2K_p1_tmp  : std_logic;
+    signal WEN_2K_p1_tmp  : std_logic;
+    signal A_2K_p2_tmp    : unsigned (13 downto 0);
+    signal CSN_2K_p2_tmp  : std_logic;
+
+    -- Data Inputs
+    signal ofm_FE_in_tmp : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+
+    -- Other signals
+    signal sign_extension : std_logic_vector (OFMAP_BITWIDTH - 32 - 1 downto 0);
 
 begin
 
-        -- control path : state register
-        asmd_reg : process (clk, reset)
-        begin
-            if rising_edge(clk) then
-                if reset = '1' then
-                    state_reg <= s_init;
-                else
-                    state_reg <= state_next;
-                end if;
+    -- control path : state register
+    asmd_reg : process (clk, reset)
+    begin
+        if rising_edge(clk) then
+            if reset = '1' then
+                state_reg <= s_init;
+            else
+                state_reg <= state_next;
             end if;
-        end process;
+        end if;
+    end process;
 
-        -- control path : next state logic
-        asmd_ctrl : process (state_reg, en_ofm_in_tmp, OFM_NL_cnt_finished_tmp, OFM_NL_NoC_m_cnt_finished_tmp)
-        begin
-            case state_reg is
-                when s_init =>
-                    state_next <= s_idle;
-                when s_idle =>
-                    if en_ofm_in_tmp = '1' then
-                        state_next <= s_OFM_Write;
-                    else
-                        state_next <= s_idle;
-                    end if;
-                when s_OFM_Write =>
-                    if OFM_NL_cnt_finished_tmp = '1' then
-                        state_next <= s_OFM_Read;
-                    else
-                        state_next <= s_OFM_Write;
-                    end if;
-                when s_OFM_Read =>
-                    if (OFM_NL_NoC_m_cnt_finished_tmp = '0') then
-                        state_next <= s_OFM_Read;
-                    else
-                        state_next <= s_finished;
-                    end if;
-                when s_finished =>
-                    state_next <= s_idle;
-                when others =>
-                    state_next <= s_init;
-            end case;
-        end process;
-
-        -- control path : output logic
-        -- ..
-
-        -- data path : data registers
-        data_reg : process (clk, reset)
-        begin
-            if rising_edge(clk) then
-                if reset = '1' then
-                    addr_ofm_write_reg <= (others => '0');
-                    addr_ofm_read_reg  <= (others => '0');
+    -- control path : next state logic
+    asmd_ctrl : process (state_reg, en_ofm_in_tmp, OFM_NL_cnt_finished_tmp, OFM_NL_NoC_m_cnt_finished_tmp)
+    begin
+        case state_reg is
+            when s_init =>
+                state_next <= s_idle;
+            when s_idle =>
+                if en_ofm_in_tmp = '1' then
+                    state_next <= s_OFM_Write;
                 else
-                    addr_ofm_write_reg <= addr_ofm_write_next;
-                    addr_ofm_read_reg  <= addr_ofm_read_next;
+                    state_next <= s_idle;
                 end if;
+            when s_OFM_Write =>
+                if OFM_NL_cnt_finished_tmp = '1' then
+                    state_next <= s_OFM_Read;
+                else
+                    state_next <= s_OFM_Write;
+                end if;
+            when s_OFM_Read =>
+                if (OFM_NL_NoC_m_cnt_finished_tmp = '0') then
+                    state_next <= s_OFM_Read;
+                else
+                    state_next <= s_finished;
+                end if;
+            when s_finished =>
+                state_next <= s_idle;
+            when others =>
+                state_next <= s_init;
+        end case;
+    end process;
+
+    -- control path : output logic
+    -- ..
+
+    -- data path : data registers
+    data_reg : process (clk, reset)
+    begin
+        if rising_edge(clk) then
+            if reset = '1' then
+                addr_ofm_write_reg <= (others => '0');
+                addr_ofm_read_reg  <= (others => '0');
+
+                initn_cnt_reg <= (others => '0');
+                initn_reg     <= '0';
+            else
+                addr_ofm_write_reg <= addr_ofm_write_next;
+                addr_ofm_read_reg  <= addr_ofm_read_next;
+
+                initn_cnt_reg <= initn_cnt_next;
+                initn_reg     <= initn_next;
             end if;
-        end process;
+        end if;
+    end process;
 
-        -- data path : functional units (perform necessary arithmetic operations)
-        addr_ofm_write_tmp <= (others => '0') when (OFM_NL_NoC_m_cnt_finished_tmp = '1') else addr_ofm_write_reg + 1;
-        addr_ofm_write_out <= addr_ofm_write_tmp when (WE_tmp(0) = '1') else addr_ofm_write_reg;
+    -- data path : functional units (perform necessary arithmetic operations)
+    addr_ofm_write_tmp <= (others => '0') when (OFM_NL_NoC_m_cnt_finished_tmp = '1') else addr_ofm_write_reg + 1;
+    addr_ofm_write_out <= addr_ofm_write_tmp when (WE_tmp = '1') else addr_ofm_write_reg;
 
-        addr_ofm_read_out <= (others => '0') when (OFM_NL_NoC_m_cnt_finished_tmp = '1') else (addr_ofm_read_reg + 1);
+    addr_ofm_read_out <= (others => '0') when (OFM_NL_NoC_m_cnt_finished_tmp = '1') else (addr_ofm_read_reg + 1);
 
-        -- data path : status (inputs to control path to modify next state logic)
-        -- ..
 
-        -- data path : outputs
-        addra_tmp <= addr_ofm_write_reg;
-        dina_tmp  <= ofm_FE_in_tmp;
-        ena_tmp   <= en_ofm_in_tmp;
-        wea_tmp   <= WE_tmp;
+    initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "10" else initn_cnt_reg + "1";
+    initn_out     <= '1' when initn_cnt_reg = "10" else '0';
+        
+    -- data path : status (inputs to control path to modify next state logic)
+    -- ..
 
-        addrb_tmp <= addr_ofm_write_next when (state_reg = s_OFM_Write) else
-                     addr_ofm_read_reg when (state_reg = s_OFM_Read) else
-                     (others => '0');
-        ofm_FE_out_tmp <= doutb when ((state_reg = s_OFM_Read) or (state_reg = s_finished)) else (others  => '0');
-        ofm_sum_tmp    <= doutb when (state_reg = s_OFM_Write) else (others => '0');
-        enb_tmp        <= en_ofm_sum when (state_reg = s_OFM_Write) else
-                          en_ofm_out when (state_reg = s_OFM_Read) else
-                          '0';
+    -- data path : outputs
+    A_2K_p1_tmp   <= addr_ofm_write_reg;
+    D_2K_p1_tmp   <= ofm_FE_in_tmp;
+    CSN_2K_p1_tmp <= en_ofm_in_tmp;
+    WEN_2K_p1_tmp <= WE_tmp;
 
-        -- data path : mux routing
-        data_mux : process (state_reg, addr_ofm_write_reg, addr_ofm_write_out, addr_ofm_read_reg, addr_ofm_read_out)
-        begin
-            case state_reg is
-                when s_init                    =>
-                    addr_ofm_write_next <= (others => '0');
-                    addr_ofm_read_next  <= (others => '0');
-                when s_idle                    =>
-                    addr_ofm_write_next <= addr_ofm_write_reg;
-                    addr_ofm_read_next  <= addr_ofm_read_reg;
-                when s_OFM_Write =>
-                    addr_ofm_write_next <= addr_ofm_write_out;
-                    addr_ofm_read_next  <= addr_ofm_read_reg;
-                when s_OFM_Read =>
-                    addr_ofm_write_next <= addr_ofm_write_reg;
-                    addr_ofm_read_next  <= addr_ofm_read_out;
-                when s_finished                =>
-                    addr_ofm_write_next <= (others => '0');
-                    addr_ofm_read_next  <= (others => '0');
-                when others                    =>
-                    addr_ofm_write_next <= addr_ofm_write_reg;
-                    addr_ofm_read_next  <= addr_ofm_read_reg;
-            end case;
-        end process;
+    A_2K_p2_tmp <= addr_ofm_write_next when (state_reg = s_OFM_Write) else
+        addr_ofm_read_reg when (state_reg = s_OFM_Read) else
+        (others => '0');
 
-        -- PORT Assignations
-        WE_tmp(0)                     <= WE;
-        ofm_FE_in_tmp                 <= ofm_FE_acc;
-        en_ofm_in_tmp                 <= en_ofm_in;
-        OFM_NL_cnt_finished_tmp       <= OFM_NL_cnt_finished;
-        OFM_NL_NoC_m_cnt_finished_tmp <= OFM_NL_NoC_m_cnt_finished;
-        ofm_sum                       <= ofm_sum_tmp;
-        ofm_FE_out                    <= ofm_FE_out_tmp;
-        addra                         <= std_logic_vector(addra_tmp);
-        dina                          <= dina_tmp;
-        ena                           <= ena_tmp;
-        wea                           <= wea_tmp;
-        addrb                         <= std_logic_vector(addrb_tmp);
-        enb                           <= enb_tmp;
+    sign_extension <= (others => Q_2K_p2(31));
+    ofm_FE_out_tmp <= (sign_extension & Q_2K_p2) when ((state_reg = s_OFM_Read) or (state_reg = s_finished)) else (others => '0');
+    ofm_sum_tmp    <= (sign_extension & Q_2K_p2) when (state_reg = s_OFM_Write) else (others                              => '0');
+    CSN_2K_p2_tmp  <= en_ofm_sum when (state_reg = s_OFM_Write) else
+        en_ofm_out when (state_reg = s_OFM_Read) else
+        '0';
+
+    -- data path : mux routing
+    data_mux : process (state_reg, addr_ofm_write_reg, addr_ofm_write_out, addr_ofm_read_reg, addr_ofm_read_out, initn_cnt_reg, initn_reg, initn_cnt_out, initn_out)
+    begin
+        case state_reg is
+            when s_init                    =>
+                addr_ofm_write_next <= (others => '0');
+                addr_ofm_read_next  <= (others => '0');
+
+                initn_cnt_next <= initn_cnt_reg;
+                initn_next     <= initn_reg;
+            when s_idle                    =>
+                addr_ofm_write_next <= addr_ofm_write_reg;
+                addr_ofm_read_next  <= addr_ofm_read_reg;
+
+                initn_cnt_next <= initn_cnt_out;
+                initn_next     <= initn_out;
+            when s_OFM_Write =>
+                addr_ofm_write_next <= addr_ofm_write_out;
+                addr_ofm_read_next  <= addr_ofm_read_reg;
+
+                initn_cnt_next <= initn_cnt_reg;
+                initn_next     <= initn_reg;
+            when s_OFM_Read =>
+                addr_ofm_write_next <= addr_ofm_write_reg;
+                addr_ofm_read_next  <= addr_ofm_read_out;
+
+                initn_cnt_next <= initn_cnt_reg;
+                initn_next     <= initn_reg;
+            when s_finished                =>
+                addr_ofm_write_next <= (others => '0');
+                addr_ofm_read_next  <= (others => '0');
+
+                initn_cnt_next <= initn_cnt_reg;
+                initn_next     <= initn_reg;
+            when others                    =>
+                addr_ofm_write_next <= addr_ofm_write_reg;
+                addr_ofm_read_next  <= addr_ofm_read_reg;
+
+                initn_cnt_next <= initn_cnt_reg;
+                initn_next     <= initn_reg;
+        end case;
+    end process;
+
+    -- PORT Assignations
+    WE_tmp                        <= WE;
+    ofm_FE_in_tmp                 <= ofm_FE_acc;
+    en_ofm_in_tmp                 <= en_ofm_in;
+    OFM_NL_cnt_finished_tmp       <= OFM_NL_cnt_finished;
+    OFM_NL_NoC_m_cnt_finished_tmp <= OFM_NL_NoC_m_cnt_finished;
+    ofm_sum                       <= ofm_sum_tmp;
+    ofm_FE_out                    <= ofm_FE_out_tmp;
+    A_2K_p1                       <= std_logic_vector(A_2K_p1_tmp);
+    D_2K_p1                       <= D_2K_p1_tmp(31 downto 0);
+    CSN_2K_p1                     <= not(CSN_2K_p1_tmp);
+    WEN_2K_p1                     <= not(WEN_2K_p1_tmp);
+    A_2K_p2                       <= std_logic_vector(A_2K_p2_tmp);
+    CSN_2K_p2                     <= not(CSN_2K_p2_tmp);
+    INITN                         <= INITN_reg;
 
 end architecture;

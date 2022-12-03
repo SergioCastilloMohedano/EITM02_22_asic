@@ -20,7 +20,7 @@ entity SRAM_IFM is
         en_w_IFM    : in std_logic;
         pooling_ack : in std_logic;
         pooling_IFM : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-        sr_IFM      : in std_logic_vector (ACT_BITWIDTH - 1 downto 0)
+        rn_IFM      : in std_logic_vector (ACT_BITWIDTH - 1 downto 0)
     );
 end SRAM_IFM;
 
@@ -68,7 +68,7 @@ architecture structural of SRAM_IFM is
             en_w_IFM    : in std_logic;
             pooling_ack : in std_logic;
             pooling_IFM : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-            sr_IFM      : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+            rn_IFM      : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             -- Back-End (BE) Interface Ports
             ifm_BE_w : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             en_w     : out std_logic;
@@ -134,7 +134,7 @@ begin
         en_w_IFM    => en_w_IFM,
         pooling_ack => pooling_ack,
         pooling_IFM => pooling_IFM,
-        sr_IFM      => sr_IFM,
+        rn_IFM      => rn_IFM,
         ifm_BE_w    => ifm_w_tmp,
         en_w        => en_w_tmp,
         WE_BE       => WE_tmp

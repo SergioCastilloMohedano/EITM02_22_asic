@@ -16,8 +16,8 @@ entity POOLING_TOP is
         NoC_f       : in std_logic_vector (7 downto 0);
         NoC_e       : in std_logic_vector (7 downto 0);
         en_pooling  : in std_logic;
-        value_in    : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-        value_out   : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+        value_in    : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+        value_out   : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         pooling_ack : out std_logic;
         en_w_IFM    : out std_logic
     );
@@ -62,8 +62,8 @@ architecture structural of POOLING_TOP is
         port (
             clk       : in std_logic;
             reset     : in std_logic;
-            value_in  : in std_logic_vector (COMP_BITWIDTH - 1 downto 0);
-            value_out : out std_logic_vector (COMP_BITWIDTH - 1 downto 0);
+            value_in  : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+            value_out : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             rf_addr   : in std_logic_vector(bit_size(X/2) - 1 downto 0);
             we_rf     : in std_logic;
             re_rf     : in std_logic;

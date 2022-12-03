@@ -55,8 +55,8 @@ architecture structural of PE is
     signal ifm_mult         : std_logic_vector(ACT_BITWIDTH - 1 downto 0);
     signal w_mult           : std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
     signal mult_out         : signed(PSUM_BITWIDTH - 1 downto 0);
-    signal mult_result      : signed((ACT_BITWIDTH * WEIGHT_BITWIDTH) - 1 downto 0);
-    signal sign_extension   : signed((PSUM_BITWIDTH - (ACT_BITWIDTH * WEIGHT_BITWIDTH)) - 1 downto 0);
+    signal mult_result      : signed((ACT_BITWIDTH + WEIGHT_BITWIDTH) - 1 downto 0);
+    signal sign_extension   : signed((PSUM_BITWIDTH - (ACT_BITWIDTH + WEIGHT_BITWIDTH)) - 1 downto 0);
 
     -- Adder Signals
     signal adder_in_1 : signed(PSUM_BITWIDTH - 1 downto 0);
@@ -75,8 +75,8 @@ architecture structural of PE is
     component REG_FILE_ACT is
         generic (
             REGISTER_INPUTS : boolean := true;
-            NUM_REGS        : natural := 32;
-            BITWIDTH        : natural := 8
+            NUM_REGS        : natural := 34;
+            BITWIDTH        : natural := 16
         );
         port (
             clk         : in std_logic;
@@ -95,7 +95,7 @@ architecture structural of PE is
     component REG_FILE_WEIGHT is
         generic (
             REGISTER_INPUTS : boolean := true;
-            NUM_REGS        : natural := 32;
+            NUM_REGS        : natural := 24;
             BITWIDTH        : natural := 8
         );
         port (
