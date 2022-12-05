@@ -215,7 +215,7 @@ module ST_SPHD_HIPERF_4096x32m8_Tlmr_HIPERF_CUT (A, ATP, CK, CSN, D , IG, INITN 
         Fault_file_name = "ST_SPHD_HIPERF_4096x32m8_Tlmr_HIPERF_CUT_faults.txt",
         max_faults = 4096+2,
         MEM_INITIALIZE  = 1'b1,
-        BinaryInit = 1'b0,
+        BinaryInit = 1'b1,
         InitFileName = "ST_SPHD_HIPERF_4096x32m8_Tlmr_HIPERF_CUT.cde",
         Debug_mode = "all_warning_mode",
         File_load_time=0,

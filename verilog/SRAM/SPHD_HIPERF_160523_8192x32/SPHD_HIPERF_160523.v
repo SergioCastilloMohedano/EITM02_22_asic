@@ -215,7 +215,7 @@ module ST_SPHD_HIPERF_8192x32m16_Tlmr (A, ATP, CK, CSN, D , IG, INITN , Q, SCTRL
         Fault_file_name = "ST_SPHD_HIPERF_8192x32m16_Tlmr_faults.txt",
         max_faults = 8192+2,
         MEM_INITIALIZE  = 1'b1,
-        BinaryInit = 1'b0,
+        BinaryInit = 1'b1,
         InitFileName = "ST_SPHD_HIPERF_8192x32m16_Tlmr.cde",
         Debug_mode = "all_warning_mode",
         File_load_time=0,

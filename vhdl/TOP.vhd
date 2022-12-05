@@ -13,13 +13,7 @@ entity TOP is
         hw_log2_EF            : integer_array := (5, 4, 3);
         NUM_REGS_IFM_REG_FILE : natural       := 34;             -- Emax (conv0 and conv1)
         NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
-        -- EOM_ADDR_WB_SRAM      : natural       := 82329;          -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
-        ADDR_4K_CFG           : natural       := 4042;           -- First Address of the reserved space for config. parameters.
-        ws                    : natural       := OFMAP_BITWIDTH; -- bitwidth of input value -- 26 fpga, 32 asic
-        fl                    : natural       := 8;              -- length of fractional part of input value
-        ws_sr                 : natural       := 8;              -- bitwidth of output value
-        fl_sr                 : natural       := 3;              -- length of fractional part of output value
-        residuals             : natural       := 5               -- fl - fl_sr;
+        ADDR_4K_CFG           : natural       := 4042            -- First Address of the reserved space for config. parameters.
     );
     port (
         clk         : in std_logic;
@@ -149,7 +143,6 @@ architecture structural of TOP is
 
     component SRAM_WB is
         generic (
-            -- EOM_ADDR_WB_SRAM : natural := 82329 -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
             ADDR_4K_CFG : natural := 4042           -- First Address of the reserved space for config. parameters.
         );
         port (

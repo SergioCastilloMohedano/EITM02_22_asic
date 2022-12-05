@@ -22,7 +22,7 @@ entity SRAM_OFM is
         -- From WB SRAM
         bias : in std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
 
-        -- To Stochastic Rounding / ReLU Block
+        -- To Round To Nearest / ReLU Block
         ofm : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0)
     );
 end SRAM_OFM;
