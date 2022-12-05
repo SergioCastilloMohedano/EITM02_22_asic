@@ -466,7 +466,7 @@ entity mux is
         LEN : natural := 8; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
         NUM : natural); -- Number of inputs
     port (
-        mux_in  : in std_logic_vector_array(0 to NUM - 1);
+        mux_in  : in std_logic_vector_array(0 to NUM - 1) := (others => (others => '0'));
         mux_sel : in natural range 0 to NUM - 1;
         mux_out : out std_logic_vector(LEN - 1 downto 0));
 end entity;

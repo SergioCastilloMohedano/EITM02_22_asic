@@ -45,11 +45,11 @@ architecture dataflow of MC_X is
     signal w_ifm_x_ctrl       : std_logic;
     signal ifm_x_ctrl_2nd     : std_logic;
     signal ifm_x_ctrl         : std_logic;
-    signal ifm_x_ctrl_tmp     : natural;
+    signal ifm_x_ctrl_tmp     : integer;
     signal w_ifm_x_ctrl_tmp_4 : std_logic_vector (7 downto 0);
-    signal w_ifm_x_ctrl_tmp_3 : natural;
-    signal w_ifm_x_ctrl_tmp_2 : natural;
-    signal w_ifm_x_ctrl_tmp   : natural;
+    signal w_ifm_x_ctrl_tmp_3 : integer;
+    signal w_ifm_x_ctrl_tmp_2 : integer;
+    signal w_ifm_x_ctrl_tmp   : integer;
     signal C_cap_tmp          : natural range 0 to 255;
     signal EF_log2_tmp        : natural range 0 to 255;
     signal r_log2_tmp         : natural range 0 to 255;

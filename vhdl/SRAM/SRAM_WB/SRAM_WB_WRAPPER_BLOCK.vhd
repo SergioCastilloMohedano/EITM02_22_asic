@@ -43,7 +43,19 @@ architecture structural of SRAM_WB_WRAPPER_BLOCK is
     signal WEN_8K_2_tmp : std_logic;
     signal WEN_4K_tmp   : std_logic;
 
-    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_1
+        port (
+            A     : in std_logic_vector(12 downto 0);
+            CK    : in std_logic;
+            CSN   : in std_logic;
+            D     : in std_logic_vector (31 downto 0);
+            INITN : in std_logic;
+            Q     : out std_logic_vector (31 downto 0);
+            WEN   : in std_logic
+        );
+    end component;
+
+    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_2
         port (
             A     : in std_logic_vector(12 downto 0);
             CK    : in std_logic;
@@ -69,8 +81,8 @@ architecture structural of SRAM_WB_WRAPPER_BLOCK is
 
 begin
 
-    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper 1
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_1 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_1
+    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_1 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_1
     port map(
         A     => A_8K_1,
         CK    => clk,
@@ -81,8 +93,8 @@ begin
         WEN   => WEN_8K_1
     );
 
-    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper 2
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_2 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_2
+    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_2 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_2
     port map(
         A     => A_8K_2,
         CK    => clk,

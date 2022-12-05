@@ -82,7 +82,7 @@
 **********************END OF HEADER ******************************/
 
 
-module ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper (A, CK, CSN, D, INITN, Q, WEN);
+module ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_1 (A, CK, CSN, D, INITN, Q, WEN);
 
         parameter
         Words = 8192,
@@ -175,10 +175,205 @@ buf (TA[11], 1'b0);
 buf (TA[12], 1'b0);
         
 
-ST_SPHD_HIPERF_8192x32m16_Tlmr I1 (.A(A), .ATP(ATP), .CK(CK), .CSN(CSN), .D(D), .IG(IG), .INITN(INITN) , .Q(Q), .SCTRLI(SCTRLI), .SCTRLO(SCTRLO), .SDLI(SDLI), .SDLO(SDLO), .SDRI(SDRI), .SDRO(SDRO), .SE(SE),  .STDBY(STDBY) , .TA(TA), .TBIST(TBIST), .TBYPASS(TBYPASS) , .TCSN(TCSN), .TED(TED) , .TOD(TOD), .TWEN(TWEN), .WEN(WEN));
+ST_SPHD_HIPERF_8192x32m16_Tlmr_1 I1 (.A(A), .ATP(ATP), .CK(CK), .CSN(CSN), .D(D), .IG(IG), .INITN(INITN) , .Q(Q), .SCTRLI(SCTRLI), .SCTRLO(SCTRLO), .SDLI(SDLI), .SDLO(SDLO), .SDRI(SDRI), .SDRO(SDRO), .SE(SE),  .STDBY(STDBY) , .TA(TA), .TBIST(TBIST), .TBYPASS(TBYPASS) , .TCSN(TCSN), .TED(TED) , .TOD(TOD), .TWEN(TWEN), .WEN(WEN));
 
 
 endmodule
 
+module ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_2 (A, CK, CSN, D, INITN, Q, WEN);
+
+        parameter
+        Words = 8192,
+        Bits = 32,
+        mux = 16,
+        Bits_Func =  32, 
+        mask_bits =  32, 
+        repair_address_width = 9, 
+        
+        Addr = 13; 
+
+        parameter
+
+        read_margin_size = 3,
+        write_margin_size = 2;
+
+
+        output [Bits_Func-1 : 0] Q;
+        
+       
+        input [Addr-1 : 0] A;
+        input CK;
+        input CSN;
+        input INITN;
+        input [Bits_Func-1 : 0] D ;
+	
+        input WEN;
+        
+        
+       
+
+       
+
+        wire ATP,IG,SCTRLI,SDLI,SDRI, SE,    STDBY,TBIST,TCSN,TED,TEM,TOD,TOM,TWEN, SDLO, SDRO,SCTRLO;
+             
+        wire TBYPASS;
+        
+        
+
+        
+
+        
+
+        
+        
+        
+
+        
+        wire [Addr-1 :0 ] TA;
+
+        wire SLEEP;
+        buf (SLEEP, 1'b0);
+
+
+        
+
+        buf (ATP, 1'b0);
+        buf (IG, 1'b0);
+        buf (SCTRLI, 1'b0);
+        buf (SDLI, 1'b0);
+        buf (SDRI, 1'b0);
+        buf (SE, 1'b0);
+        
+        
+        
+         
+        buf (STDBY, 1'b0);
+        buf (TBIST, 1'b0);
+        buf (TBYPASS, 1'b0);
+        buf (TCSN, 1'b0);
+        buf (TED, 1'b0);
+        buf (TEM, 1'b0);
+        buf (TOD, 1'b0);
+        buf (TOM, 1'b0);
+        buf (TWEN, 1'b0);
+        
+        
+        buf (TA[0], 1'b0);
+buf (TA[1], 1'b0);
+buf (TA[2], 1'b0);
+buf (TA[3], 1'b0);
+buf (TA[4], 1'b0);
+buf (TA[5], 1'b0);
+buf (TA[6], 1'b0);
+buf (TA[7], 1'b0);
+buf (TA[8], 1'b0);
+buf (TA[9], 1'b0);
+buf (TA[10], 1'b0);
+buf (TA[11], 1'b0);
+buf (TA[12], 1'b0);
+        
+
+ST_SPHD_HIPERF_8192x32m16_Tlmr_2 I1 (.A(A), .ATP(ATP), .CK(CK), .CSN(CSN), .D(D), .IG(IG), .INITN(INITN) , .Q(Q), .SCTRLI(SCTRLI), .SCTRLO(SCTRLO), .SDLI(SDLI), .SDLO(SDLO), .SDRI(SDRI), .SDRO(SDRO), .SE(SE),  .STDBY(STDBY) , .TA(TA), .TBIST(TBIST), .TBYPASS(TBYPASS) , .TCSN(TCSN), .TED(TED) , .TOD(TOD), .TWEN(TWEN), .WEN(WEN));
+
+
+endmodule
+
+module ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3 (A, CK, CSN, D, INITN, Q, WEN);
+
+        parameter
+        Words = 8192,
+        Bits = 32,
+        mux = 16,
+        Bits_Func =  32, 
+        mask_bits =  32, 
+        repair_address_width = 9, 
+        
+        Addr = 13; 
+
+        parameter
+
+        read_margin_size = 3,
+        write_margin_size = 2;
+
+
+        output [Bits_Func-1 : 0] Q;
+        
+       
+        input [Addr-1 : 0] A;
+        input CK;
+        input CSN;
+        input INITN;
+        input [Bits_Func-1 : 0] D ;
+	
+        input WEN;
+        
+        
+       
+
+       
+
+        wire ATP,IG,SCTRLI,SDLI,SDRI, SE,    STDBY,TBIST,TCSN,TED,TEM,TOD,TOM,TWEN, SDLO, SDRO,SCTRLO;
+             
+        wire TBYPASS;
+        
+        
+
+        
+
+        
+
+        
+        
+        
+
+        
+        wire [Addr-1 :0 ] TA;
+
+        wire SLEEP;
+        buf (SLEEP, 1'b0);
+
+
+        
+
+        buf (ATP, 1'b0);
+        buf (IG, 1'b0);
+        buf (SCTRLI, 1'b0);
+        buf (SDLI, 1'b0);
+        buf (SDRI, 1'b0);
+        buf (SE, 1'b0);
+        
+        
+        
+         
+        buf (STDBY, 1'b0);
+        buf (TBIST, 1'b0);
+        buf (TBYPASS, 1'b0);
+        buf (TCSN, 1'b0);
+        buf (TED, 1'b0);
+        buf (TEM, 1'b0);
+        buf (TOD, 1'b0);
+        buf (TOM, 1'b0);
+        buf (TWEN, 1'b0);
+        
+        
+        buf (TA[0], 1'b0);
+buf (TA[1], 1'b0);
+buf (TA[2], 1'b0);
+buf (TA[3], 1'b0);
+buf (TA[4], 1'b0);
+buf (TA[5], 1'b0);
+buf (TA[6], 1'b0);
+buf (TA[7], 1'b0);
+buf (TA[8], 1'b0);
+buf (TA[9], 1'b0);
+buf (TA[10], 1'b0);
+buf (TA[11], 1'b0);
+buf (TA[12], 1'b0);
+        
+
+ST_SPHD_HIPERF_8192x32m16_Tlmr_3 I1 (.A(A), .ATP(ATP), .CK(CK), .CSN(CSN), .D(D), .IG(IG), .INITN(INITN) , .Q(Q), .SCTRLI(SCTRLI), .SCTRLO(SCTRLO), .SDLI(SDLI), .SDLO(SDLO), .SDRI(SDRI), .SDRO(SDRO), .SE(SE),  .STDBY(STDBY) , .TA(TA), .TBIST(TBIST), .TBYPASS(TBYPASS) , .TCSN(TCSN), .TED(TED) , .TOD(TOD), .TWEN(TWEN), .WEN(WEN));
+
+
+endmodule
 
 

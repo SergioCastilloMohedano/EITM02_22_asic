@@ -10,7 +10,7 @@ entity PE is
         X_ID                  : natural       := 16;
         Y                     : natural       := 3;
         X                     : natural       := 32;
-        NUM_REGS_IFM_REG_FILE : natural       := 34; -- Emax (conv0 and conv1)
+        NUM_REGS_IFM_REG_FILE : natural       := 34; -- W' max (conv0 and conv1)
         NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
     );
     port (
@@ -156,7 +156,7 @@ begin
     REG_FILE_ifm_inst : REG_FILE_ACT
     generic map(
         REGISTER_INPUTS => true,
-        NUM_REGS        => NUM_REGS_IFM_REG_FILE, -- Emax (conv0 and conv1)
+        NUM_REGS        => NUM_REGS_IFM_REG_FILE, -- W' max (conv0 and conv1)
         BITWIDTH        => ACT_BITWIDTH
     )
     port map(

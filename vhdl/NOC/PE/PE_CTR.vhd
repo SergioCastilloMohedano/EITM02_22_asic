@@ -8,7 +8,7 @@ entity PE_CTR is
         -- HW Parameters, at synthesis time.
         Y_ID                  : natural       := 3;
         X                     : natural       := 32;
-        NUM_REGS_IFM_REG_FILE : natural       := 34;  -- Emax (conv0 and conv1)
+        NUM_REGS_IFM_REG_FILE : natural       := 34;  -- W' max (conv0 and conv1)
         NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
     );
     port (

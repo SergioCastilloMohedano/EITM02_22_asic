@@ -27,13 +27,13 @@ architecture sim of NOC_tb is
     constant t                     : natural       := 1;             -- it must always be 1
     constant M_div_pt              : natural       := M_cap/(p * t); --M/p*t
     constant HYP_BITWIDTH          : natural       := 8;
---    constant NUM_REGS_IFM_REG_FILE : natural       := X;               -- Emax (conv0 and conv1)
     constant NUM_REGS_IFM_REG_FILE : natural       := 34; -- W' max (conv0 and conv1)
     constant NUM_REGS_W_REG_FILE   : natural       := natural(p * RS); -- p*S = 8*3 = 24
     constant hw_log2_r             : integer_array := (0, 1, 2);
     constant hw_log2_EF            : integer_array := (5, 4, 3); -- for E = (32, 16, 8)
 --    constant EOM_ADDR_WB_SRAM      : natural       := 82329;
-    constant EOM_ADDR_WB_SRAM      : natural       := 432+16-1; -- For conv0 testing
+--    constant EOM_ADDR_WB_SRAM      : natural       := 432+16-1; -- For conv0 testing
+    constant ADDR_4K_CFG           : natural       := 4042;
     constant ws                    : natural       := OFMAP_BITWIDTH; -- bitwidth of input value -- 26 fpga, 32 asic
     constant fl                    : natural       := 8;              -- length of fractional part of input value
     constant ws_sr                 : natural       := COMP_BITWIDTH;  -- bitwidth of output value
@@ -65,14 +65,9 @@ architecture sim of NOC_tb is
             Y                     : natural       := 3;
             hw_log2_r             : integer_array := (0, 1, 2);
             hw_log2_EF            : integer_array := (5, 4, 3);
-            NUM_REGS_IFM_REG_FILE : natural       := 32;             -- Emax (conv0 and conv1)
+            NUM_REGS_IFM_REG_FILE : natural       := 32;             -- W' max (conv0 and conv1)
             NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
-            EOM_ADDR_WB_SRAM      : natural       := 82329;          -- End Of Memory Address of the WB SRAM, this is where first bias value is stored, in decreasing order of addresses.
-            ws                    : natural       := OFMAP_BITWIDTH; -- bitwidth of input value -- 26 fpga, 32 asic
-            fl                    : natural       := 8;              -- length of fractional part of input value
-            ws_sr                 : natural       := 8;              -- bitwidth of output value
-            fl_sr                 : natural       := 3;              -- length of fractional part of output value
-            residuals             : natural       := 5               -- fl - fl_sr;
+            ADDR_4K_CFG           : natural       := 4042            -- First Address of the reserved space for config. parameters.
         );
         port (
             clk         : in std_logic;
@@ -107,9 +102,9 @@ begin
         Y                     => Y,
         hw_log2_r             => (0, 1, 2),
         hw_log2_EF            => (5, 4, 3),
-        NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE, -- Emax (conv0 and conv1)
+        NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE, -- W' max (conv0 and conv1)
         NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE,   -- p*S = 8*3 = 24
-        EOM_ADDR_WB_SRAM      => EOM_ADDR_WB_SRAM
+        ADDR_4K_CFG           => ADDR_4K_CFG
     )
     port map(
         clk         => clk,

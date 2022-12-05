@@ -11,7 +11,7 @@ entity TOP is
         Y                     : natural       := 3;
         hw_log2_r             : integer_array := (0, 1, 2);
         hw_log2_EF            : integer_array := (5, 4, 3);
-        NUM_REGS_IFM_REG_FILE : natural       := 34;             -- Emax (conv0 and conv1)
+        NUM_REGS_IFM_REG_FILE : natural       := 34;             -- W' max (conv0 and conv1)
         NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
         ADDR_4K_CFG           : natural       := 4042            -- First Address of the reserved space for config. parameters.
     );
@@ -200,7 +200,7 @@ architecture structural of TOP is
             Y                     : natural       := Y;
             hw_log2_r             : integer_array := hw_log2_r;
             hw_log2_EF            : integer_array := hw_log2_EF;
-            NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE; -- Emax (conv0 and conv1)
+            NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE; -- W' max (conv0 and conv1)
             NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE    -- p*S = 8*3 = 24
         );
         port (
