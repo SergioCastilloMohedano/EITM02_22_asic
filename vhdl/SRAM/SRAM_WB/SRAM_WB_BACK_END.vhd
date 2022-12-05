@@ -314,7 +314,12 @@ begin
                 initn_next    <= initn_out;
 
             when s_read_w =>
-                addr_block_ctrl_w_next <= addr_block_ctrl_w_reg + 1;
+                if (addr_block_ctrl_w_reg = 3) then
+                    addr_block_ctrl_w_next <= 0;
+                else
+                    addr_block_ctrl_w_next <= addr_block_ctrl_w_reg + 1;
+                end if;
+
                 addr_block_w_next      <= addr_block_w_out;
                 addr_8K_1_w_next       <= addr_8K_1_w_out;
                 addr_8K_2_w_next       <= addr_8K_2_w_out;
