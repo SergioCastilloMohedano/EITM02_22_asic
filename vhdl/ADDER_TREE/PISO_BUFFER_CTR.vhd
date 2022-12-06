@@ -61,13 +61,13 @@ architecture behavioral of PISO_BUFFER_CTR is
     ---- Data Registers Signals
     signal j_cnt_reg, j_cnt_next           : natural;
     signal buffer_cnt_reg, buffer_cnt_next : natural range 0 to (X - 1);
-    signal empty_cnt_reg, empty_cnt_next   : natural range 0 to (X - 1);
+    signal empty_cnt_reg, empty_cnt_next   : natural range 0 to X;
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
     ---- Functional Units Intermediate Signals
     signal j_cnt_out      : natural;
     signal buffer_cnt_out : natural range 0 to (X - 1);
-    signal empty_cnt_out : natural range 0 to (X - 1);
+    signal empty_cnt_out : natural range 0 to X;
 
     ---- Data Outputs
     signal j_tmp : natural range 0 to 255;

@@ -185,7 +185,7 @@ begin
                 addr_4K_b_reg      <= to_unsigned((ADDR_4K_CFG - 1), 12);
 
                 initn_cnt_reg <= (others => '0');
-                initn_reg     <= '0';
+                initn_reg     <= '1';
 
             else
                 addr_block_ctrl_w_reg <= addr_block_ctrl_w_next;
@@ -206,9 +206,9 @@ begin
     -- data path : functional units (perform necessary arithmetic operations)
     addr_block_w_out <= (addr_block_w_reg + 1) when (addr_block_ctrl_w_reg = 3) else addr_block_w_reg;
 
-    addr_8K_1_w_out <= (addr_8K_1_w_reg + 1) when (addr_block_w_reg <= 8191) else addr_8K_1_w_reg;
-    addr_8K_2_w_out <= (addr_8K_2_w_reg + 1) when ((addr_block_w_reg > 8191) and (addr_block_w_reg <= 16383)) else addr_8K_1_w_reg;
-    addr_4K_w_out <= (addr_4K_w_reg + 1) when (addr_block_w_reg > 16383) else addr_4K_w_reg;
+    addr_8K_1_w_out <= (addr_8K_1_w_reg + 1) when ((addr_block_w_reg <= 8191) and (addr_block_ctrl_w_reg = 3)) else addr_8K_1_w_reg;
+    addr_8K_2_w_out <= (addr_8K_2_w_reg + 1) when (((addr_block_w_reg > 8191) and (addr_block_w_reg <= 16383)) and (addr_block_ctrl_w_reg = 3)) else addr_8K_2_w_reg;
+    addr_4K_w_out <= (addr_4K_w_reg + 1) when ((addr_block_w_reg > 16383) and (addr_block_ctrl_w_reg = 3)) else addr_4K_w_reg;
 
     -- Bias addresses start at the last memory position (before reserved space), and decreases as pm increases from 0 to M - 1.
     -- Address decreases with changes in NoC_pm value.
@@ -225,17 +225,19 @@ begin
     addr_4K_b_ctrl_next <= addr_4K_b_ctrl_reg + 1 when ((NoC_pm_next /= NoC_pm_reg) and (en_b_read_tmp = '1')) else addr_4K_b_ctrl_reg;
     addr_4K_b_out       <= (addr_4K_b_reg - 1) when addr_4K_b_ctrl_reg = 1 else addr_4K_b_reg;
 
-    initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "10" else initn_cnt_reg + "1";
-    initn_out     <= '1' when initn_cnt_reg = "10" else '0';
+    initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "11" else initn_cnt_reg + "1";
+    initn_out     <= '1' when initn_cnt_reg = "00" else
+                     '1' when initn_cnt_reg = "11" else
+                     '0';
 
     -- data path : status (inputs to control path to modify next state logic)
     -- ..
 
     -- data path : Output Logic
-    A_8K_1_tmp <= std_logic_vector(addr_8K_1_w_reg);
-    A_8K_2_tmp <= std_logic_vector(addr_8K_2_w_reg);
-    A_4K_tmp   <= std_logic_vector(addr_4K_w_reg) when (state_reg = s_read_w) else
-                  std_logic_vector(addr_4K_b_reg) when (state_reg = s_read_b) else
+    A_8K_1_tmp <= std_logic_vector(addr_8K_1_w_next);
+    A_8K_2_tmp <= std_logic_vector(addr_8K_2_w_next);
+    A_4K_tmp   <= std_logic_vector(addr_4K_w_next) when (state_reg = s_read_w) else
+                  std_logic_vector(addr_4K_b_next) when (state_reg = s_read_b) else
                   (others => '0'); -- tbd write cfg
 
     CSN_8K_1_tmp <= not(en_w_read_tmp) when (addr_block_w_reg <= 8191) else
@@ -248,6 +250,10 @@ begin
     CSN_4K_tmp <= en_w_read_tmp_tmp when (state_reg = s_read_w) else
                   not(en_b_read_tmp) when (state_reg = s_read_b) else
                  '1'; --tbd write cfg
+
+    WEN_8k_1_tmp <= '1'; --tbd when write, by the moment, always to 1
+    WEN_8k_2_tmp <= '1'; --tbd when write, by the moment, always to 1
+    WEN_4k_tmp   <= '1'; --tbd when write, by the moment, always to 1
 
     Qp : process (addr_block_w_reg, Q_8K_1, Q_8K_2, Q_4K_w_tmp)
     begin

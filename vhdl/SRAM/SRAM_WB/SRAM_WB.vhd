@@ -188,17 +188,17 @@ begin
         CSN_8K_1 => CSN_8K_1_tmp,
         D_8K_1   => (others => '0'), --D_8K_1_tmp,
         Q_8K_1   => Q_8K_1_tmp,
-        WEN_8K_1 => '0', --WEN_8K_1_tmp,
+        WEN_8K_1 => '1', --WEN_8K_1_tmp,
         A_8K_2   => A_8K_2_tmp,
         CSN_8K_2 => CSN_8K_2_tmp,
         D_8K_2   => (others => '0'), --D_8K_2_tmp,
         Q_8K_2   => Q_8K_2_tmp,
-        WEN_8K_2 => '0', --WEN_8K_2_tmp,
+        WEN_8K_2 => '1', --WEN_8K_2_tmp,
         A_4K     => A_4K_tmp,
         CSN_4K   => CSN_4K_tmp,
         D_4K     => (others => '0'), --D_4K_tmp,
         Q_4K     => Q_4K_tmp,
-        WEN_4K   => '0', --WEN_4K_tmp,
+        WEN_4K   => '1', --WEN_4K_tmp,
         INITN    => INITN_tmp
     );
 
