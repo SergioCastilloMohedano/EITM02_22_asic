@@ -150,7 +150,7 @@ begin
                 addr_ofm_read_reg  <= (others => '0');
 
                 initn_cnt_reg <= (others => '0');
-                initn_reg     <= '0';
+                initn_reg     <= '1';
             else
                 addr_ofm_write_reg <= addr_ofm_write_next;
                 addr_ofm_read_reg  <= addr_ofm_read_next;
@@ -168,9 +168,11 @@ begin
     addr_ofm_read_out <= (others => '0') when (OFM_NL_NoC_m_cnt_finished_tmp = '1') else (addr_ofm_read_reg + 1);
 
 
-    initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "10" else initn_cnt_reg + "1";
-    initn_out     <= '1' when initn_cnt_reg = "10" else '0';
-        
+    initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "11" else initn_cnt_reg + "1";
+    initn_out     <= '1' when initn_cnt_reg = "00" else
+                     '1' when initn_cnt_reg = "11" else
+                     '0';
+                
     -- data path : status (inputs to control path to modify next state logic)
     -- ..
 

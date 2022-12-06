@@ -196,9 +196,11 @@ begin
         buff_reg(31 downto 16) & ifm_FE_w when "01",
         (others => '0')                   when others;
 
-    initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "10" else initn_cnt_reg + "1";
-    initn_out     <= '1' when initn_cnt_reg = "10" else '0';
-
+    initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "11" else initn_cnt_reg + "1";
+    initn_out     <= '1' when initn_cnt_reg = "00" else
+                     '1' when initn_cnt_reg = "11" else
+                     '0';
+        
     -- data path : mux routing
     data_mux : process (state_reg, Q_tmp, addr_r_reg, wea_cnt_reg, wea_cnt_out, addr_w_reg, WE_FE, initn_cnt_reg, initn_reg, initn_cnt_out, initn_out)
     begin
