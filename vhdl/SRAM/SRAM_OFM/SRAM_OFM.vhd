@@ -30,13 +30,17 @@ end SRAM_OFM;
 architecture structural of SRAM_OFM is
 
     -- SIGNAL DECLARATIONS
-    signal ofm_acc_tmp    : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
-    signal ofm_sum_tmp    : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
-    signal en_ofm_in_tmp  : std_logic;
-    signal en_ofm_sum_tmp : std_logic;
-    signal WE_tmp         : std_logic;
-    signal en_ofm_out_tmp : std_logic;
-    signal ofm_FE_out_tmp : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+    signal ofm_acc_tmp        : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+    signal ofm_sum_tmp        : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+    signal en_ofm_in_tmp      : std_logic;
+    signal en_ofm_sum_tmp     : std_logic;
+    signal WE_tmp             : std_logic;
+    signal en_ofm_out_tmp     : std_logic;
+    signal ofm_FE_out_tmp     : std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
+    signal OFM_WRITE_BUSY_tmp : std_logic;
+    signal OFM_READ_BUSY_tmp  : std_logic;
+    signal OFM_READ_FINISHED_tmp : std_logic;
+
 
     -- Port 1 (write)
     signal A_2K_p1   : std_logic_vector(13 downto 0);
@@ -98,7 +102,10 @@ architecture structural of SRAM_OFM is
             ofm_FE_out : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
             en_ofm_out : in std_logic;
             -- SRAM Wrapper Ports
-            INITN : out std_logic;
+            OFM_WRITE_BUSY : out std_logic;
+            OFM_READ_BUSY  : out std_logic;
+            OFM_READ_FINISHED : out std_logic;
+            INITN          : out std_logic;
             -- Port 1 (write)
             A_2K_p1   : out std_logic_vector(13 downto 0);
             CSN_2K_p1 : out std_logic;
@@ -113,8 +120,11 @@ architecture structural of SRAM_OFM is
 
     component SRAM_OFM_WRAPPER_BLOCK
         port (
-            clk   : in std_logic;
-            INITN : in std_logic;
+            clk            : in std_logic;
+            INITN          : in std_logic;
+            OFM_WRITE_BUSY    : in std_logic;
+            OFM_READ_BUSY     : in std_logic;
+            OFM_READ_FINISHED : in std_logic;
             -- Port 1 (write)
             A_2K_p1   : in std_logic_vector(13 downto 0);
             CSN_2K_p1 : in std_logic;
@@ -166,6 +176,9 @@ begin
         WE                        => WE_tmp,
         ofm_FE_out                => ofm_FE_out_tmp,
         en_ofm_out                => en_ofm_out_tmp,
+        OFM_WRITE_BUSY            => OFM_WRITE_BUSY_tmp,
+        OFM_READ_BUSY             => OFM_READ_BUSY_tmp,
+        OFM_READ_FINISHED         => OFM_READ_FINISHED_tmp,
         INITN                     => INITN,
         A_2K_p1                   => A_2K_p1,
         CSN_2K_p1                 => CSN_2K_p1,
@@ -179,15 +192,18 @@ begin
     -- SRAM_OFM_WRAPPER_BLOCK
     SRAM_OFM_WRAPPER_BLOCK_inst : SRAM_OFM_WRAPPER_BLOCK
     port map(
-        clk        => clk,
-        INITN      => INITN,
-        A_2K_p1    => A_2K_p1,
-        CSN_2K_p1  => CSN_2K_p1,
-        D_2K_p1    => D_2K_p1,
-        WEN_2K_p1  => WEN_2K_p1,
-        A_2K_p2    => A_2K_p2,
-        CSN_2K_p2  => CSN_2K_p2,
-        Q_2K_p2    => Q_2K_p2
+        clk            => clk,
+        INITN          => INITN,
+        OFM_WRITE_BUSY => OFM_WRITE_BUSY_tmp,
+        OFM_READ_BUSY  => OFM_READ_BUSY_tmp,
+        OFM_READ_FINISHED => OFM_READ_FINISHED_tmp,
+        A_2K_p1        => A_2K_p1,
+        CSN_2K_p1      => CSN_2K_p1,
+        D_2K_p1        => D_2K_p1,
+        WEN_2K_p1      => WEN_2K_p1,
+        A_2K_p2        => A_2K_p2,
+        CSN_2K_p2      => CSN_2K_p2,
+        Q_2K_p2        => Q_2K_p2
     );
 
     -- PORT ASSIGNATIONS

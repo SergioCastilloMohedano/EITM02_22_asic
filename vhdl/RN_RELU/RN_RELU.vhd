@@ -16,7 +16,9 @@ architecture dataflow of RN_RELU is
 
     signal value_relu  : signed (OFMAP_BITWIDTH - 1 downto 0);
     signal value_round : signed (OFMAP_BITWIDTH - 1 downto 0);
-    signal value_trunc   : signed (ACT_BITWIDTH - 1 downto 0);
+    signal value_trunc : signed (ACT_BITWIDTH - 1 downto 0);
+    signal rounding    : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+    signal rounding_s    : signed (ACT_BITWIDTH - 1 downto 0);
 
 begin
 
@@ -30,14 +32,17 @@ begin
     -- act:    -- ---- ---- ---I IIII IIIF FFFF FFF- ----
     --                                   (13 - 8): ↑
     -- value_round <= value_relu + "10000";
-    value_round <= value_relu + "10000";
+    rounding    <= "0000000000010000";
+    rounding_s <= signed(rounding);
+    value_round <= (value_relu + rounding_s) when (value_relu > 0) else
+                    value_relu;
 
     -- Truncation:
     -- min_16b = -2^(16 - 1)    = -32768 = b01111...1111;
     -- max_16b = 2^(16 - 1) - 1 =  32767 = b10000...0000;
-    value_trunc <= to_signed(-32768, value_trunc'length) when (value_round <  to_signed(-32768, value_round'length)) else
-                   to_signed( 32767, value_trunc'length) when (value_round >  to_signed( 32767, value_round'length)) else
-                   value_round(20 downto 5);
+--    value_trunc <= to_signed(32767, value_trunc'length) when (value_round > to_signed(32767, value_round'length)) else
+--                   value_round(20 downto 5);
+      value_trunc <= value_round(20 downto 5);
 
     value_out <= std_logic_vector(value_trunc);
 

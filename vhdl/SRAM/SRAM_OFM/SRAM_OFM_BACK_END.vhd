@@ -20,7 +20,10 @@ entity SRAM_OFM_BACK_END is
         ofm_FE_out : out std_logic_vector (OFMAP_BITWIDTH - 1 downto 0);
         en_ofm_out : in std_logic;
         -- SRAM Wrapper Ports
-        INITN : out std_logic;
+        INITN          : out std_logic;
+        OFM_WRITE_BUSY : out std_logic;
+        OFM_READ_BUSY  : out std_logic;
+        OFM_READ_FINISHED : out std_logic;
         -- Port 1 (write)
         A_2K_p1   : out std_logic_vector(13 downto 0);
         CSN_2K_p1 : out std_logic;
@@ -53,7 +56,9 @@ architecture behavioral of SRAM_OFM_BACK_END is
     -- ..
 
     ---- External Status Signals to indicate status of the FSMD
-    -- ..
+    signal OFM_WRITE_BUSY_tmp : std_logic;
+    signal OFM_READ_BUSY_tmp  : std_logic;
+    signal OFM_READ_FINISHED_tmp  : std_logic;
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
@@ -139,7 +144,9 @@ begin
     end process;
 
     -- control path : output logic
-    -- ..
+    OFM_WRITE_BUSY_tmp <= '1' when (state_reg = s_OFM_Write) else '0';
+    OFM_READ_BUSY_tmp  <= '1' when (state_reg = s_OFM_Read)  else '0';
+    OFM_READ_FINISHED_tmp <= '1' when (state_reg = s_finished) else '0';
 
     -- data path : data registers
     data_reg : process (clk, reset)
@@ -251,5 +258,8 @@ begin
     A_2K_p2                       <= std_logic_vector(A_2K_p2_tmp);
     CSN_2K_p2                     <= not(CSN_2K_p2_tmp);
     INITN                         <= INITN_reg;
+    OFM_WRITE_BUSY                <= OFM_WRITE_BUSY_tmp;
+    OFM_READ_BUSY                 <= OFM_READ_BUSY_tmp;
+    OFM_READ_FINISHED             <= OFM_READ_FINISHED_tmp;
 
 end architecture;

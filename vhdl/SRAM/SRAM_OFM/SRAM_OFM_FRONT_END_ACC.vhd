@@ -58,7 +58,7 @@ begin
     -- Although it's very unlikely, since the word's length of memory is 32 bits and
     -- OFMAP_BITWIDTH = 34, it might happen that ofmap value may be higher(lower) than max(min)
     -- possible representable value in 32 bit fixed-point format. In which case truncation is
-    -- applied to the 34b fixed-point value down to the max(min) value in 32b fixed-point.
+    -- applied to the 34b fixed-point value up(down) to the max(min) value in 32b fixed-point.
     -- min_32b = -2^(32 - 1)    = -2147483648 = b01111...1111;
     -- max_32b = 2^(32 - 1) - 1 =  2147483647 = b10000...0000;
     ofm_BE_tmp <= to_signed(-2147483648, ofm_BE_tmp'length) when (ofm_BE_tmp_2 < to_signed(-2147483648, ofm_BE_tmp_2'length)) else

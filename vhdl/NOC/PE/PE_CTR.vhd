@@ -78,8 +78,8 @@ architecture behavioral of PE_CTR is
     ---- Data Registers Signals
     signal w_addr_write_reg, w_addr_write_next       : std_logic_vector (bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
     signal ifm_addr_write_reg, ifm_addr_write_next   : std_logic_vector (bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
-    signal w_addr_read_reg, w_addr_read_next         : natural range 0 to (NUM_REGS_W_REG_FILE - 1);
-    signal ifm_addr_read_reg, ifm_addr_read_next     : natural range 0 to (NUM_REGS_IFM_REG_FILE - 1);
+    signal w_addr_read_reg, w_addr_read_next         : natural range 0 to (NUM_REGS_W_REG_FILE);
+    signal ifm_addr_read_reg, ifm_addr_read_next     : natural range 0 to (NUM_REGS_IFM_REG_FILE);
     signal intra_w_p_reg, intra_w_p_next             : natural range 0 to 255;
     signal intra_s_reg, intra_s_next                 : natural range 0 to 255;
     signal intra_p_reg, intra_p_next                 : natural range 0 to 255;
@@ -103,10 +103,10 @@ architecture behavioral of PE_CTR is
     signal intra_w_p_out_tmp     : natural range 0 to 255;
     signal intra_p_out           : natural range 0 to 255;
     signal intra_p_out_tmp       : natural range 0 to 255;
-    signal w_addr_read_out       : natural range 0 to (NUM_REGS_W_REG_FILE - 1);
-    signal w_addr_read_out_tmp   : natural range 0 to (NUM_REGS_W_REG_FILE - 1);
-    signal ifm_addr_read_out     : natural range 0 to (NUM_REGS_IFM_REG_FILE - 1);
-    signal ifm_addr_read_out_tmp : natural range 0 to (NUM_REGS_IFM_REG_FILE - 1);
+    signal w_addr_read_out       : natural range 0 to (NUM_REGS_W_REG_FILE);
+    signal w_addr_read_out_tmp   : natural range 0 to (NUM_REGS_W_REG_FILE);
+    signal ifm_addr_read_out     : natural range 0 to (NUM_REGS_IFM_REG_FILE);
+    signal ifm_addr_read_out_tmp : natural range 0 to (NUM_REGS_IFM_REG_FILE);
     signal inter_r_p_out_1       : natural range 0 to 255;
     signal inter_r_p_out_2       : natural range 0 to 255;
     signal inter_r_p_out         : natural range 0 to 255;
@@ -491,24 +491,24 @@ begin
 
             when s_finished =>
 
-                ifm_addr_write_next <= ifm_addr_write_reg;
-                w_addr_write_next   <= w_addr_write_reg;
+                ifm_addr_write_next <= (others => '0');
+                w_addr_write_next   <= (others => '0');
                 ifm_we_rf_tmp       <= '0';
                 w_we_rf_tmp         <= '0';
 
-                intra_s_next       <= intra_s_reg;
-                intra_w_p_next     <= intra_w_p_reg;
-                intra_p_next       <= intra_p_reg;
-                w_addr_read_next   <= w_addr_read_reg;
-                ifm_addr_read_next <= ifm_addr_read_reg;
+                intra_s_next       <= 0;
+                intra_w_p_next     <= 0;
+                intra_p_next       <= 0;
+                w_addr_read_next   <= 0;
+                ifm_addr_read_next <= 0;
 
-                inter_r_p_next <= inter_r_p_reg;
+                inter_r_p_next <= 0;
 
-                hold_cnt_next <= hold_cnt_reg;
+                hold_cnt_next <= 0;
 
-                j_cnt_next <= j_cnt_reg;
+                j_cnt_next <= 0;
 
-                stall_cnt_next <= stall_cnt_reg;
+                stall_cnt_next <= 0;
 
             when others =>
 

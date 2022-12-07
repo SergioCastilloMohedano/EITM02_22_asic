@@ -66,7 +66,7 @@ architecture behavioral of SRAM_WB_BACK_END is
     signal addr_8K_2_w_reg, addr_8K_2_w_next             : unsigned (12 downto 0);
     signal addr_4K_w_reg, addr_4K_w_next                 : unsigned (11 downto 0);
 
-    signal addr_4K_b_ctrl_reg, addr_4K_b_ctrl_next : natural range 0 to 1;
+    signal addr_4K_b_ctrl_reg, addr_4K_b_ctrl_next : std_logic;
     signal addr_4K_b_reg, addr_4K_b_next           : unsigned (11 downto 0);
     signal NoC_pm_next, NoC_pm_reg                 : natural;
 
@@ -181,7 +181,7 @@ begin
                 addr_8K_2_w_reg       <= (others => '0');
                 addr_4K_w_reg         <= (others => '0');
 
-                addr_4K_b_ctrl_reg <= 0;
+                addr_4K_b_ctrl_reg <= '0';
                 addr_4K_b_reg      <= to_unsigned((ADDR_4K_CFG - 1), 12);
 
                 initn_cnt_reg <= (others => '0');
@@ -222,8 +222,8 @@ begin
             end if;
         end if;
     end process;
-    addr_4K_b_ctrl_next <= addr_4K_b_ctrl_reg + 1 when ((NoC_pm_next /= NoC_pm_reg) and (en_b_read_tmp = '1')) else addr_4K_b_ctrl_reg;
-    addr_4K_b_out       <= (addr_4K_b_reg - 1) when addr_4K_b_ctrl_reg = 1 else addr_4K_b_reg;
+    -- addr_4K_b_ctrl_next <= addr_4K_b_ctrl_reg + 1 when ((NoC_pm_next /= NoC_pm_reg) and (en_b_read_tmp = '1')) else addr_4K_b_ctrl_reg;
+    addr_4K_b_out       <= (addr_4K_b_reg - 1) when (addr_4K_b_ctrl_reg = '1') and ((NoC_pm_next /= NoC_pm_reg) and (en_b_read_tmp = '1')) else addr_4K_b_reg;
 
     initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "11" else initn_cnt_reg + "1";
     initn_out     <= '1' when initn_cnt_reg = "00" else
@@ -282,8 +282,8 @@ begin
     -- tbd cfg
 
     with addr_4K_b_ctrl_reg select bias_tmp <=
-        Q_4K_b_tmp(31 downto 16) when 0,
-        Q_4K_b_tmp(15 downto 0)  when 1,
+        Q_4K_b_tmp(31 downto 16) when '0',
+        Q_4K_b_tmp(15 downto 0)  when '1',
         (others => '0')          when others;
 
     wb_FE_tmp <= weight_tmp when (state_reg = s_read_w) else
@@ -292,7 +292,7 @@ begin
 
 
     -- data path : mux routing
-    data_mux : process (state_reg, addr_block_ctrl_w_reg, addr_block_w_reg, addr_8K_1_w_reg, addr_8K_2_w_reg, addr_4K_w_reg, addr_4K_b_reg, initn_reg, addr_block_w_out, addr_8K_1_w_out, addr_8K_2_w_out, addr_4K_w_out, addr_4K_b_out, initn_cnt_out, initn_out)
+    data_mux : process (state_reg, addr_block_ctrl_w_reg, addr_block_w_reg, addr_8K_1_w_reg, addr_8K_2_w_reg, addr_4K_w_reg, addr_4K_b_reg, initn_reg, addr_block_w_out, addr_8K_1_w_out, addr_8K_2_w_out, addr_4K_w_out, addr_4K_b_out, initn_cnt_out, initn_out, addr_4K_b_ctrl_reg, NoC_pm_reg, NoC_pm_next, en_b_read_tmp)
     begin
         case state_reg is
             when s_init =>
@@ -302,7 +302,8 @@ begin
                 addr_8K_2_w_next       <= addr_8K_2_w_reg;
                 addr_4K_w_next         <= addr_4K_w_reg;
 
-                addr_4K_b_next <= addr_4K_b_reg;
+                addr_4K_b_ctrl_next <= addr_4K_b_ctrl_reg;
+                addr_4K_b_next      <= addr_4K_b_reg;
 
                 initn_cnt_next <= initn_cnt_reg;
                 initn_next     <= initn_reg;
@@ -314,10 +315,11 @@ begin
                 addr_8K_2_w_next       <= addr_8K_2_w_reg;
                 addr_4K_w_next         <= addr_4K_w_reg;
 
-                addr_4K_b_next <= addr_4K_b_reg;
+                addr_4K_b_ctrl_next <= addr_4K_b_ctrl_reg;
+                addr_4K_b_next      <= addr_4K_b_reg;
 
                 initn_cnt_next <= initn_cnt_out;
-                initn_next    <= initn_out;
+                initn_next     <= initn_out;
 
             when s_read_w =>
                 if (addr_block_ctrl_w_reg = 3) then
@@ -331,7 +333,8 @@ begin
                 addr_8K_2_w_next       <= addr_8K_2_w_out;
                 addr_4K_w_next         <= addr_4K_w_out;
 
-                addr_4K_b_next <= addr_4K_b_reg;
+                addr_4K_b_ctrl_next <= addr_4K_b_ctrl_reg;
+                addr_4K_b_next      <= addr_4K_b_reg;
 
                 initn_cnt_next <= initn_cnt_reg;
                 initn_next     <= initn_reg;
@@ -343,6 +346,11 @@ begin
                 addr_8K_2_w_next       <= addr_8K_2_w_reg;
                 addr_4K_w_next         <= addr_4K_w_reg;
 
+                if ((NoC_pm_next /= NoC_pm_reg) and (en_b_read_tmp = '1')) then
+                    addr_4K_b_ctrl_next <= not(addr_4K_b_ctrl_reg);
+                else
+                    addr_4K_b_ctrl_next <= addr_4K_b_ctrl_reg;
+                end if;
                 addr_4K_b_next <= addr_4K_b_out;
 
                 initn_cnt_next <= initn_cnt_reg;
@@ -355,7 +363,8 @@ begin
                 addr_8K_2_w_next       <= addr_8K_2_w_reg;
                 addr_4K_w_next         <= addr_4K_w_reg;
 
-                addr_4K_b_next <= addr_4K_b_reg;
+                addr_4K_b_ctrl_next <= addr_4K_b_ctrl_reg;
+                addr_4K_b_next      <= addr_4K_b_reg;
 
                 initn_cnt_next <= initn_cnt_reg;
                 initn_next     <= initn_reg;
