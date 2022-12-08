@@ -75,9 +75,8 @@ architecture behavioral of SRAM_IFM_BACK_END is
     ---- Data Registers Signals
     signal addr_r_reg, addr_r_next       : unsigned (12 downto 0);
     signal addr_w_reg, addr_w_next       : unsigned (12 downto 0);
-    signal buff_reg, buff_next           : std_logic_vector (31 downto 0);
+    signal buff_reg, buff_next           : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
     signal wea_cnt_reg, wea_cnt_next     : unsigned (1 downto 0);
-    signal wea_cnt_reg_2, wea_cnt_next_2 : unsigned (1 downto 0);
     signal INITN_reg, INITN_next         : std_logic;
     signal initn_cnt_reg, initn_cnt_next : unsigned (1 downto 0);
 
@@ -161,7 +160,6 @@ begin
                 addr_w_reg      <= (others => '0');
                 buff_reg        <= (others => '0');
                 wea_cnt_reg     <= (others => '0');
-                wea_cnt_reg_2   <= (others => '0');
                 INITN_reg       <= '1';
                 initn_cnt_reg   <= (others => '0');
             else
@@ -169,7 +167,6 @@ begin
                 addr_w_reg      <= addr_w_next;
                 buff_reg        <= buff_next;
                 wea_cnt_reg     <= wea_cnt_next;
-                wea_cnt_reg_2   <= wea_cnt_next_2;
                 INITN_reg       <= INITN_next;
                 initn_cnt_reg   <= initn_cnt_next;
 
@@ -188,13 +185,9 @@ begin
     wea_cnt_tmp <= (others => '0') when wea_cnt_reg = 1 else wea_cnt_reg + to_unsigned(1, wea_cnt_reg'length);
     wea_cnt_out <= wea_cnt_tmp     when WE_FE = '1' else wea_cnt_reg;
 
-    wea_cnt_next_2 <= wea_cnt_reg when rising_edge(clk);
-    WEN_tmp        <= '0' when wea_cnt_reg_2 = 1 else '1';
+    WEN_tmp        <= '0' when wea_cnt_reg = 1 else '1';
 
-    with wea_cnt_reg select buff_next <=
-        ifm_FE_w & buff_reg(15 downto 0)  when "00",
-        buff_reg(31 downto 16) & ifm_FE_w when "01",
-        (others => '0')                   when others;
+    buff_next <= ifm_FE_w when wea_cnt_reg = "00" else (others => '0');
 
     initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "11" else initn_cnt_reg + "1";
     initn_out     <= '1' when initn_cnt_reg = "00" else
@@ -295,7 +288,7 @@ begin
     CSN   <= CSN_tmp;
     Q_tmp <= Q;
     A     <= std_logic_vector(A_tmp);
-    D     <= buff_reg;
+    D     <= buff_reg & ifm_FE_w;
     WEN   <= WEN_tmp;
     INITN <= INITN_reg;
 

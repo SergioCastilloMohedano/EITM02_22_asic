@@ -36,8 +36,6 @@ architecture dataflow of SRAM_OFM_FRONT_END_ACC is
     signal en_ofm_sum_tmp   : std_logic;
     signal WE_tmp           : std_logic;
     signal NoC_c_nez        : std_logic;
-    signal ofm_adder_in_tmp : signed (OFMAP_BITWIDTH - 1 downto 0);
-    signal ofm_in_tmp_delay : signed (OFMAP_BITWIDTH - 1 downto 0);
     signal bias_tmp         : signed (BIAS_BITWIDTH - 1 downto 0);
 
     -- Bias rounding

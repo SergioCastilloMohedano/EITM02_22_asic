@@ -41,7 +41,6 @@ architecture dataflow of MC_X is
     signal ifm_x_tmp        : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
     signal ifm_x_status_tmp : std_logic;
 
-    signal w_x_ctrl           : std_logic;
     signal w_ifm_x_ctrl       : std_logic;
     signal ifm_x_ctrl_2nd     : std_logic;
     signal ifm_x_ctrl         : std_logic;
