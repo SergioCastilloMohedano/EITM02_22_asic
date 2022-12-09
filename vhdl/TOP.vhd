@@ -20,21 +20,7 @@ entity TOP is
         reset       : in std_logic;
         NL_start    : in std_logic;
         NL_ready    : out std_logic;
-        NL_finished : out std_logic;
-
-        -- Signals Below Shall be coming from within the accelerator later on. ----
-        M_cap    : in std_logic_vector (7 downto 0);
-        C_cap    : in std_logic_vector (7 downto 0);
-        r        : in std_logic_vector (7 downto 0);
-        p        : in std_logic_vector (7 downto 0);
-        RS       : in std_logic_vector (7 downto 0);
-        EF       : in std_logic_vector (7 downto 0);
-        HW_p     : in std_logic_vector (7 downto 0);
-        HW       : in std_logic_vector (7 downto 0);
-        M_div_pt : in std_logic_vector (7 downto 0);
-        EF_log2 : in std_logic_vector (7 downto 0);
-        r_log2  : in std_logic_vector (7 downto 0)
-        ---------------------------------------------------------------------------
+        NL_finished : out std_logic
     );
 end TOP;
 
@@ -66,10 +52,26 @@ architecture structural of TOP is
     signal NoC_pm_tmp          : std_logic_vector (7 downto 0);
     signal NoC_e_tmp           : std_logic_vector (7 downto 0);
     signal NoC_f_tmp           : std_logic_vector (7 downto 0);
+    signal READ_CFG_tmp        : std_logic;
+    -- cfg -----------------------------------------
+    signal M_cap_tmp       : std_logic_vector (7 downto 0);
+    signal C_cap_tmp       : std_logic_vector (7 downto 0);
+    signal r_tmp           : std_logic_vector (7 downto 0);
+    signal p_tmp           : std_logic_vector (7 downto 0);
+    signal RS_tmp          : std_logic_vector (7 downto 0);
+    signal EF_tmp          : std_logic_vector (7 downto 0);
+    signal HW_p_tmp        : std_logic_vector (7 downto 0);
+    signal HW_tmp          : std_logic_vector (7 downto 0);
+    signal EF_log2_tmp     : std_logic_vector (7 downto 0);
+    signal r_log2_tmp      : std_logic_vector (7 downto 0);
+    signal is_pooling_tmp  : std_logic_vector (7 downto 0);
+    ------------------------------------------------
+
 
     -- SRAM_WB
-    signal w_tmp : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
-    signal b_tmp : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+    signal w_tmp   : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+    signal b_tmp   : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+    signal cfg_tmp : std_logic_vector (7 downto 0);
 
     -- SRAM_IFM
     signal ifm_tmp : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -94,7 +96,6 @@ architecture structural of TOP is
     signal pooling_out     : std_logic_vector((ACT_BITWIDTH - 1) downto 0);
     signal en_w_IFM_tmp    : std_logic;
     signal p_en_w_IFM_tmp  : std_logic;
-    signal is_pooling_tmp  : std_logic := '0'; -- to be changed later within the system controller.
 
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is
@@ -104,13 +105,6 @@ architecture structural of TOP is
             NL_start                  : in std_logic;
             NL_ready                  : out std_logic;
             NL_finished               : out std_logic;
-            M_cap                     : in std_logic_vector (7 downto 0);
-            C_cap                     : in std_logic_vector (7 downto 0);
-            r                         : in std_logic_vector (7 downto 0);
-            p                         : in std_logic_vector (7 downto 0);
-            RS                        : in std_logic_vector (7 downto 0);
-            HW_p                      : in std_logic_vector (7 downto 0);
-            EF                        : in std_logic_vector (7 downto 0);
             c                         : out std_logic_vector (7 downto 0);
             m                         : out std_logic_vector (7 downto 0);
             rc                        : out std_logic_vector (7 downto 0);
@@ -119,7 +113,6 @@ architecture structural of TOP is
             s                         : out std_logic_vector (7 downto 0);
             w_p                       : out std_logic_vector (7 downto 0);
             h_p                       : out std_logic_vector (7 downto 0);
-            M_div_pt                  : in std_logic_vector (7 downto 0);
             NoC_ACK_flag              : in std_logic;
             IFM_NL_ready              : out std_logic;
             IFM_NL_finished           : out std_logic;
@@ -137,7 +130,20 @@ architecture structural of TOP is
             NoC_pm_bias               : out std_logic_vector (7 downto 0); -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
             NoC_pm                    : out std_logic_vector (7 downto 0);
             NoC_f                     : out std_logic_vector (7 downto 0);
-            NoC_e                     : out std_logic_vector (7 downto 0)
+            NoC_e                     : out std_logic_vector (7 downto 0);
+            READ_CFG                  : out std_logic;
+            cfg_in                    : in  std_logic_vector (7 downto 0);
+            M_cap                     : out std_logic_vector (7 downto 0);
+            C_cap                     : out std_logic_vector (7 downto 0);
+            HW                        : out std_logic_vector (7 downto 0);
+            HW_p                      : out std_logic_vector (7 downto 0);
+            RS                        : out std_logic_vector (7 downto 0);
+            EF                        : out std_logic_vector (7 downto 0);
+            r                         : out std_logic_vector (7 downto 0);
+            p                         : out std_logic_vector (7 downto 0);
+            EF_log2                   : out std_logic_vector (7 downto 0);
+            r_log2                    : out std_logic_vector (7 downto 0);
+            is_pooling                : out std_logic_vector (7 downto 0)
         );
     end component;
 
@@ -153,8 +159,10 @@ architecture structural of TOP is
             NoC_c          : in std_logic_vector (7 downto 0);
             NoC_pm_bias    : in std_logic_vector (7 downto 0);
             OFM_NL_Write   : in std_logic;
+            READ_CFG       : in std_logic;
             w_out          : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
-            b_out          : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0)
+            b_out          : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+            cfg_out        : out std_logic_vector (7 downto 0)
         );
     end component;
 
@@ -281,13 +289,6 @@ begin
         NL_start                  => NL_start,
         NL_ready                  => NL_ready_tmp,
         NL_finished               => NL_finished_tmp,
-        M_cap                     => M_cap,
-        C_cap                     => C_cap,
-        r                         => r,
-        p                         => p,
-        RS                        => RS,
-        HW_p                      => HW_p,
-        EF                        => EF,
         c                         => c_tmp,
         m                         => m_tmp,
         rc                        => rc_tmp,
@@ -296,7 +297,6 @@ begin
         s                         => s_tmp,
         w_p                       => w_p_tmp,
         h_p                       => h_p_tmp,
-        M_div_pt                  => M_div_pt,
         NoC_ACK_flag              => NoC_ACK_flag,
         IFM_NL_ready              => IFM_NL_ready_tmp,
         IFM_NL_finished           => IFM_NL_finished_tmp,
@@ -314,7 +314,20 @@ begin
         NoC_pm_bias               => NoC_pm_bias_tmp,
         NoC_pm                    => NoC_pm_tmp,
         NoC_f                     => NoC_f_tmp,
-        NoC_e                     => NoC_e_tmp
+        NoC_e                     => NoC_e_tmp,
+        READ_CFG                  => READ_CFG_tmp,
+        cfg_in                    => cfg_tmp,
+        M_cap                     => M_cap_tmp,
+        C_cap                     => C_cap_tmp,
+        r                         => r_tmp,
+        p                         => p_tmp,
+        RS                        => RS_tmp,
+        EF                        => EF_tmp,
+        HW_p                      => HW_p_tmp,
+        HW                        => HW_tmp,
+        EF_log2                   => EF_log2_tmp,
+        r_log2                    => r_log2_tmp,
+        is_pooling                => is_pooling_tmp
     );
 
     -- SRAM_WB
@@ -330,8 +343,10 @@ begin
         NoC_c          => NoC_c,
         NoC_pm_bias    => NoC_pm_bias_tmp,
         OFM_NL_Write   => OFM_NL_Write_tmp,
+        READ_CFG       => READ_CFG_tmp,
         w_out          => w_tmp,
-        b_out          => b_tmp
+        b_out          => b_tmp,
+        cfg_out        => cfg_tmp
     );
 
     -- SRAM_IFM
@@ -341,12 +356,12 @@ begin
         reset           => reset,
         h_p             => h_p_tmp,
         w_p             => w_p_tmp,
-        HW              => HW,
-        RS              => RS,
+        HW              => HW_tmp,
+        RS              => RS_tmp,
         IFM_NL_ready    => IFM_NL_ready_tmp,
         IFM_NL_finished => IFM_NL_finished_tmp,
         ifm_out         => ifm_tmp,
-        is_pooling      => is_pooling_tmp,
+        is_pooling      => is_pooling_tmp(0),
         en_w_IFM        => en_w_IFM_tmp,
         pooling_ack     => pooling_ack_tmp,
         pooling_IFM     => pooling_out,
@@ -367,14 +382,14 @@ begin
     port map(
         clk               => clk,
         reset             => reset,
-        C_cap             => C_cap,
-        HW_p              => HW_p,
-        EF                => EF,
-        EF_log2           => EF_log2,
-        r_log2            => r_log2,
-        RS                => RS,
-        p                 => p,
-        r                 => r,
+        C_cap             => C_cap_tmp,
+        HW_p              => HW_p_tmp,
+        EF                => EF_tmp,
+        EF_log2           => EF_log2_tmp,
+        r_log2            => r_log2_tmp,
+        RS                => RS_tmp,
+        p                 => p_tmp,
+        r                 => r_tmp,
         h_p               => h_p_tmp,
         rc                => rc_tmp,
         r_p               => r_p_tmp,
@@ -395,8 +410,8 @@ begin
     port map(
         clk               => clk,
         reset             => reset,
-        r                 => r,
-        EF                => EF,
+        r                 => r_tmp,
+        EF                => EF_tmp,
         ofmap_p           => ofmap_p,
         PISO_Buffer_start => PISO_Buffer_start,
         ofmap             => ofmap,
@@ -435,8 +450,8 @@ begin
     port map(
         clk         => clk,
         reset       => reset,
-        M_cap       => M_cap,
-        EF          => EF,
+        M_cap       => M_cap_tmp,
+        EF          => EF_tmp,
         NoC_pm      => NoC_pm_tmp,
         NoC_f       => NoC_f_tmp,
         NoC_e       => NoC_e_tmp,
@@ -446,7 +461,7 @@ begin
         pooling_ack => pooling_ack_tmp,
         en_w_IFM    => p_en_w_IFM_tmp
     );
-    en_w_IFM_tmp <= p_en_w_IFM_tmp when (is_pooling_tmp = '1') else OFM_NL_Read_tmp;
+    en_w_IFM_tmp <= p_en_w_IFM_tmp when (is_pooling_tmp(0) = '1') else OFM_NL_Read_tmp;
 
     -- PORT Assignations
     NL_ready    <= NL_ready_tmp;

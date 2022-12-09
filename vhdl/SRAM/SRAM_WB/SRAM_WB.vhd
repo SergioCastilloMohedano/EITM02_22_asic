@@ -17,9 +17,11 @@ entity SRAM_WB is
         NoC_c          : in std_logic_vector (7 downto 0);
         NoC_pm_bias    : in std_logic_vector (7 downto 0);
         OFM_NL_Write   : in std_logic;
+        READ_CFG       : in std_logic;
         -- Front-End Read Interface
-        w_out : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
-        b_out : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0)
+        w_out   : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
+        b_out   : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+        cfg_out : out std_logic_vector (7 downto 0)
         -- Front-End Write Interface
         -- ..
     );
@@ -32,9 +34,12 @@ architecture structural of SRAM_WB is
     signal WB_NL_finished_tmp : std_logic;
     signal w_out_tmp          : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
     signal b_out_tmp          : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+    signal cfg_out_tmp        : std_logic_vector (7 downto 0);
     signal wb_tmp             : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+    signal cfg_tmp            : std_logic_vector (7 downto 0);
     signal en_w_read_tmp      : std_logic;
     signal en_b_read_tmp      : std_logic;
+    signal en_cfg_read_tmp    : std_logic;
     signal NoC_pm_tmp         : std_logic_vector (7 downto 0);
 
     signal A_8K_1_tmp   : std_logic_vector(12 downto 0);
@@ -59,18 +64,22 @@ architecture structural of SRAM_WB is
         port (
             clk            : in std_logic;
             reset          : in std_logic;
-            WB_NL_ready    : in std_logic;
-            WB_NL_finished : in std_logic;
+            WB_NL_ready    : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
+            WB_NL_finished : in std_logic; -- WB NL has finished. Do not read SRAM anymore.
             NoC_c          : in std_logic_vector (7 downto 0);
             NoC_pm_bias    : in std_logic_vector (7 downto 0);
             OFM_NL_Write   : in std_logic;
+            READ_CFG       : in std_logic;
             w_out          : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
             b_out          : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+            cfg_out        : out std_logic_vector (7 downto 0);
             -- Back-End (BE) Interface Ports
-            wb_BE     : in std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-            en_w_read : out std_logic;
-            en_b_read : out std_logic;
-            NoC_pm_BE : out std_logic_vector (7 downto 0)
+            wb_BE       : in std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+            cfg_BE      : in std_logic_vector (7 downto 0);
+            en_w_read   : out std_logic;
+            en_b_read   : out std_logic;
+            en_cfg_read : out std_logic;
+            NoC_pm_BE   : out std_logic_vector (7 downto 0)
         );
     end component;
 
@@ -83,10 +92,12 @@ architecture structural of SRAM_WB is
             clk   : in std_logic;
             reset : in std_logic;
             -- Front-End Interface Ports
-            wb_FE     : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-            en_w_read : in std_logic;
-            en_b_read : in std_logic;
-            NoC_pm_FE : in std_logic_vector (7 downto 0);
+            wb_FE       : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+            cfg_FE      : out std_logic_vector (7 downto 0);
+            en_w_read   : in std_logic;
+            en_b_read   : in std_logic;
+            en_cfg_read : in std_logic;
+            NoC_pm_FE   : in std_logic_vector (7 downto 0);
             -- SRAM Block Wrapper Ports (ASIC)
             A_8K_1   : out std_logic_vector(12 downto 0);
             CSN_8K_1 : out std_logic;
@@ -141,12 +152,16 @@ begin
         NoC_c          => NoC_c,
         NoC_pm_bias    => NoC_pm_bias,
         OFM_NL_Write   => OFM_NL_Write,
+        READ_CFG       => READ_CFG,
         w_out          => w_out_tmp,
         b_out          => b_out_tmp,
+        cfg_out        => cfg_out_tmp,
         -- Back-End (BE) Interface Ports
         wb_BE     => wb_tmp,
+        cfg_BE    => cfg_tmp,
         en_w_read => en_w_read_tmp,
         en_b_read => en_b_read_tmp,
+        en_cfg_read => en_cfg_read_tmp,
         NoC_pm_BE => NoC_pm_tmp
     );
 
@@ -159,8 +174,10 @@ begin
         clk       => clk,
         reset     => reset,
         wb_FE     => wb_tmp,
+        cfg_FE    => cfg_tmp,
         en_w_read => en_w_read_tmp,
         en_b_read => en_b_read_tmp,
+        en_cfg_read => en_cfg_read_tmp,
         NoC_pm_FE => NoC_pm_tmp,
         A_8K_1    => A_8K_1_tmp,
         CSN_8K_1  => CSN_8K_1_tmp,
@@ -207,5 +224,6 @@ begin
     WB_NL_finished_tmp <= WB_NL_finished;
     w_out              <= w_out_tmp;
     b_out              <= b_out_tmp;
+    cfg_out            <= cfg_out_tmp;
 
 end architecture;

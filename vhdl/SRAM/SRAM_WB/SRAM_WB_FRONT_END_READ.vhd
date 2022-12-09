@@ -35,13 +35,17 @@ entity SRAM_WB_FRONT_END_READ is
         NoC_c          : in std_logic_vector (7 downto 0);
         NoC_pm_bias    : in std_logic_vector (7 downto 0);
         OFM_NL_Write   : in std_logic;
+        READ_CFG       : in std_logic;
         w_out          : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
         b_out          : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+        cfg_out        : out std_logic_vector (7 downto 0);
         -- Back-End (BE) Interface Ports
-        wb_BE     : in std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-        en_w_read : out std_logic;
-        en_b_read : out std_logic;
-        NoC_pm_BE : out std_logic_vector (7 downto 0)
+        wb_BE       : in std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
+        cfg_BE      : in std_logic_vector (7 downto 0);
+        en_w_read   : out std_logic;
+        en_b_read   : out std_logic;
+        en_cfg_read : out std_logic;
+        NoC_pm_BE   : out std_logic_vector (7 downto 0)
     );
 end SRAM_WB_FRONT_END_READ;
 
@@ -86,12 +90,14 @@ begin
     en_b_read_tmp <= '1' when ((NoC_c_eqz and OFM_NL_Write) = '1') else '0';
 
     -- PORT Assignations
-    NoC_pm_BE <= NoC_pm_BE_tmp;
-    w_out     <= w_out_tmp;
-    b_out     <= b_out_tmp;
-    wb_BE_tmp <= wb_BE;
-    NoC_c_tmp <= to_integer(unsigned(NoC_c));
-    en_w_read <= en_w_read_tmp;
-    en_b_read <= en_b_read_tmp;
+    NoC_pm_BE   <= NoC_pm_BE_tmp;
+    w_out       <= w_out_tmp;
+    b_out       <= b_out_tmp;
+    wb_BE_tmp   <= wb_BE;
+    NoC_c_tmp   <= to_integer(unsigned(NoC_c));
+    en_w_read   <= en_w_read_tmp;
+    en_b_read   <= en_b_read_tmp;
+    en_cfg_read <= READ_CFG;
+    cfg_out     <= cfg_BE;
 
 end architecture;

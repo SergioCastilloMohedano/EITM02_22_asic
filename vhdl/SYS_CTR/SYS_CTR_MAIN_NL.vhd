@@ -58,14 +58,17 @@ entity SYS_CTR_MAIN_NL is
         OFM_NL_ready              : in std_logic;
         OFM_NL_finished           : in std_logic;
         OFM_NL_start              : out std_logic;
-        OFM_NL_NoC_m_cnt_finished : in std_logic
+        OFM_NL_NoC_m_cnt_finished : in std_logic;
+        CFG_start                 : out std_logic;
+        CFG_finished              : in std_logic;
+        L                         : in std_logic_vector (7 downto 0)
     );
 end SYS_CTR_MAIN_NL;
 
 architecture behavioral of SYS_CTR_MAIN_NL is
 
     -- Enumeration type for the states and state_type signals
-    type state_type is (s_init, s_idle, s_start, s_wait_1, s_wait_2, s_NL, s_finished, s_NoC_ACK, s_OFM_READ);
+    type state_type is (s_init, s_idle, s_start, s_wait_1, s_wait_2, s_NL, s_finished, s_NoC_ACK, s_OFM_READ, s_CFG, s_layer_done);
     signal state_next, state_reg : state_type;
 
     -- ************** FSMD SIGNALS **************
@@ -93,15 +96,17 @@ architecture behavioral of SYS_CTR_MAIN_NL is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal rc_next, rc_reg : natural range 0 to 255;
-    signal m_next, m_reg   : natural range 0 to 255;
-    signal c_next, c_reg   : natural range 0 to 255;
+    signal rc_next, rc_reg       : natural range 0 to 255;
+    signal m_next, m_reg         : natural range 0 to 255;
+    signal c_next, c_reg         : natural range 0 to 255;
+    signal layer_reg, layer_next : natural range 0 to 255;
 
     ---- External Control Signals used to control Data Path Operation
     signal M_cap_tmp : natural range 0 to 255;
     signal C_cap_tmp : natural range 0 to 255;
     signal r_tmp     : natural range 0 to 255;
     signal p_tmp     : natural range 0 to 255;
+    signal L_tmp     : natural range 0 to 255;
 
     ---- Functional Units Intermediate Signals
     signal rc_out    : natural range 0 to 255;
@@ -123,6 +128,7 @@ architecture behavioral of SYS_CTR_MAIN_NL is
     signal start_flag_next_2, start_flag_reg_2 : std_logic; -- of "c", "m" and "rc" being 0 are met, allowing "NL_cnt_done_next" to be set to "1" only when it has to.
     signal pass_flag_tmp                       : std_logic;
     signal OFM_NL_start_tmp                    : std_logic;
+    signal CFG_start_tmp                       : std_logic;
     ----------------------------------------------
 
 begin
@@ -150,16 +156,22 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process (state_reg, NL_start_tmp, WB_NL_finished_tmp, IFM_NL_finished_tmp, WB_NL_ready_tmp, IFM_NL_ready_tmp, NL_cnt_done_reg, IFM_NL_flag_tmp, pass_flag_tmp, OFM_NL_finished, NoC_ACK_flag_tmp, OFM_NL_NoC_m_cnt_finished)
+    asmd_ctrl : process (state_reg, NL_start_tmp, WB_NL_finished_tmp, IFM_NL_finished_tmp, WB_NL_ready_tmp, IFM_NL_ready_tmp, NL_cnt_done_reg, IFM_NL_flag_tmp, pass_flag_tmp, OFM_NL_finished, NoC_ACK_flag_tmp, OFM_NL_NoC_m_cnt_finished, CFG_finished, layer_reg, L_tmp)
     begin
         case state_reg is
             when s_init =>
                 state_next <= s_idle;
             when s_idle =>
                 if NL_start_tmp = '1' then
-                    state_next <= s_start;
+                    state_next <= s_CFG;
                 else
                     state_next <= s_idle;
+                end if;
+            when s_CFG =>
+                if (CFG_finished = '1') then
+                    state_next <= s_start;
+                else
+                    state_next <= s_CFG;
                 end if;
             when s_start =>
                 if (pass_flag_tmp = '0') then
@@ -209,9 +221,15 @@ begin
                 end if;
             when s_OFM_READ =>
                 if (OFM_NL_NoC_m_cnt_finished = '1') then
-                    state_next <= s_finished;
+                    state_next <= s_layer_done;
                 else
                     state_next <= s_OFM_READ;
+                end if;
+            when s_layer_done =>
+                if (layer_reg < L_tmp) then
+                    state_next <= s_cfg;
+                else
+                    state_next <= s_finished;
                 end if;
             when s_finished =>
                 state_next <= s_idle;
@@ -221,25 +239,28 @@ begin
     end process;
 
     -- control path : output logic
-    NL_ready_tmp       <= '1' when state_reg = s_idle else '0';
+    NL_ready_tmp       <= '1' when (state_reg = s_idle) else '0';
     WB_NL_start_tmp    <= '1' when (state_reg = s_start and pass_flag_tmp = '0') else '0';
     IFM_NL_start_tmp_2 <= '1' when (state_reg = s_start and pass_flag_tmp = '0') else '0';
     IFM_NL_start_tmp   <= '1' when (IFM_NL_start_tmp_2 = '1' and IFM_NL_flag_tmp = '1') else '0';
-    NL_finished_tmp    <= '1' when state_reg = s_finished else '0';
+    NL_finished_tmp    <= '1' when (state_reg = s_finished) else '0';
     OFM_NL_start_tmp   <= '1' when (state_reg = s_start and pass_flag_tmp = '1') else '0';
+    CFG_start_tmp      <= '1' when (state_reg = s_CFG) else '0';
 
     -- data path : data registers
     data_reg : process (clk, reset)
     begin
         if rising_edge(clk) then
             if reset = '1' then
-                rc_reg <= 0;
-                m_reg  <= 0;
-                c_reg  <= 0;
+                rc_reg    <= 0;
+                m_reg     <= 0;
+                c_reg     <= 0;
+                layer_reg <= 0;
             else
-                rc_reg <= rc_next;
-                m_reg  <= m_next;
-                c_reg  <= c_next;
+                rc_reg    <= rc_next;
+                m_reg     <= m_next;
+                c_reg     <= c_next;
+                layer_reg <= layer_next;
             end if;
         end if;
     end process;
@@ -265,35 +286,40 @@ begin
         (rc_reg = 0)) and
         (start_flag_reg_2 = '1') and
         (state_reg = s_start)) else
-        '0' when state_reg = s_finished else
+        '0' when state_reg = s_layer_done else
         NL_cnt_done_reg;
 
     IFM_NL_flag_tmp <= '1' when m_reg = 0 else '0';
 
     -- data path : mux routing
-    data_mux : process (state_reg, rc_reg, m_reg, c_reg, rc_out, m_out, c_out, WB_NL_ready_tmp, IFM_NL_ready_tmp)
+    data_mux : process (state_reg, rc_reg, m_reg, c_reg, rc_out, m_out, c_out, WB_NL_ready_tmp, IFM_NL_ready_tmp, layer_reg)
     begin
         case state_reg is
             when s_init =>
-                rc_next <= rc_reg;
-                m_next  <= m_reg;
-                c_next  <= c_reg;
+                rc_next    <= rc_reg;
+                m_next     <= m_reg;
+                c_next     <= c_reg;
+                layer_next <= layer_reg;
             when s_idle =>
-                rc_next <= rc_reg;
-                m_next  <= m_reg;
-                c_next  <= c_reg;
+                rc_next    <= rc_reg;
+                m_next     <= m_reg;
+                c_next     <= c_reg;
+                layer_next <= layer_reg;
             when s_start =>
-                rc_next <= rc_reg;
-                m_next  <= m_reg;
-                c_next  <= c_reg;
+                rc_next    <= rc_reg;
+                m_next     <= m_reg;
+                c_next     <= c_reg;
+                layer_next <= layer_reg;
             when s_wait_1 =>
-                rc_next <= rc_reg;
-                m_next  <= m_reg;
-                c_next  <= c_reg;
+                rc_next    <= rc_reg;
+                m_next     <= m_reg;
+                c_next     <= c_reg;
+                layer_next <= layer_reg;
             when s_wait_2 =>
-                rc_next <= rc_reg;
-                m_next  <= m_reg;
-                c_next  <= c_reg;
+                rc_next    <= rc_reg;
+                m_next     <= m_reg;
+                c_next     <= c_reg;
+                layer_next <= layer_reg;
             when s_NL =>
                 if (WB_NL_ready_tmp and IFM_NL_ready_tmp) = '0' then
                     rc_next <= rc_reg;
@@ -304,18 +330,27 @@ begin
                     m_next  <= m_out;
                     c_next  <= c_out;
                 end if;
+                layer_next <= layer_reg;
             when s_NOC_ACK =>
-                rc_next <= rc_reg;
-                m_next  <= m_reg;
-                c_next  <= c_reg;
+                rc_next    <= rc_reg;
+                m_next     <= m_reg;
+                c_next     <= c_reg;
+                layer_next <= layer_reg;
+            when s_layer_done =>
+                rc_next    <= rc_reg;
+                m_next     <= m_reg;
+                c_next     <= c_reg;
+                layer_next <= layer_reg + 1;
             when s_finished =>
-                rc_next <= rc_reg;
-                m_next  <= m_reg;
-                c_next  <= c_reg;
+                rc_next   <= rc_reg;
+                m_next    <= m_reg;
+                c_next    <= c_reg;
+                layer_next <= layer_reg;
             when others =>
-                rc_next <= rc_reg;
-                m_next  <= m_reg;
-                c_next  <= c_reg;
+                rc_next    <= rc_reg;
+                m_next     <= m_reg;
+                c_next     <= c_reg;
+                layer_next <= layer_reg;
         end case;
     end process;
 
@@ -341,5 +376,7 @@ begin
     OFM_NL_start        <= OFM_NL_start_tmp;
     OFM_NL_finished_tmp <= OFM_NL_finished;
     OFM_NL_ready_tmp    <= OFM_NL_ready;
+    CFG_start           <= CFG_start_tmp;
+    L_tmp               <= to_integer(unsigned(L));
 
 end architecture;

@@ -626,7 +626,7 @@ begin
     end process;
 
 
-    q_out_process : process(A_2K_p2, Q_2K_p2_1, Q_2K_p2_2, Q_2K_p2_3, Q_2K_p2_4, Q_2K_p2_5, Q_2K_p2_6, Q_2K_p2_7, Q_2K_p2_8, OFM_WRITE_BUSY, OFM_READ_BUSY)
+    q_out_process : process(A_2K_p1, A_2K_p2, Q_2K_p2_1, Q_2K_p2_2, Q_2K_p2_3, Q_2K_p2_4, Q_2K_p2_5, Q_2K_p2_6, Q_2K_p2_7, Q_2K_p2_8, OFM_WRITE_BUSY, OFM_READ_BUSY, OFM_READ_FINISHED)
     begin
         if (OFM_WRITE_BUSY = '1') then
             if    (unsigned(A_2K_p1) <  2048) then
