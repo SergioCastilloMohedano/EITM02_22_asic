@@ -63,7 +63,7 @@ architecture behavioral of PE_CTR is
     ---- External Command Signals to the FSMD
     signal PE_ARRAY_RF_write_start_tmp : std_logic;
     signal pass_flag_tmp               : std_logic;
-    signal stall_cnt                   : natural range 0 to 255;
+    signal stall_cnt                   : integer;
 
     -------- OUTPUTS --------
     ----- Internal Control Signals used to control Data Path Operation

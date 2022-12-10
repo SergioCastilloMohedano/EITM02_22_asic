@@ -204,7 +204,7 @@ begin
                 addr_4K_b_reg      <= to_unsigned((ADDR_4K_CFG - 1), 12);
 
                 addr_4K_cfg_ctrl_reg <= 0;
-                addr_4K_b_reg        <= to_unsigned((ADDR_4K_CFG), 12);
+                addr_4K_cfg_reg        <= to_unsigned((ADDR_4K_CFG), 12);
 
                 initn_cnt_reg <= (others => '0');
                 initn_reg     <= '1';
@@ -265,7 +265,7 @@ begin
     A_8K_2_tmp <= std_logic_vector(addr_8K_2_w_next);
     A_4K_tmp   <= std_logic_vector(addr_4K_w_next)   when (state_reg = s_read_w)   else
                   std_logic_vector(addr_4K_b_next)   when (state_reg = s_read_b)   else
-                  std_logic_vector(addr_4K_cfg_next) when (state_reg = s_read_cfg) else
+                  std_logic_vector(addr_4K_cfg_next) when (en_cfg_read_tmp = '1') else
                   (others => '0');
 
     CSN_8K_1_tmp <= not(en_w_read_tmp) when (addr_block_w_reg <= 8191) else
@@ -277,7 +277,7 @@ begin
                          '1';
     CSN_4K_tmp <= en_w_read_tmp_tmp    when (state_reg = s_read_w)  else
                   not(en_b_read_tmp)   when (state_reg = s_read_b)  else
-                  not(en_cfg_read_tmp) when (state_reg = s_read_cfg) else 
+                  not(en_cfg_read_tmp) when (en_cfg_read_tmp = '1') else 
                   '1';
 
     WEN_8k_1_tmp <= '1'; --tbd when write, by the moment, always to 1
@@ -329,7 +329,7 @@ begin
 
 
     -- data path : mux routing
-    data_mux : process (state_reg, addr_block_ctrl_w_reg, addr_block_w_reg, addr_8K_1_w_reg, addr_8K_2_w_reg, addr_4K_w_reg, addr_4K_b_reg, initn_reg, addr_block_w_out, addr_8K_1_w_out, addr_8K_2_w_out, addr_4K_w_out, addr_4K_b_out, initn_cnt_out, initn_out, addr_4K_b_ctrl_reg, NoC_pm_reg, NoC_pm_next, en_b_read_tmp, addr_4K_cfg_ctrl_reg)
+    data_mux : process (state_reg, addr_block_ctrl_w_reg, addr_block_w_reg, addr_8K_1_w_reg, addr_8K_2_w_reg, addr_4K_w_reg, addr_4K_b_reg, initn_reg, addr_block_w_out, addr_8K_1_w_out, addr_8K_2_w_out, addr_4K_w_out, addr_4K_b_out, initn_cnt_out, initn_out, addr_4K_b_ctrl_reg, NoC_pm_reg, NoC_pm_next, en_b_read_tmp, addr_4K_cfg_ctrl_reg, addr_4K_cfg_reg, addr_4K_cfg_out)
     begin
         case state_reg is
             when s_init =>

@@ -113,7 +113,8 @@ architecture architectural of SYS_CTR_TOP is
             OFM_NL_NoC_m_cnt_finished : in std_logic;
             CFG_start                 : out std_logic;
             CFG_finished              : in std_logic;
-            L                         : in std_logic_vector (7 downto 0)
+            L                         : in std_logic_vector (7 downto 0);
+            layer_finished            : out std_logic
         );
     end component;
 
@@ -152,8 +153,8 @@ architecture architectural of SYS_CTR_TOP is
         port (
             clk             : in std_logic;
             reset           : in std_logic;
-            NL_start        : in std_logic;
-            NL_finished     : in std_logic;
+            CFG_finished : in std_logic;
+            layer_finished : in std_logic;
             r               : in std_logic_vector (7 downto 0);
             M_div_pt        : in std_logic_vector (7 downto 0);
             WB_NL_finished  : in std_logic;
@@ -240,6 +241,7 @@ architecture architectural of SYS_CTR_TOP is
 
     -- SYS_CTR_PASS_FLAG Intermediate Signals
     signal pass_flag_tmp : std_logic;
+    signal layer_finished_tmp : std_logic;
 
     -- SYS_CTR_OFM_NL Intermediate Signals
     --    signal NoC_c_tmp        : std_logic_vector (7 downto 0);
@@ -298,7 +300,8 @@ begin
         OFM_NL_NoC_m_cnt_finished => OFM_NL_NoC_m_cnt_finished_tmp,
         CFG_start                 => CFG_start_tmp,
         CFG_finished              => CFG_finished_tmp,
-        L                         => L_tmp
+        L                         => L_tmp,
+        layer_finished            => layer_finished_tmp
     );
     -- SYS_CTR_WB_NL
     SYS_CTR_WB_NL_inst : SYS_CTR_WB_NL
@@ -336,8 +339,8 @@ begin
     port map(
         clk             => clk,
         reset           => reset,
-        NL_start        => NL_start,
-        NL_finished     => NL_finished_tmp,
+        CFG_finished    => CFG_finished_tmp,
+        layer_finished  => layer_finished_tmp,
         r               => r_tmp,
         M_div_pt        => M_div_pt_tmp,
         WB_NL_finished  => WB_NL_finished_tmp,

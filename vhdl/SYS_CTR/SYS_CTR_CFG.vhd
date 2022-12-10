@@ -44,8 +44,8 @@ architecture behavioral of SYS_CTR_CFG is
 
     signal cfg_buffer_next, cfg_buffer_reg     : std_logic_vector_array(12 downto 0);
     signal CFG_start_reg, CFG_start_next       : std_logic;
-    signal CFG_finished_reg, CFG_finished_next : std_logic;
-    signal cfg_cnt_reg, cfg_cnt_next           : natural range 0 to 12;
+    signal CFG_finished_tmp                    : std_logic;
+    signal cfg_cnt_reg, cfg_cnt_next           : natural range 0 to 13;
     signal lock_layer_reg, lock_layer_next     : std_logic;
     signal cfg_layer_reg, cfg_layer_next       : std_logic_vector (7 downto 0);
 
@@ -58,14 +58,12 @@ begin
             if reset = '1' then
                 cfg_buffer_reg   <= (others => (others => '0'));
                 CFG_start_reg    <= '0';
-                CFG_finished_reg <= '0';
                 lock_layer_reg   <= '0';
                 cfg_layer_reg    <= (others => '0');
                 cfg_cnt_reg      <= 0;
             else
                 cfg_buffer_reg   <= cfg_buffer_next;
                 CFG_start_reg    <= CFG_start_next; -- cfg_start delayed 1clk to synchronise it with sram_wb 1clk latency
-                CFG_finished_reg <= CFG_finished_next;
                 lock_layer_reg   <= lock_layer_next;
                 cfg_layer_reg    <= cfg_layer_next;
                 cfg_cnt_reg      <= cfg_cnt_next;
@@ -73,27 +71,39 @@ begin
         end if;
     end process;
     
-    p_buff_cfg : process (cfg, CFG_start_reg, cfg_buffer_reg, cfg_cnt_reg, lock_layer_reg)
+    p_buff_cfg : process (cfg, CFG_start_reg, cfg_buffer_reg, cfg_cnt_reg, lock_layer_reg, CFG_start)
     begin
         if CFG_start_reg = '1' then
             if (cfg_cnt_reg = 0) then
-                cfg_buffer_next(0)           <= cfg; -- first cfg. parameter arriving is # of layers, stays unchanged on buff_reg(0).
-                cfg_buffer_next(12 downto 1) <= cfg & cfg_buffer_reg(12 downto 2);
-                cfg_cnt_next                 <= cfg_cnt_reg + 1;
-                CFG_finished_next            <= '0';
-                lock_layer_next              <= lock_layer_reg;
+                if (CFG_start = '1') then
+		        cfg_buffer_next(12 downto 1) <= cfg & cfg_buffer_reg(12 downto 2);
+		        cfg_cnt_next                 <= cfg_cnt_reg + 1;
+		else
+		        cfg_buffer_next(12 downto 1) <= cfg_buffer_reg(12 downto 1);
+		        cfg_cnt_next                 <= cfg_cnt_reg;
+		end if;
+	        cfg_buffer_next(0)           <= cfg; -- first cfg. parameter arriving is # of layers, stays unchanged on buff_reg(0).
+	        CFG_finished_tmp             <= '0';
+	        lock_layer_next              <= lock_layer_reg;
 
             elsif (cfg_cnt_reg <= 12) then
                 cfg_buffer_next(0)           <= cfg_buffer_reg(0);
                 cfg_buffer_next(12 downto 1) <= cfg & cfg_buffer_reg(12 downto 2);
                 cfg_cnt_next                 <= cfg_cnt_reg + 1;
-                CFG_finished_next            <= '0';
+                CFG_finished_tmp             <= '0';
+                lock_layer_next              <= '1';
+
+            elsif (cfg_cnt_reg = 13) then
+                cfg_buffer_next(0)           <= cfg_buffer_reg(0);
+                cfg_buffer_next(12 downto 1) <= cfg_buffer_reg(12 downto 1);
+                cfg_cnt_next                 <= 0;
+                CFG_finished_tmp             <= '1';
                 lock_layer_next              <= '1';
             else
                 cfg_buffer_next(0)           <= cfg_buffer_reg(0);
                 cfg_buffer_next(12 downto 1) <= cfg_buffer_reg(12 downto 1);
-                cfg_cnt_next                 <= cfg_cnt_reg;
-                CFG_finished_next            <= '1';
+                cfg_cnt_next                 <=  0 ;
+                CFG_finished_tmp             <= '0';
                 lock_layer_next              <= '1';
             end if;
 
@@ -101,7 +111,7 @@ begin
             cfg_buffer_next(0)           <= cfg_buffer_reg(0);
             cfg_buffer_next(12 downto 1) <= cfg_buffer_reg(12 downto 1);
             cfg_cnt_next                 <= 0;
-            CFG_finished_next            <= '0';
+            CFG_finished_tmp             <= '0';
             lock_layer_next              <= lock_layer_reg;
         end if;
     end process;
@@ -126,7 +136,7 @@ begin
 
     -- PORT ASSIGNATIONS
     CFG_start_next <= CFG_start;
-    CFG_finished   <= CFG_finished_reg;
+    CFG_finished   <= CFG_finished_tmp;
 
     L          <= L_tmp;          
     M_cap      <= M_cap_tmp;      

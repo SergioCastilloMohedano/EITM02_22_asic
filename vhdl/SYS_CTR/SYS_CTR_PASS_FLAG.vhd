@@ -18,9 +18,9 @@
 -- Input Signals  :
 --         * clk: clock
 --         * reset: synchronous, active high.
---         * NL_start: flag that tells this block that the controller has started the count of the
+--         * CFG_finished: flag that tells this block that the controller has started the count of the
 --       Nested Loops, it triggers the FSM within this block. Active high.
---         * NL_finished: flag indicating end of processing. Evaluated within s_flag state in order to
+--         * layer_finished: flag indicating end of processing. Evaluated within s_flag state in order to
 --       go to s_idle state. Active high.
 --         * r: hyperparameter of the Network. Indicates the number of PE Sets that process different
 --       input channels within the PE Array.
@@ -44,8 +44,8 @@ entity SYS_CTR_PASS_FLAG is
     port (
         clk : in std_logic;
         reset : in std_logic;
-        NL_start : in std_logic;
-        NL_finished : in std_logic;
+        CFG_finished : in std_logic;
+        layer_finished : in std_logic;
         r : in std_logic_vector (7 downto 0);
         M_div_pt : in std_logic_vector (7 downto 0);
         WB_NL_finished : in std_logic;
@@ -70,8 +70,8 @@ architecture behavioral of SYS_CTR_PASS_FLAG is
     signal IFM_flag_reg, IFM_flag_next : std_logic;                         -- indicates ifmaps NL has run enough times to fill up PE Array entirely.
  
     ---- External Command Signals to the FSMD
-    signal NL_start_tmp : std_logic;
-    signal NL_finished_tmp : std_logic;
+    signal CFG_finished_tmp : std_logic;
+    signal layer_finished_tmp : std_logic;
 
     -------- OUTPUTS --------
     ---- Internal Control Signals used to control Data Path Operation
@@ -124,13 +124,13 @@ begin
     end process;
 
     -- control path : next state logic
-    asmd_ctrl : process(state_reg, NL_start_tmp , WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, NL_finished_tmp , r_tmp , M_div_pt_tmp , IFM_flag_reg)
+    asmd_ctrl : process(state_reg, CFG_finished_tmp , WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, layer_finished_tmp , r_tmp , M_div_pt_tmp , IFM_flag_reg)
     begin
         case state_reg is
             when s_init =>
                 state_next <= s_idle;
             when s_idle =>
-                if NL_start_tmp = '1' then
+                if CFG_finished_tmp = '1' then
                     state_next <= s_cnt_1;
                 else
                     state_next <= s_idle;
@@ -152,7 +152,7 @@ begin
                     end if;
                 end if;
             when s_flag =>
-                if (NL_finished_tmp = '1') then
+                if (layer_finished_tmp = '1') then
                     state_next <= s_idle;
                 else
                     if (IFM_flag_reg = '0') then
@@ -275,8 +275,8 @@ begin
     end process;
 
     -- PORT Assignations
-    NL_start_tmp <= NL_start;
-    NL_finished_tmp <= NL_finished;
+    CFG_finished_tmp <= CFG_finished;
+    layer_finished_tmp <= layer_finished;
     r_tmp <= to_integer(unsigned(r));
     M_div_pt_tmp <= to_integer(unsigned(M_div_pt));
     WB_NL_finished_tmp <= WB_NL_finished;

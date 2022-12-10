@@ -61,7 +61,8 @@ entity SYS_CTR_MAIN_NL is
         OFM_NL_NoC_m_cnt_finished : in std_logic;
         CFG_start                 : out std_logic;
         CFG_finished              : in std_logic;
-        L                         : in std_logic_vector (7 downto 0)
+        L                         : in std_logic_vector (7 downto 0);
+        layer_finished            : out std_logic
     );
 end SYS_CTR_MAIN_NL;
 
@@ -93,6 +94,7 @@ architecture behavioral of SYS_CTR_MAIN_NL is
     ---- External Status Signals to indicate status of the FSMD
     signal NL_ready_tmp    : std_logic;
     signal NL_finished_tmp : std_logic;
+    signal layer_finished_tmp : std_logic;
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
@@ -246,6 +248,7 @@ begin
     NL_finished_tmp    <= '1' when (state_reg = s_finished) else '0';
     OFM_NL_start_tmp   <= '1' when (state_reg = s_start and pass_flag_tmp = '1') else '0';
     CFG_start_tmp      <= '1' when (state_reg = s_CFG) else '0';
+    layer_finished_tmp <= '1' when (state_reg = s_layer_done) else '0';
 
     -- data path : data registers
     data_reg : process (clk, reset)
@@ -378,5 +381,6 @@ begin
     OFM_NL_ready_tmp    <= OFM_NL_ready;
     CFG_start           <= CFG_start_tmp;
     L_tmp               <= to_integer(unsigned(L));
+    layer_finished      <= layer_finished_tmp;
 
 end architecture;
