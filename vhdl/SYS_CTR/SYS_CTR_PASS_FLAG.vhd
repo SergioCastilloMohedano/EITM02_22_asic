@@ -136,10 +136,14 @@ begin
                     state_next <= s_idle;
                 end if;
             when s_cnt_1 =>
-                if ((WB_NL_cnt_reg < r_tmp ) OR (IFM_NL_cnt_reg < r_tmp )) then
-                    state_next <= s_cnt_1;
+                if (layer_finished_tmp = '1') then
+                    state_next <= s_idle;
                 else
-                    state_next <= s_flag;
+                    if ((WB_NL_cnt_reg < r_tmp ) OR (IFM_NL_cnt_reg < r_tmp )) then
+                        state_next <= s_cnt_1;
+                    else
+                        state_next <= s_flag;
+                    end if;
                 end if;
             when s_cnt_2 =>
                 if (M_div_pt_tmp < 2) then
@@ -152,15 +156,15 @@ begin
                     end if;
                 end if;
             when s_flag =>
-                if (layer_finished_tmp = '1') then
-                    state_next <= s_idle;
-                else
+--                if (layer_finished_tmp = '1') then
+--                    state_next <= s_idle;
+--                else
                     if (IFM_flag_reg = '0') then
                         state_next <= s_cnt_2;
                     else
                         state_next <= s_cnt_1;
                     end if;
-                end if;
+--                end if;
             when others =>
                 state_next <= s_init;
         end case;

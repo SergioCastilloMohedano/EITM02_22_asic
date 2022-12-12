@@ -228,7 +228,7 @@ begin
                     state_next <= s_OFM_READ;
                 end if;
             when s_layer_done =>
-                if (layer_reg < L_tmp) then
+                if (layer_reg < L_tmp - 1) then
                     state_next <= s_cfg;
                 else
                     state_next <= s_finished;
@@ -278,8 +278,8 @@ begin
     c_out     <= c_out_tmp when ((m_reg = (M_cap_tmp - p_tmp)) and (rc_reg = (c_reg + r_tmp - 1))) else c_reg;
 
     -- data path : status (inputs to control path to modify next state logic)
-    start_flag_next <= '0' when (state_reg = s_finished) else
-        '1' when (state_reg = s_idle and NL_start_tmp = '1') else
+    start_flag_next <= '0' when (state_reg = s_layer_done) else
+        '1' when (CFG_finished = '1') else
         start_flag_reg;
 
     start_flag_next_2 <= start_flag_reg;

@@ -185,9 +185,9 @@ begin
     wea_cnt_tmp <= (others => '0') when wea_cnt_reg = 1 else wea_cnt_reg + to_unsigned(1, wea_cnt_reg'length);
     wea_cnt_out <= wea_cnt_tmp     when WE_FE = '1' else wea_cnt_reg;
 
-    WEN_tmp        <= '0' when wea_cnt_reg = 1 else '1';
+    WEN_tmp        <= '0' when ((wea_cnt_reg = 1) and (WE_FE = '1')) else '1';
 
-    buff_next <= ifm_FE_w when wea_cnt_reg = "00" else (others => '0');
+    buff_next <= ifm_FE_w when ((wea_cnt_reg = "00") and (WE_FE = '1')) else buff_reg;
 
     initn_cnt_out <= initn_cnt_reg when initn_cnt_reg = "11" else initn_cnt_reg + "1";
     initn_out     <= '1' when initn_cnt_reg = "00" else

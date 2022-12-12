@@ -270,10 +270,10 @@ begin
 
     CSN_8K_1_tmp <= not(en_w_read_tmp) when (addr_block_w_reg <= 8191) else
                     '1';
-    CSN_8K_2_tmp <= not(en_w_read_tmp) when ((addr_block_w_reg > 8191) and (addr_block_w_reg <= 16383)) else
+    CSN_8K_2_tmp <= not(en_w_read_tmp) when ((addr_block_w_reg >= 8191) and (addr_block_w_reg <= 16383)) else
                    '1';
 
-    en_w_read_tmp_tmp <= not(en_w_read_tmp) when (addr_block_w_reg > 16383) else
+    en_w_read_tmp_tmp <= not(en_w_read_tmp) when (addr_block_w_reg >= 16383) else
                          '1';
     CSN_4K_tmp <= en_w_read_tmp_tmp    when (state_reg = s_read_w)  else
                   not(en_b_read_tmp)   when (state_reg = s_read_b)  else

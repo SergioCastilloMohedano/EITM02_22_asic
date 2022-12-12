@@ -63,7 +63,7 @@ begin
                 cfg_cnt_reg      <= 0;
             else
                 cfg_buffer_reg   <= cfg_buffer_next;
-                CFG_start_reg    <= CFG_start_next; -- cfg_start delayed 1clk to synchronise it with sram_wb 1clk latency
+                CFG_start_reg    <= CFG_start_next; -- cfg_start delayed 1clk to synchronise it with sram_wb 1clk read latency
                 lock_layer_reg   <= lock_layer_next;
                 cfg_layer_reg    <= cfg_layer_next;
                 cfg_cnt_reg      <= cfg_cnt_next;
@@ -86,19 +86,25 @@ begin
 	        CFG_finished_tmp             <= '0';
 	        lock_layer_next              <= lock_layer_reg;
 
-            elsif (cfg_cnt_reg <= 12) then
+            elsif (cfg_cnt_reg <= 13) then
                 cfg_buffer_next(0)           <= cfg_buffer_reg(0);
-                cfg_buffer_next(12 downto 1) <= cfg & cfg_buffer_reg(12 downto 2);
-                cfg_cnt_next                 <= cfg_cnt_reg + 1;
-                CFG_finished_tmp             <= '0';
+
+                if (cfg_cnt_reg = 13) then
+                    cfg_buffer_next(12 downto 1) <= cfg_buffer_reg(12 downto 1);
+                    cfg_cnt_next                 <= 1;
+                else
+                    cfg_buffer_next(12 downto 1) <= cfg & cfg_buffer_reg(12 downto 2);
+                    cfg_cnt_next                 <= cfg_cnt_reg + 1;
+                end if;
+
+                if (cfg_cnt_reg = 11) then
+                    CFG_finished_tmp <= '1';
+                else
+                    CFG_finished_tmp <= '0';
+                end if;
+
                 lock_layer_next              <= '1';
 
-            elsif (cfg_cnt_reg = 13) then
-                cfg_buffer_next(0)           <= cfg_buffer_reg(0);
-                cfg_buffer_next(12 downto 1) <= cfg_buffer_reg(12 downto 1);
-                cfg_cnt_next                 <= 0;
-                CFG_finished_tmp             <= '1';
-                lock_layer_next              <= '1';
             else
                 cfg_buffer_next(0)           <= cfg_buffer_reg(0);
                 cfg_buffer_next(12 downto 1) <= cfg_buffer_reg(12 downto 1);
@@ -110,13 +116,18 @@ begin
         else
             cfg_buffer_next(0)           <= cfg_buffer_reg(0);
             cfg_buffer_next(12 downto 1) <= cfg_buffer_reg(12 downto 1);
-            cfg_cnt_next                 <= 0;
+            if (cfg_cnt_reg = 13) then
+	        cfg_cnt_next                 <= 1;
+            else
+                cfg_cnt_next                 <= cfg_cnt_reg;
+            end if;
             CFG_finished_tmp             <= '0';
             lock_layer_next              <= lock_layer_reg;
         end if;
+
     end process;
 
-    -- Lock value of # of layers since it's only read once.cfg
+    -- Lock value of # of layers since it's only read once
     cfg_layer_next <= cfg_buffer_reg(0) when lock_layer_reg = '0' else
                       cfg_layer_reg;
 
