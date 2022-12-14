@@ -28,13 +28,18 @@ package thesis_pkg is
     constant HYP_BITWIDTH   : natural := 8;
 
     -- Array Definitions
-    type NOC_w_array is array (0 to (Y - 1)) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
+    subtype weight_word is std_logic_vector((WEIGHT_BITWIDTH - 1) downto 0);
+    type NOC_w_array is array (0 to (Y - 1)) of weight_word;
     type NOC_w_2D_array is array (0 to (X - 1)) of NOC_w_array;
-    type RF_w_array is array (0 to (NUM_REGS_W_REG_FILE - 1)) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
-    type NOC_ifm_array is array (0 to (Y - 1)) of std_logic_vector(ACT_BITWIDTH - 1 downto 0);
+    type RF_w_array is array (natural range <>) of weight_word;
+
+    subtype act_word is std_logic_vector((ACT_BITWIDTH - 1) downto 0);
+    type NOC_ifm_array is array (0 to (Y - 1)) of act_word;
     type NOC_ifm_2D_array is array (0 to (X - 1)) of NOC_ifm_array;
-    type RF_ifm_array is array (0 to (NUM_REGS_IFM_REG_FILE - 1)) of std_logic_vector(ACT_BITWIDTH - 1 downto 0);
+    type RF_ifm_array is array (natural range <>) of act_word;
+
     type NOC_std_logic_2D_array is array(0 to (X - 1)) of std_logic_vector (0 to (Y - 1));
+
     type psum_array is array (0 to (X - 1)) of std_logic_vector(PSUM_BITWIDTH - 1 downto 0);
     type psum_2D_array is array(0 to (Y)) of psum_array;
     type ofmap_p_X_array is array (0 to (X - 1)) of std_logic_vector(OFMAP_P_BITWIDTH - 1 downto 0);

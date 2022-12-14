@@ -51,7 +51,7 @@ architecture dataflow of POOLING is
             wr_data     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             re          : in std_logic;
             rd_data     : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-            registers   : out RF_ifm_array;
+            registers   : out RF_ifm_array(0 to (NUM_REGS - 1));
             reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
         );
     end component;

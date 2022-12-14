@@ -23,7 +23,7 @@ entity REG_FILE_WEIGHT is
         rd_data : out std_logic_vector (BITWIDTH - 1 downto 0); -- Read port
 
         -- Internal file contents
-        registers   : out RF_w_array; -- Register file contents
+        registers   : out RF_w_array(0 to (NUM_REGS - 1)); -- Register file contents
         reg_written : out std_logic_vector(0 to (NUM_REGS - 1)) -- Status flags indicating when each register is written
     );
 end entity;
@@ -33,7 +33,7 @@ architecture rtl of REG_FILE_WEIGHT is
     signal reg_sel_reg   : unsigned(reg_sel'range);
     signal we_reg        : std_logic;
     signal wr_data_reg   : std_logic_vector(wr_data'range);
-    signal registers_loc : RF_w_array;
+    signal registers_loc : RF_w_array(registers'range);
     signal re_reg        : std_logic;
 
 begin
