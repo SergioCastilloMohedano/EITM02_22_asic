@@ -42,7 +42,7 @@ architecture behavioral of SYS_CTR_CFG is
     signal r_log2_tmp       : std_logic_vector (7 downto 0); -- buffer(11)
     signal is_pooling_tmp   : std_logic_vector (7 downto 0); -- buffer(12): '1' if there is pooling after convolution, '0' if there is not
 
-    signal cfg_buffer_next, cfg_buffer_reg     : std_logic_vector_array(12 downto 0);
+    signal cfg_buffer_next, cfg_buffer_reg     : CFG_hyp_array;
     signal CFG_start_reg, CFG_start_next       : std_logic;
     signal CFG_finished_tmp                    : std_logic;
     signal cfg_cnt_reg, cfg_cnt_next           : natural range 0 to 13;

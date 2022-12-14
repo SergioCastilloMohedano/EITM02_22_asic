@@ -13,9 +13,9 @@ entity PISO_BUFFER is
         reset : in std_logic;
 
         -- From Adder Tree
-        ofmap_p_1 : in ofmap_p_array (0 to (X - 1));
-        ofmap_p_2 : in ofmap_p_array (0 to ((X/2) - 1));
-        ofmap_p_4 : in ofmap_p_array (0 to ((X/4) - 1));
+        ofmap_p_1 : in ofmap_p_X_array;
+        ofmap_p_2 : in ofmap_p_X_array;
+        ofmap_p_4 : in ofmap_p_X_array;
 
         -- config. parameters
         r : in std_logic_vector (7 downto 0);
@@ -31,9 +31,9 @@ end PISO_BUFFER;
 
 architecture behavioral of PISO_BUFFER is
 
-    signal ofmap_buffer_next : ofmap_p_array (0 to (X - 1));
-    signal ofmap_buffer_reg  : ofmap_p_array (0 to (X - 1 + 1));
-    signal ofmap_p_in        : ofmap_p_array (0 to (X - 1));
+    signal ofmap_buffer_next : ofmap_p_X_array;
+    signal ofmap_buffer_reg  : ofmap_p_X_array;
+    signal ofmap_p_in        : ofmap_p_X_array;
     signal r_tmp             : natural range 0 to 255;
 
 begin
@@ -44,37 +44,37 @@ begin
             ofmap_p_in <= ofmap_p_1;
         elsif (r_tmp = 2) then
             if (j = 1) then
-                ofmap_p_in(0 to (X/2) - 1)   <= ofmap_p_2;
+                ofmap_p_in(0 to (X/2) - 1)   <= ofmap_p_2(0 to ((X/2) - 1));
                 ofmap_p_in((X/2) to (X - 1)) <= ofmap_buffer_reg((X/2) to (X - 1));
             elsif (j = 2) then
                 ofmap_p_in(0 to (X/2) - 1)   <= ofmap_buffer_reg(0 to (X/2) - 1);
-                ofmap_p_in((X/2) to (X - 1)) <= ofmap_p_2;
+                ofmap_p_in((X/2) to (X - 1)) <= ofmap_p_2(0 to ((X/2) - 1));
             else
                 ofmap_p_in(0 to (X/2) - 1)   <= ofmap_buffer_reg(0 to (X/2) - 1);
                 ofmap_p_in((X/2) to (X - 1)) <= ofmap_buffer_reg((X/2) to (X - 1));
             end if;
         else -- r = 4
             if (j = 1) then
-                ofmap_p_in(0 to (X/4) - 1)             <= ofmap_p_4;
+                ofmap_p_in(0 to (X/4) - 1)             <= ofmap_p_4(0 to (X/4 - 1));
                 ofmap_p_in((X/4) to (X/2) - 1)         <= ofmap_buffer_reg((X/4) to (X/2) - 1);
                 ofmap_p_in((X/2) to (((3 * X)/4) - 1)) <= ofmap_buffer_reg((X/2) to (((3 * X)/4) - 1));
                 ofmap_p_in(((3 * X)/4) to (X - 1))     <= ofmap_buffer_reg(((3 * X)/4) to (X - 1));
 
             elsif (j = 2) then
                 ofmap_p_in(0 to (X/4) - 1)             <= ofmap_buffer_reg(0 to (X/4) - 1);
-                ofmap_p_in((X/4) to (X/2) - 1)         <= ofmap_p_4;
+                ofmap_p_in((X/4) to (X/2) - 1)         <= ofmap_p_4(0 to (X/4 - 1));
                 ofmap_p_in((X/2) to (((3 * X)/4) - 1)) <= ofmap_buffer_reg((X/2) to (((3 * X)/4) - 1));
                 ofmap_p_in(((3 * X)/4) to (X - 1))     <= ofmap_buffer_reg(((3 * X)/4) to (X - 1));
             elsif (j = 3) then
                 ofmap_p_in(0 to (X/4) - 1)             <= ofmap_buffer_reg(0 to (X/4) - 1);
                 ofmap_p_in((X/4) to (X/2) - 1)         <= ofmap_buffer_reg((X/4) to (X/2) - 1);
-                ofmap_p_in((X/2) to (((3 * X)/4) - 1)) <= ofmap_p_4;
+                ofmap_p_in((X/2) to (((3 * X)/4) - 1)) <= ofmap_p_4(0 to (X/4 - 1));
                 ofmap_p_in(((3 * X)/4) to (X - 1))     <= ofmap_buffer_reg(((3 * X)/4) to (X - 1));
             elsif (j = 4) then
                 ofmap_p_in(0 to (X/4) - 1)             <= ofmap_buffer_reg(0 to (X/4) - 1);
                 ofmap_p_in((X/4) to (X/2) - 1)         <= ofmap_buffer_reg((X/4) to (X/2) - 1);
                 ofmap_p_in((X/2) to (((3 * X)/4) - 1)) <= ofmap_buffer_reg((X/2) to (((3 * X)/4) - 1));
-                ofmap_p_in(((3 * X)/4) to (X - 1))     <= ofmap_p_4;
+                ofmap_p_in(((3 * X)/4) to (X - 1))     <= ofmap_p_4(0 to (X/4 - 1));
             else
                 ofmap_p_in(0 to (X/4) - 1)             <= ofmap_buffer_reg(0 to (X/4) - 1);
                 ofmap_p_in((X/4) to (X/2) - 1)         <= ofmap_buffer_reg((X/4) to (X/2) - 1);
@@ -85,7 +85,7 @@ begin
     end process;
 
     -- PISO Buffer
-    ofmap_buffer_reg(X) <= (others => '0'); -- Input zeroes to last reg. in PISO Buffer.
+   -- ofmap_buffer_reg(X) <= (others => '0'); -- Input zeroes to last reg. in PISO Buffer.
 
     PISO_BUFFER_loop : for i in 0 to (X - 1) generate
 
@@ -100,9 +100,24 @@ begin
             end if;
         end process;
 
-        ofmap_buffer_next(i) <= ofmap_buffer_reg(i + 1) when (shift = '1')       else -- Allows serial shifting.
-                                ofmap_p_in(i)           when (parallel_in = '1') else -- Allows parallel inputting.
-                                ofmap_buffer_reg(i);                                  -- Holds register values.
+        PISO_BUFFER_CTR_PROC : process(shift, parallel_in, ofmap_p_in, ofmap_buffer_reg)
+        begin
+            if i = (X - 1) then -- To avoid out of range error during synthesis
+                ofmap_buffer_next(i) <= (others => '0');
+            else
+                if (shift = '1') then -- Allows serial shifting.
+                    ofmap_buffer_next(i) <= ofmap_buffer_reg(i + 1);
+                elsif (parallel_in = '1') then -- Allows parallel inputting.
+                    ofmap_buffer_next(i) <= ofmap_p_in(i);
+                else -- Holds register values.
+                    ofmap_buffer_next(i) <= ofmap_buffer_reg(i);
+                end if;
+            end if;
+        end process;
+
+        -- ofmap_buffer_next(i) <= ofmap_buffer_reg(i + 1) when (shift = '1')       else -- Allows serial shifting.
+        --                         ofmap_p_in(i)           when (parallel_in = '1') else -- Allows parallel inputting.
+        --                         ofmap_buffer_reg(i);                                  -- Holds register values.
 
     end generate PISO_BUFFER_loop;
 

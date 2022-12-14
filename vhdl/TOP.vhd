@@ -7,13 +7,13 @@ use work.thesis_pkg.all;
 entity TOP is
     generic (
         -- HW Parameters, at synthesis time.
-        X                     : natural       := 32; -- Emax of network (conv0 and conv1)
-        Y                     : natural       := 3;
-        hw_log2_r             : integer_array := (0, 1, 2);
-        hw_log2_EF            : integer_array := (5, 4, 3);
-        NUM_REGS_IFM_REG_FILE : natural       := 34;             -- W' max (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
-        ADDR_4K_CFG           : natural       := 4042            -- First Address of the reserved space for config. parameters.
+        X                     : natural       := X; -- Emax of network (conv0 and conv1)
+        Y                     : natural       := Y;
+        hw_log2_r             : hw_log2_array := hw_log2_r;
+        hw_log2_EF            : hw_log2_array := hw_log2_EF;
+        NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE;             -- W' max (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE;             -- p*S = 8*3 = 24
+        ADDR_4K_CFG           : natural       := ADDR_4K_CFG            -- First Address of the reserved space for config. parameters.
     );
     port (
         clk         : in std_logic;
@@ -77,7 +77,7 @@ architecture structural of TOP is
     signal ifm_tmp : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
 
     -- PE ARRAY
-    signal ofmap_p                   : psum_array(0 to (X - 1));
+    signal ofmap_p                   : psum_array;
     signal PISO_Buffer_start         : std_logic;
     signal NoC_ACK_flag              : std_logic;
     signal shift_PISO                : std_logic;
@@ -206,8 +206,8 @@ architecture structural of TOP is
         generic (
             X                     : natural       := X;
             Y                     : natural       := Y;
-            hw_log2_r             : integer_array := hw_log2_r;
-            hw_log2_EF            : integer_array := hw_log2_EF;
+            hw_log2_r             : hw_log2_array := hw_log2_r;
+            hw_log2_EF            : hw_log2_array := hw_log2_EF;
             NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE; -- W' max (conv0 and conv1)
             NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE    -- p*S = 8*3 = 24
         );
@@ -230,7 +230,7 @@ architecture structural of TOP is
             pass_flag         : in std_logic;
             ifm_sram          : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             w_sram            : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
-            ofmap_p           : out psum_array(0 to (X - 1));
+            ofmap_p           : out psum_array;
             PISO_Buffer_start : out std_logic
         );
     end component;
@@ -244,7 +244,7 @@ architecture structural of TOP is
             reset             : in std_logic;
             r                 : in std_logic_vector (7 downto 0);
             EF                : in std_logic_vector (7 downto 0);
-            ofmap_p           : in psum_array(0 to (X - 1));
+            ofmap_p           : in psum_array;
             PISO_Buffer_start : in std_logic;
             ofmap             : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
             NoC_ACK_flag      : out std_logic;

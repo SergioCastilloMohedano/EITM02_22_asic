@@ -16,13 +16,13 @@ entity ADDER_TREE is
         r : in std_logic_vector (7 downto 0);
 
         -- From NoC
-        ofmap_p           : in psum_array(0 to (X - 1));
+        ofmap_p           : in psum_array;
         PISO_Buffer_start : in std_logic;
 
         -- To PISO Buffer
-        ofmap_p_1           : out ofmap_p_array (0 to (X - 1));
-        ofmap_p_2           : out ofmap_p_array (0 to ((X/2) - 1));
-        ofmap_p_4           : out ofmap_p_array (0 to ((X/4) - 1));
+        ofmap_p_1           : out ofmap_p_X_array;
+        ofmap_p_2           : out ofmap_p_X_array;
+        ofmap_p_4           : out ofmap_p_X_array;
         PISO_Buffer_start_1 : out std_logic;
         PISO_Buffer_start_2 : out std_logic;
         PISO_Buffer_start_4 : out std_logic
@@ -33,38 +33,44 @@ architecture behavioral of ADDER_TREE is
 
     -- SIGNAL DEFINITIONS
     -- Input Branch
-    signal ofmap_p_bus_0 : ofmap_p_array (0 to (X - 1));
+    signal ofmap_p_bus_0 : ofmap_p_X_array;
 
     -- r = 1 Branch
-    signal ofmap_p_bus_1 : ofmap_p_array (0 to (X - 1));
+    signal ofmap_p_bus_1 : ofmap_p_X_array;
 
     -- r /= 1 Branch
-    signal ofmap_p_bus_2 : ofmap_p_array (0 to (X - 1));
+    signal ofmap_p_bus_2 : ofmap_p_X_array;
 
     -- Adders 1st Stage
-    signal ofmap_p_add_1_in_1 : ofmap_p_array (0 to ((X/4) - 1)); -- set r = 1
-    signal ofmap_p_add_2_in_1 : ofmap_p_array (0 to ((X/4) - 1)); -- set r = 2
-    signal ofmap_p_add_1_in_2 : ofmap_p_array (0 to ((X/4) - 1)); -- set r = 3
-    signal ofmap_p_add_2_in_2 : ofmap_p_array (0 to ((X/4) - 1)); -- set r = 4
-    signal ofmap_p_add_1_out  : ofmap_p_array (0 to ((X/4) - 1));
-    signal ofmap_p_add_2_out  : ofmap_p_array (0 to ((X/4) - 1));
+    -- signal ofmap_p_add_1_in_1 : ofmap_p_Xdiv4_array; -- set r = 1
+    -- signal ofmap_p_add_2_in_1 : ofmap_p_Xdiv4_array; -- set r = 2
+    -- signal ofmap_p_add_1_in_2 : ofmap_p_Xdiv4_array; -- set r = 3
+    -- signal ofmap_p_add_2_in_2 : ofmap_p_Xdiv4_array; -- set r = 4
+    -- signal ofmap_p_add_1_out  : ofmap_p_Xdiv4_array;
+    -- signal ofmap_p_add_2_out  : ofmap_p_Xdiv4_array;
+    signal ofmap_p_add_out : ofmap_p_X_array;
 
     -- Regs 1st Stage
-    signal ofmap_p_add_1_out_reg : ofmap_p_array (0 to ((X/4) - 1));
-    signal ofmap_p_add_2_out_reg : ofmap_p_array (0 to ((X/4) - 1));
+    -- signal ofmap_p_add_1_out_reg : ofmap_p_Xdiv4_array;
+    -- signal ofmap_p_add_2_out_reg : ofmap_p_Xdiv4_array;
+    signal ofmap_p_add_out_reg : ofmap_p_X_array;
 
     -- r = 2 Branch
-    signal ofmap_p_bus_2_1 : ofmap_p_array (0 to ((X/4) - 1));
-    signal ofmap_p_bus_2_2 : ofmap_p_array (0 to ((X/4) - 1));
+    -- signal ofmap_p_bus_2_1 : ofmap_p_Xdiv4_array;
+    -- signal ofmap_p_bus_2_2 : ofmap_p_Xdiv4_array;
+    signal ofmap_p_bus_out_2 : ofmap_p_X_array;
 
     -- Adder 2nd Stage
-    signal ofmap_p_add_3_in_1 : ofmap_p_array (0 to ((X/4) - 1));
-    signal ofmap_p_add_3_in_2 : ofmap_p_array (0 to ((X/4) - 1));
+    -- signal ofmap_p_add_3_in_1 : ofmap_p_Xdiv4_array;
+    -- signal ofmap_p_add_3_in_2 : ofmap_p_Xdiv4_array;
+    signal ofmap_p_add_3_in   : ofmap_p_X_array;
 
-    signal ofmap_p_add_3_out : ofmap_p_array (0 to ((X/4) - 1));
+    -- signal ofmap_p_add_3_out : ofmap_p_Xdiv4_array;
+    signal ofmap_p_add_3_out : ofmap_p_X_array;
 
     -- Regs 2nd Stage (r = 4 Branch)
-    signal ofmap_p_add_3_out_reg : ofmap_p_array (0 to ((X/4) - 1));
+    -- signal ofmap_p_add_3_out_reg : ofmap_p_Xdiv4_array;
+    signal ofmap_p_add_3_out_reg : ofmap_p_X_array;
 
     -- PISO Buffer Start Signals
     signal PISO_Buffer_start_reg_1, PISO_Buffer_start_next_1 : std_logic;
@@ -88,15 +94,22 @@ begin
     ofmap_p_bus_2 <= ofmap_p_bus_0 when (r_tmp /= 1) else (others => (others => '0'));
 
     -- Splitting Bus
-    ofmap_p_add_1_in_1 <= ofmap_p_bus_2 (0 to ((X/4) - 1));
-    ofmap_p_add_2_in_1 <= ofmap_p_bus_2 ((X/4) to ((X/2) - 1));
-    ofmap_p_add_1_in_2 <= ofmap_p_bus_2 ((X/2) to (((3 * X)/4) - 1));
-    ofmap_p_add_2_in_2 <= ofmap_p_bus_2 (((3 * X)/4) to (X - 1));
+    -- ofmap_p_add_1_in_1 <= ofmap_p_bus_2 (0 to ((X/4) - 1));
+    -- ofmap_p_add_2_in_1 <= ofmap_p_bus_2 ((X/4) to ((X/2) - 1));
+    -- ofmap_p_add_1_in_2 <= ofmap_p_bus_2 ((X/2) to (((3 * X)/4) - 1));
+    -- ofmap_p_add_2_in_2 <= ofmap_p_bus_2 (((3 * X)/4) to (X - 1));
 
     -- Adders Stage 1
+    -- loop_adders_stage_1 : for i in 0 to ((X/4) - 1) generate
+    --     ofmap_p_add_1_out(i) <= std_logic_vector(signed(ofmap_p_add_1_in_1(i)) + signed(ofmap_p_add_1_in_2(i)));
+    --     ofmap_p_add_2_out(i) <= std_logic_vector(signed(ofmap_p_add_2_in_1(i)) + signed(ofmap_p_add_2_in_2(i)));
+    -- end generate loop_adders_stage_1;
+
     loop_adders_stage_1 : for i in 0 to ((X/4) - 1) generate
-        ofmap_p_add_1_out(i) <= std_logic_vector(signed(ofmap_p_add_1_in_1(i)) + signed(ofmap_p_add_1_in_2(i)));
-        ofmap_p_add_2_out(i) <= std_logic_vector(signed(ofmap_p_add_2_in_1(i)) + signed(ofmap_p_add_2_in_2(i)));
+        ofmap_p_add_out(i)               <= std_logic_vector(signed(ofmap_p_bus_2(i)) + signed(ofmap_p_bus_2(i + (X/2))));
+        ofmap_p_add_out(i + (X/4))       <= std_logic_vector(signed(ofmap_p_bus_2(i + (X/4))) + signed(ofmap_p_bus_2(i + ((3 * X)/4))));
+        ofmap_p_add_out(i + (X/2))       <= (others => '0');
+        ofmap_p_add_out(i + ((3 * X)/4)) <= (others => '0');
     end generate loop_adders_stage_1;
 
     -- Register Buses - Stage 1
@@ -104,26 +117,46 @@ begin
     begin
         if rising_edge(clk) then
             if (reset = '1') then
-                ofmap_p_add_1_out_reg <= (others => (others => '0'));
-                ofmap_p_add_2_out_reg <= (others => (others => '0'));
+                -- ofmap_p_add_1_out_reg <= (others => (others => '0'));
+                -- ofmap_p_add_2_out_reg <= (others => (others => '0'));
+                ofmap_p_add_out_reg <= (others => (others => '0'));
             else
-                ofmap_p_add_1_out_reg <= ofmap_p_add_1_out;
-                ofmap_p_add_2_out_reg <= ofmap_p_add_2_out;
+                -- ofmap_p_add_1_out_reg <= ofmap_p_add_1_out;
+                -- ofmap_p_add_2_out_reg <= ofmap_p_add_2_out;
+                ofmap_p_add_out_reg <= ofmap_p_add_out;
             end if;
         end if;
     end process;
 
-    -- Demux 2
-    ofmap_p_bus_2_1    <= ofmap_p_add_1_out_reg when (r_tmp = 2) else (others => (others => '0'));
-    ofmap_p_add_3_in_1 <= ofmap_p_add_1_out_reg when (r_tmp /= 2) else (others => (others => '0'));
+    -- -- Demux 2
+    -- ofmap_p_bus_2_1    <= ofmap_p_add_1_out_reg when (r_tmp = 2) else (others => (others => '0'));
+    -- ofmap_p_add_3_in_1 <= ofmap_p_add_1_out_reg when (r_tmp /= 2) else (others => (others => '0'));
 
-    -- Demux 3
-    ofmap_p_bus_2_2    <= ofmap_p_add_2_out_reg when (r_tmp = 2) else (others => (others => '0'));
-    ofmap_p_add_3_in_2 <= ofmap_p_add_2_out_reg when (r_tmp /= 2) else (others => (others => '0'));
+    -- -- Demux 3
+    -- ofmap_p_bus_2_2    <= ofmap_p_add_2_out_reg when (r_tmp = 2) else (others => (others => '0'));
+    -- ofmap_p_add_3_in_2 <= ofmap_p_add_2_out_reg when (r_tmp /= 2) else (others => (others => '0'));
 
-    -- Adder Stage 2
+    -- Demux 2 & 3
+    ofmap_p_add_3_in (0 to ((X/4) - 1))     <= ofmap_p_add_out_reg (0 to ((X/4) - 1))     when (r_tmp /= 2) else (others => (others => '0'));
+    ofmap_p_add_3_in ((X/4) to ((X/2) - 1)) <= ofmap_p_add_out_reg ((X/4) to ((X/2) - 1)) when (r_tmp /= 2) else (others => (others => '0'));
+    ofmap_p_add_3_in ((X/2) to (X - 1))     <= (others => (others => '0'));
+    
+    -- ofmap_p_bus_2_1    <= ofmap_p_add_out_reg (0 to ((X/4) - 1))     when (r_tmp = 2) else (others => (others => '0'));
+    -- ofmap_p_bus_2_2    <= ofmap_p_add_out_reg ((X/4) to ((X/2) - 1)) when (r_tmp = 2) else (others => (others => '0'));
+
+    ofmap_p_bus_out_2 (0 to ((X/4) - 1))     <= ofmap_p_add_out_reg (0 to ((X/4) - 1))     when (r_tmp = 2) else (others => (others => '0'));
+    ofmap_p_bus_out_2 ((X/4) to ((X/2) - 1)) <= ofmap_p_add_out_reg ((X/4) to ((X/2) - 1)) when (r_tmp = 2) else (others => (others => '0'));
+
+    -- -- Adder Stage 2
+    -- loop_adders_stage_2 : for i in 0 to ((X/4) - 1) generate
+    --     ofmap_p_add_3_out(i) <= std_logic_vector(signed(ofmap_p_add_3_in_1(i)) + signed(ofmap_p_add_3_in_2(i)));
+    -- end generate loop_adders_stage_2;
+
     loop_adders_stage_2 : for i in 0 to ((X/4) - 1) generate
-        ofmap_p_add_3_out(i) <= std_logic_vector(signed(ofmap_p_add_3_in_1(i)) + signed(ofmap_p_add_3_in_2(i)));
+        ofmap_p_add_3_out(i)               <= std_logic_vector(signed(ofmap_p_add_3_in(i)) + signed(ofmap_p_add_3_in(i + (X/4))));
+        ofmap_p_add_3_out(i + (X/4))       <= (others => '0');
+        ofmap_p_add_3_out(i + (X/2))       <= (others => '0');
+        ofmap_p_add_3_out(i + ((3 * X)/4)) <= (others => '0');
     end generate loop_adders_stage_2;
 
     -- Register Bus - Stage 2
@@ -161,9 +194,21 @@ begin
     ----------------------------------------------
 
     -- PORT Assignations
-    ofmap_p_1 <= ofmap_p_bus_1; -- r = 1 (size X)
-    ofmap_p_2 <= ofmap_p_bus_2_1 & ofmap_p_bus_2_2; -- r = 2 (size X/2)
-    ofmap_p_4 <= ofmap_p_add_3_out_reg; -- r = 4 (size X/4)
+    -- ofmap_p_1 <= ofmap_p_bus_1; -- r = 1 (size X)
+    -- ofmap_p_2 <= ofmap_p_bus_2_1 & ofmap_p_bus_2_2; -- r = 2 (size X/2)
+    -- ofmap_p_4 <= ofmap_p_add_3_out_reg; -- r = 4 (size X/4)
+
+    -- r = 1 (size X)
+    ofmap_p_1 <= ofmap_p_bus_1;
+
+    -- r = 2 (size X/2)
+    ofmap_p_2(0 to ((X/2) - 1)) <= ofmap_p_bus_out_2(0 to ((X/2) - 1));
+    ofmap_p_2((X/2) to (X - 1)) <= (others => (others => '0'));
+
+    -- r = 4 (size X/4)
+    ofmap_p_4(0 to (X/4 - 1))   <= ofmap_p_add_3_out_reg(0 to (X/4 - 1));
+    ofmap_p_4((X/4) to (X - 1)) <= (others => (others => '0'));
+
     r_tmp     <= to_integer(unsigned(r));
 
 

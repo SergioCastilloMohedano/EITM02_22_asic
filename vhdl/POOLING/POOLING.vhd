@@ -51,7 +51,7 @@ architecture dataflow of POOLING is
             wr_data     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             re          : in std_logic;
             rd_data     : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-            registers   : out act_array(0 to (NUM_REGS - 1));
+            registers   : out RF_ifm_array;
             reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
         );
     end component;
@@ -94,12 +94,12 @@ begin
     r1_next <= signed(value_in) when r1_r2_ctr = '0' else r1_reg;
     r2_next <= signed(value_in) when r1_r2_ctr = '1' else r2_reg;
 
-    max_1 <= maximum(r1_reg, r2_reg);
+    max_1 <= r1_reg when (r1_reg >= r2_reg) else r2_reg;
 
     r3_next <= max_1 when r3_rf_ctr = '1' else (others => '0');
     rf_in   <= max_1 when r3_rf_ctr = '0' else (others => '0');
 
-    max_2         <= maximum(r3_reg, signed(rd_data_tmp));
+    max_2         <= r3_reg when (r3_reg >= signed(rd_data_tmp)) else signed(rd_data_tmp);
     value_out_tmp <= max_2 when (en_out = '1') else (others => '0');
 
     -- PORT Assignations

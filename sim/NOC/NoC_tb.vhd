@@ -16,8 +16,8 @@ architecture sim of NOC_tb is
 
     constant X                     : natural       := 32;
     constant Y                     : natural       := 3;
-    constant hw_log2_r             : integer_array := (0, 1, 2);
-    constant hw_log2_EF            : integer_array := (5, 4, 3); -- for E = (32, 16, 8)
+    constant hw_log2_r             : hw_log2_array := (0, 1, 2);
+    constant hw_log2_EF            : hw_log2_array := (5, 4, 3); -- for E = (32, 16, 8)
     constant NUM_REGS_IFM_REG_FILE : natural       := 34; -- W' max (conv0 and conv1)
     constant NUM_REGS_W_REG_FILE   : natural       := 24; -- p*S = 8*3 = 24
     constant ADDR_4K_CFG           : natural       := 4042;
@@ -34,8 +34,8 @@ architecture sim of NOC_tb is
             -- HW Parameters, at synthesis time.
             X                     : natural       := 32;
             Y                     : natural       := 3;
-            hw_log2_r             : integer_array := (0, 1, 2);
-            hw_log2_EF            : integer_array := (5, 4, 3);
+            hw_log2_r             : hw_log2_array := (0, 1, 2);
+            hw_log2_EF            : hw_log2_array := (5, 4, 3);
             NUM_REGS_IFM_REG_FILE : natural       := 32;             -- W' max (conv0 and conv1)
             NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
             ADDR_4K_CFG           : natural       := 4042            -- First Address of the reserved space for config. parameters.

@@ -6,12 +6,12 @@ use work.thesis_pkg.all;
 entity NOC is
     generic (
         -- HW Parameters, at synthesis time.
-        X                     : natural       := 32;
-        Y                     : natural       := 3;
-        hw_log2_r             : integer_array := (0, 1, 2);
-        hw_log2_EF            : integer_array := (5, 4, 3);
-        NUM_REGS_IFM_REG_FILE : natural       := 34; -- W' max (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
+        X                     : natural       := X;
+        Y                     : natural       := Y;
+        hw_log2_r             : hw_log2_array := hw_log2_r;
+        hw_log2_EF            : hw_log2_array := hw_log2_EF;
+        NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE; -- W' max (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE -- p*S = 8*3 = 24
     );
     port (
         clk   : in std_logic;
@@ -40,7 +40,7 @@ entity NOC is
         w_sram   : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
 
         -- Ofmap Primitives Output Registers (To Adder Tree)
-        ofmap_p           : out psum_array(0 to (X - 1));
+        ofmap_p           : out psum_array;
         PISO_Buffer_start : out std_logic
     );
 end NOC;
@@ -49,27 +49,27 @@ architecture structural of NOC is
 
     -- SIGNAL DEFINITIONS
     -- MC_Y to MC_X
-    signal ifm_enable_y_to_x : std_logic_array(0 to (Y - 1));
-    signal ifm_y_to_x        : act_array(0 to (Y - 1));
-    signal w_enable_y_to_x   : std_logic_array(0 to (Y - 1));
-    signal w_y_to_x          : weight_array(0 to (Y - 1));
+    signal ifm_enable_y_to_x : std_logic_vector(0 to (Y - 1));
+    signal ifm_y_to_x        : NOC_ifm_array;
+    signal w_enable_y_to_x   : std_logic_vector(0 to (Y - 1));
+    signal w_y_to_x          : NOC_w_array;
 
     -- MC_X to PE
-    signal ifm_x_to_PE        : act_2D_array(0 to (X - 1))(0 to (Y - 1));
-    signal ifm_status_x_to_PE : std_logic_2D_array(0 to (X - 1))(0 to (Y - 1));
-    signal w_x_to_PE          : weight_2D_array(0 to (X - 1))(0 to (Y - 1));
-    signal w_status_x_to_PE   : std_logic_2D_array(0 to (X - 1))(0 to (Y - 1));
+    signal ifm_x_to_PE        : NOC_ifm_2D_array;
+    signal ifm_status_x_to_PE : NOC_std_logic_2D_array;
+    signal w_x_to_PE          : NOC_w_2D_array;
+    signal w_status_x_to_PE   : NOC_std_logic_2D_array;
 
     -- MC_rr to MC_X
-    signal rr_tmp : std_logic_vector_array(0 to (X - 1));
+    signal rr_tmp : NOC_hyp_array;
 
     -- Internal PE Array Signals
-    signal psum_inter_array : psum_2D_array(0 to (X - 1))(0 to (Y));
-    signal psum_out_array   : psum_array(0 to (X - 1));
+    signal psum_inter_array : psum_2D_array;
+    signal psum_out_array   : psum_array;
 
     -- PE to Adder Tree
-    signal ofmap_p_reg, ofmap_p_next : psum_array(0 to (X - 1));
-    signal ofmap_p_done_array        : std_logic_2D_array(0 to (X - 1))(0 to (Y - 1));
+    signal ofmap_p_reg, ofmap_p_next : psum_array;
+    signal ofmap_p_done_array        : NOC_std_logic_2D_array;
 
     -- Delay Signals
     signal h_p_reg         : std_logic_vector (7 downto 0);
@@ -150,7 +150,7 @@ architecture structural of NOC is
             Y_ID      : natural       := 3;
             X_ID      : natural       := 16;
             Y         : natural       := Y;
-            hw_log2_r : integer_array := hw_log2_r
+            hw_log2_r : hw_log2_array := hw_log2_r
         );
         port (
             EF_log2      : in std_logic_vector (7 downto 0);
@@ -173,7 +173,7 @@ architecture structural of NOC is
     component MC_rr is
         generic (
             X_ID       : natural       := 1;
-            hw_log2_EF : integer_array := hw_log2_EF
+            hw_log2_EF : hw_log2_array := hw_log2_EF
         );
         port (
             EF_log2 : in std_logic_vector (7 downto 0);
@@ -208,14 +208,14 @@ begin
                 ifm_PE_enable           => ifm_status_x_to_PE(i)(k),
                 w_PE                    => w_x_to_PE(i)(k),
                 w_PE_enable             => w_status_x_to_PE(i)(k),
-                psum_in                 => psum_inter_array(i)(Y - 1 - k),
-                psum_out                => psum_inter_array(i)(Y - k),
+                psum_in                 => psum_inter_array(Y - 1 - k)(i),
+                psum_out                => psum_inter_array(Y - k)(i),
                 PE_ARRAY_RF_write_start => PE_ARRAY_RF_write_start,
                 ofmap_p_done            => ofmap_p_done_array(i)(k)
             );
         end generate PE_ARRAY_Y_loop;
-        psum_out_array(i)      <= psum_inter_array(i)(Y); -- Connect psum output of top PEs to the output of the PE Array.
-        psum_inter_array(i)(0) <= (others => '0'); -- Connect psum input of bottom PEs to zero.
+        psum_out_array(i)      <= psum_inter_array(Y)(i); -- Connect psum output of top PEs to the output of the PE Array.
+        psum_inter_array(0)(i) <= (others => '0'); -- Connect psum input of bottom PEs to zero.
     end generate PE_ARRAY_X_loop;
 
     -- -- MC FC ROW
@@ -321,7 +321,7 @@ begin
     end generate OFMAP_REG_GEN;
 
     -- PORT Assignations
-    PE_ARRAY_RF_write_start <= '1' when (IFM_NL_busy_reg or WB_NL_busy_reg) else '0'; -- triggers writing state within all PEs.
+    PE_ARRAY_RF_write_start <= '1' when ((IFM_NL_busy_reg = '1') or (WB_NL_busy_reg = '1')) else '0'; -- triggers writing state within all PEs.
     ofmap_p_next            <= psum_out_array; -- register ofmap primitives from the PE Array.
     ofmap_p                 <= ofmap_p_reg;
     PISO_Buffer_start       <= ofmap_p_done_array(0)(0); -- triggers parallel input.

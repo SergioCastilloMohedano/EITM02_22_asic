@@ -8,10 +8,10 @@ entity PE is
         -- HW Parameters, at synthesis time.
         Y_ID                  : natural       := 3;
         X_ID                  : natural       := 16;
-        Y                     : natural       := 3;
-        X                     : natural       := 32;
-        NUM_REGS_IFM_REG_FILE : natural       := 34; -- W' max (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
+        Y                     : natural       := Y;
+        X                     : natural       := X;
+        NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE; -- W' max (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE -- p*S = 8*3 = 24
     );
     port (
         clk   : in std_logic;
@@ -87,7 +87,7 @@ architecture structural of PE is
             wr_data     : in std_logic_vector (BITWIDTH - 1 downto 0);
             re          : in std_logic;
             rd_data     : out std_logic_vector (BITWIDTH - 1 downto 0);
-            registers   : out act_array(0 to (NUM_REGS - 1));
+            registers   : out RF_ifm_array;
             reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
         );
     end component;
@@ -107,7 +107,7 @@ architecture structural of PE is
             wr_data     : in std_logic_vector (BITWIDTH - 1 downto 0);
             re          : in std_logic;
             rd_data     : out std_logic_vector (BITWIDTH - 1 downto 0);
-            registers   : out weight_array(0 to (NUM_REGS - 1));
+            registers   : out RF_w_array;
             reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
         );
     end component;

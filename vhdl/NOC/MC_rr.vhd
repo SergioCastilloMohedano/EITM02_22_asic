@@ -7,7 +7,7 @@ entity MC_rr is
     generic (
         -- HW Parameters, at synthesis time.
         X_ID       : natural       := 1;
-        hw_log2_EF : integer_array := (5, 4, 3) -- log2(32, 16, 8)
+        hw_log2_EF : hw_log2_array := (5, 4, 3) -- log2(32, 16, 8)
     );
     port (
         -- config. parameters
@@ -22,10 +22,10 @@ architecture dataflow of MC_rr is
 
     signal EF_log2_tmp : natural range 0 to 255;
 
-    signal mux_in  : std_logic_vector_array (0 to hw_log2_EF'length - 1);
+    signal mux_in  : mux_hyp_array;
+    signal mux_out : std_logic_vector(7 downto 0);
+    signal mux_sel : natural range 0 to (hw_log2_array'length - 1);
     signal rr_tmp  : std_logic_vector (7 downto 0);
-    signal mux_out : std_logic_vector (7 downto 0);
-    signal mux_sel : natural range 0 to 255;
 
 begin
 
@@ -64,8 +64,7 @@ begin
 
     p_mux : mux
     generic map(
-        LEN => 8,
-        NUM => hw_log2_EF'length
+        LEN => 8
     )
     port map(
         mux_in  => mux_in,

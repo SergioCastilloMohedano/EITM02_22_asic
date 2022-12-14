@@ -9,7 +9,7 @@ entity MC_X is
         Y_ID      : natural       := 3;
         X_ID      : natural       := 16;
         Y         : natural       := 3;
-        hw_log2_r : integer_array := (0, 1, 2)
+        hw_log2_r : hw_log2_array := (0, 1, 2)
     );
     port (
         -- config. parameters
@@ -61,9 +61,9 @@ architecture dataflow of MC_X is
     signal Y_ID_tmp : natural range 0 to 255;
     signal X_ID_tmp : natural range 0 to 255;
 
-    signal mux_in  : std_logic_vector_array(0 to hw_log2_r'length - 1);
+    signal mux_in  : mux_hyp_array;
     signal mux_out : std_logic_vector(7 downto 0);
-    signal mux_sel : natural range 0 to 255;
+    signal mux_sel : natural range 0 to (hw_log2_array'length - 1);
 
 begin
 
@@ -98,8 +98,7 @@ begin
 
     p_mux : mux
     generic map(
-        LEN => 8,
-        NUM => hw_log2_r'length
+        LEN => 8
     )
     port map(
         mux_in  => mux_in,

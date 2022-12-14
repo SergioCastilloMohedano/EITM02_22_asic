@@ -20,9 +20,9 @@ entity PISO_BUFFER_TOP is
         PISO_Buffer_start_1 : in std_logic;
         PISO_Buffer_start_2 : in std_logic;
         PISO_Buffer_start_4 : in std_logic;
-        ofmap_p_1           : in ofmap_p_array (0 to (X - 1));
-        ofmap_p_2           : in ofmap_p_array (0 to ((X/2) - 1));
-        ofmap_p_4           : in ofmap_p_array (0 to ((X/4) - 1));
+        ofmap_p_1           : in ofmap_p_X_array;
+        ofmap_p_2           : in ofmap_p_X_array;
+        ofmap_p_4           : in ofmap_p_X_array;
 
         -- To OFMAP SRAM
         ofmap : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
@@ -54,9 +54,9 @@ architecture structural of PISO_BUFFER_TOP is
         port (
             clk         : in std_logic;
             reset       : in std_logic;
-            ofmap_p_1   : in ofmap_p_array (0 to (X - 1));
-            ofmap_p_2   : in ofmap_p_array (0 to ((X/2) - 1));
-            ofmap_p_4   : in ofmap_p_array (0 to ((X/4) - 1));
+            ofmap_p_1   : in ofmap_p_X_array;
+            ofmap_p_2   : in ofmap_p_X_array;
+            ofmap_p_4   : in ofmap_p_X_array;
             r           : in std_logic_vector (7 downto 0);
             shift       : in std_logic;
             parallel_in : in std_logic;

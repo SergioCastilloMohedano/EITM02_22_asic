@@ -7,32 +7,55 @@ use ieee.numeric_std.all;
 
 package thesis_pkg is
 
-    -- **** TYPE DECLARATIONS ****
+    -- HW Parameters, at synthesis time.
+    constant X                     : natural       := 32; -- Emax of network (conv0 and conv1)
+    constant Y                     : natural       := 3;
+    type hw_log2_array is array (0 to 2) of integer; -- Array Definition
+    constant hw_log2_r             : hw_log2_array := (0, 1, 2);
+    constant hw_log2_EF            : hw_log2_array := (5, 4, 3);
+    constant NUM_REGS_IFM_REG_FILE : natural       := 34;             -- W' max (conv0 and conv1)
+    constant NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
+    constant ADDR_4K_CFG           : natural       := 4042;            -- First Address of the reserved space for config. parameters.
+    constant NUM_OF_PARAMS         : natural       := 13;             -- Number of parameters to set for each layer (M, C, EF, RS, r, p, ...)
+
+    -- TYPE DECLARATIONS
     constant ACT_BITWIDTH : natural := 16;
     constant WEIGHT_BITWIDTH : natural := 8;
     constant BIAS_BITWIDTH : natural := 16;
     constant PSUM_BITWIDTH  : natural := 28; -- determines bitwidth of the psum considering worst case scenario accumulations -> ceil(log2(R*S*2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH)) = ceil(27.17) = 28
     constant OFMAP_P_BITWIDTH : natural := 30; -- Bitwidth of Adder Tree -> ceil(log2(r*R*S*(COMP_BITWIDTH^2))) -> r = 4 -> 28 + 2
     constant OFMAP_BITWIDTH : natural := 34; -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario -> max(ceil(log2(Cconv*R*S*COMP_BITWIDTH^2) = 34 , ceil(log2(Cfc*COMP_BITWIDTH^2)))
+    constant HYP_BITWIDTH   : natural := 8;
 
+    -- Array Definitions
+    type NOC_w_array is array (0 to (Y - 1)) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
+    type NOC_w_2D_array is array (0 to (X - 1)) of NOC_w_array;
+    type RF_w_array is array (0 to (NUM_REGS_W_REG_FILE - 1)) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
+    type NOC_ifm_array is array (0 to (Y - 1)) of std_logic_vector(ACT_BITWIDTH - 1 downto 0);
+    type NOC_ifm_2D_array is array (0 to (X - 1)) of NOC_ifm_array;
+    type RF_ifm_array is array (0 to (NUM_REGS_IFM_REG_FILE - 1)) of std_logic_vector(ACT_BITWIDTH - 1 downto 0);
+    type NOC_std_logic_2D_array is array(0 to (X - 1)) of std_logic_vector (0 to (Y - 1));
+    type psum_array is array (0 to (X - 1)) of std_logic_vector(PSUM_BITWIDTH - 1 downto 0);
+    type psum_2D_array is array(0 to (Y)) of psum_array;
+    type ofmap_p_X_array is array (0 to (X - 1)) of std_logic_vector(OFMAP_P_BITWIDTH - 1 downto 0);
+    -- subtype ofmap_p_Xdiv4_array is ofmap_p_X_array (0 to ((X/4) - 1));
+    -- subtype ofmap_p_Xdiv2_array is ofmap_p_X_array (0 to ((X/2) - 1));
+    -- subtype ofmap_p_Xplus1_array is ofmap_p_X_array (0 to (X));
+
+    -- subtype ofmap_p_X_array_Xdiv4_1 is ofmap_p_X_array (0 to ((X/4) - 1));
+    -- subtype ofmap_p_X_array_Xdiv4_2 is ofmap_p_X_array ((X/4) to ((X/2) - 1));
+    -- subtype ofmap_p_X_array_Xdiv4_3 is ofmap_p_X_array ((X/2) to (((3 * X)/4) - 1));
+    -- subtype ofmap_p_X_array_Xdiv4_4 is ofmap_p_X_array (((3 * X)/4) to (X - 1));
+
+    -- type ofmap_p_Xdiv2_array is array (0 to ((X/2) - 1)) of std_logic_vector(OFMAP_P_BITWIDTH - 1 downto 0);
+    -- type ofmap_p_Xdiv4_array is array (0 to ((X/4) - 1)) of std_logic_vector(OFMAP_P_BITWIDTH - 1 downto 0);
+    -- type ofmap_p_Xplus1_array is array (0 to (X)) of std_logic_vector(OFMAP_P_BITWIDTH - 1 downto 0);
+
+    type mux_hyp_array is array (0 to (hw_log2_array'length - 1)) of std_logic_vector (HYP_BITWIDTH - 1 downto 0);
+    type NOC_hyp_array is array (0 to (X - 1)) of std_logic_vector (HYP_BITWIDTH - 1 downto 0);
+    type CFG_hyp_array is array ((NUM_OF_PARAMS - 1) downto 0) of std_logic_vector (HYP_BITWIDTH - 1 downto 0);
 
     constant COMP_BITWIDTH  : natural := 8; -- determines computing resolution of the accelerator
-
-    type weight_array is array (natural range <>) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
-    type weight_2D_array is array (natural range <>) of weight_array;
-    type act_array is array (natural range <>) of std_logic_vector(ACT_BITWIDTH - 1 downto 0);
-    type act_2D_array is array (natural range <>) of act_array;
-
-    type std_logic_vector_array is array(natural range <>) of std_logic_vector(COMP_BITWIDTH - 1 downto 0);
-    type std_logic_vector_2D_array is array(natural range <>) of std_logic_vector_array;
-    
-    type std_logic_array is array(natural range <>) of std_logic;
-    type std_logic_2D_array is array(natural range <>) of std_logic_array;
-    type integer_array is array(natural range <>) of integer;
-    type psum_array is array(natural range <>) of std_logic_vector(PSUM_BITWIDTH - 1 downto 0);
-    type psum_2D_array is array(natural range <>) of psum_array;
-    type ofmap_p_array is array (natural range <>) of std_logic_vector(OFMAP_P_BITWIDTH - 1 downto 0);
-    type ofmap_array is array (natural range <>) of std_logic_vector(OFMAP_BITWIDTH - 1 downto 0);
 
     -- **** PROCEDURES DECLARATIONS ****
 
@@ -100,12 +123,11 @@ package thesis_pkg is
 
     component mux is
         generic (
-            LEN : natural := 8; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
-            NUM : natural -- Number of inputs
+            LEN : natural := 8 -- Bits in each input (must be 8 due to data type definition being constrained to 8).
         );
         port (
-            mux_in  : in std_logic_vector_array(0 to NUM - 1);
-            mux_sel : in natural range 0 to NUM - 1;
+            mux_in  : in mux_hyp_array := (others => (others => '0'));
+            mux_sel : in natural range 0 to (hw_log2_array'length - 1);
             mux_out : out std_logic_vector(LEN - 1 downto 0));
     end component;
 
@@ -233,11 +255,11 @@ use work.thesis_pkg.all;
 
 entity mux is
     generic (
-        LEN : natural := 8; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
-        NUM : natural); -- Number of inputs
+        LEN : natural := 8 -- Bits in each input (must be 8 due to data type definition being constrained to 8).
+    );
     port (
-        mux_in  : in std_logic_vector_array(0 to NUM - 1) := (others => (others => '0'));
-        mux_sel : in natural range 0 to NUM - 1;
+        mux_in  : in mux_hyp_array := (others => (others => '0'));
+        mux_sel : in natural range 0 to hw_log2_array'length - 1;
         mux_out : out std_logic_vector(LEN - 1 downto 0));
 end entity;
 
