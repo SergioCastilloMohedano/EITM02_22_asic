@@ -117,7 +117,7 @@ architecture behavioral of SRAM_WB_BACK_END is
     signal en_w_read_tmp_tmp : std_logic;
     signal Q_tmp : std_logic_vector(31 downto 0);
     signal weight_tmp : std_logic_vector (BIAS_BITWIDTH - 1 downto 0); -- MSBs zeroes disregarded in front-end read interface
-    signal zeroes : std_logic_vector (31 - BIAS_BITWIDTH - WEIGHT_BITWIDTH downto 0) := (others => '0');
+    signal zeroes : std_logic_vector (31 - BIAS_BITWIDTH - WEIGHT_BITWIDTH downto 0);
     signal Q_4K_w_tmp : std_logic_vector (31 downto 0);
     signal Q_4K_b_tmp : std_logic_vector (31 downto 0);
     signal Q_4K_cfg_tmp : std_logic_vector (31 downto 0);
@@ -297,6 +297,7 @@ begin
         end if;
     end process;
 
+    zeroes <= (others => '0');
     with addr_block_ctrl_w_reg select weight_tmp <=
         Q_tmp(31 downto 24) & zeroes when 0,
         Q_tmp(23 downto 16) & zeroes when 1,

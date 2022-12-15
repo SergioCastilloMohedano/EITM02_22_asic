@@ -321,7 +321,7 @@ begin
     end generate OFMAP_REG_GEN;
 
     -- PORT Assignations
-    PE_ARRAY_RF_write_start <= '1' when (IFM_NL_busy_reg or WB_NL_busy_reg) else '0'; -- triggers writing state within all PEs.
+    PE_ARRAY_RF_write_start <= '1' when ((IFM_NL_busy_reg = '1') or (WB_NL_busy_reg = '1')) else '0'; -- triggers writing state within all PEs.
     ofmap_p_next            <= psum_out_array; -- register ofmap primitives from the PE Array.
     ofmap_p                 <= ofmap_p_reg;
     PISO_Buffer_start       <= ofmap_p_done_array(0)(0); -- triggers parallel input.

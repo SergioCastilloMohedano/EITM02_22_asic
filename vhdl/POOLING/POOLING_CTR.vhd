@@ -183,12 +183,22 @@ begin
                 re_rf_next <= '0';
 
             when s_buffering =>
-                we_rf_next <= '1' when to_unsigned(e_cnt_reg, EF'length)(0) = '1' else '0';
+                if (to_unsigned(e_cnt_reg, EF'length)(0) = '1') then
+                    we_rf_next <= '1';
+                else
+                    we_rf_next <= '0';
+                end if;
+
                 re_rf_next <= '0';
 
             when s_out =>
                 we_rf_next <= '0';
-                re_rf_next <= '1' when to_unsigned(e_cnt_reg, EF'length)(0) = '1' else '0';
+
+                if (to_unsigned(e_cnt_reg, EF'length)(0) = '1') then
+                    re_rf_next <= '1';
+                else
+                    re_rf_next <= '0';
+                end if;
 
             when s_finished =>
                 we_rf_next <= '0';
