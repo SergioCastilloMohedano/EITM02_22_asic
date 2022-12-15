@@ -6,18 +6,18 @@ use work.thesis_pkg.all;
 entity SRAM_WB_BACK_END is
     generic (
         -- HW Parameters, at synthesis time.
-        ADDR_4K_CFG : natural := 4042 -- First Address of the reserved space for config. parameters.
+        ADDR_4K_CFG : natural := ADDR_4K_CFG_PKG -- First Address of the reserved space for config. parameters.
     );
     port (
         clk   : in std_logic;
         reset : in std_logic;
         -- Front-End Interface Ports
         wb_FE       : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-        cfg_FE      : out std_logic_vector (7 downto 0);
+        cfg_FE      : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         en_w_read   : in std_logic;
         en_b_read   : in std_logic;
         en_cfg_read : in std_logic;
-        NoC_pm_FE   : in std_logic_vector (7 downto 0);
+        NoC_pm_FE   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         -- SRAM Block Wrapper Ports (ASIC)
         A_8K_1   : out std_logic_vector(12 downto 0);
         CSN_8K_1 : out std_logic;
@@ -111,7 +111,7 @@ architecture behavioral of SRAM_WB_BACK_END is
     signal WEN_4K_tmp   : std_logic;
     signal INITN_tmp    : std_logic;
     signal wb_FE_tmp    : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-    signal cfg_FE_tmp   : std_logic_vector (7 downto 0);
+    signal cfg_FE_tmp   : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
     -- SRAM_WB_BACK_END Intermediate Signals
     signal en_w_read_tmp_tmp : std_logic;
@@ -201,10 +201,10 @@ begin
                 addr_4K_w_reg         <= (others => '0');
 
                 addr_4K_b_ctrl_reg <= '0';
-                addr_4K_b_reg      <= to_unsigned((ADDR_4K_CFG - 1), 12);
+                addr_4K_b_reg      <= to_unsigned((ADDR_4K_CFG_PKG - 1), 12);
 
                 addr_4K_cfg_ctrl_reg <= 0;
-                addr_4K_cfg_reg        <= to_unsigned((ADDR_4K_CFG), 12);
+                addr_4K_cfg_reg        <= to_unsigned((ADDR_4K_CFG_PKG), 12);
 
                 initn_cnt_reg <= (others => '0');
                 initn_reg     <= '1';

@@ -6,15 +6,15 @@ use work.thesis_pkg.all;
 entity PISO_BUFFER_CTR is
     generic (
         -- HW Parameters, at synthesis time.
-        X : natural := 32
+        X : natural := X_PKG
     );
     port (
         clk   : in std_logic;
         reset : in std_logic;
 
         -- config. parameters
-        r  : in std_logic_vector (7 downto 0);
-        EF : in std_logic_vector (7 downto 0);
+        r  : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- From Adder Tree
         PISO_Buffer_start_1 : in std_logic;
@@ -24,7 +24,7 @@ entity PISO_BUFFER_CTR is
         -- To PISO Buffer
         shift       : out std_logic;
         parallel_in : out std_logic;
-        j           : out natural range 0 to 255;
+        j           : out natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
         -- To Sys Controller
         buffer_empty : out std_logic
@@ -45,8 +45,8 @@ architecture behavioral of PISO_BUFFER_CTR is
     signal buffer_empty_tmp    : std_logic;
 
     ---- External Command Signals to the FSMD
-    signal r_tmp                 : natural range 0 to 255;
-    signal EF_tmp                : natural range 0 to 255;
+    signal r_tmp                 : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal EF_tmp                : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
     signal PISO_Buffer_start_tmp : std_logic; -- triggers FSMD.
 
     -------- OUTPUTS --------
@@ -60,17 +60,17 @@ architecture behavioral of PISO_BUFFER_CTR is
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
     signal j_cnt_reg, j_cnt_next           : natural;
-    signal buffer_cnt_reg, buffer_cnt_next : natural range 0 to (X - 1);
-    signal empty_cnt_reg, empty_cnt_next   : natural range 0 to X;
+    signal buffer_cnt_reg, buffer_cnt_next : natural range 0 to (X_PKG - 1);
+    signal empty_cnt_reg, empty_cnt_next   : natural range 0 to X_PKG;
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
     ---- Functional Units Intermediate Signals
     signal j_cnt_out      : natural;
-    signal buffer_cnt_out : natural range 0 to (X - 1);
-    signal empty_cnt_out : natural range 0 to X;
+    signal buffer_cnt_out : natural range 0 to (X_PKG - 1);
+    signal empty_cnt_out : natural range 0 to X_PKG;
 
     ---- Data Outputs
-    signal j_tmp : natural range 0 to 255;
+    signal j_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     -- Intermediate Signals
     -- Other Signals

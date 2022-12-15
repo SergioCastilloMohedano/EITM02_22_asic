@@ -6,21 +6,21 @@ use work.thesis_pkg.all;
 entity PE_CTR is
     generic (
         -- HW Parameters, at synthesis time.
-        Y_ID                  : natural       := 3;
-        X                     : natural       := 32;
-        NUM_REGS_IFM_REG_FILE : natural       := 34;  -- W' max (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
+        Y_ID                  : natural       := 1;
+        X                     : natural       := X_PKG;
+        NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG;  -- W' max (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG -- p*S = 8*3 = 24
     );
     port (
         clk   : in std_logic;
         reset : in std_logic;
 
         -- config. parameters
-        HW_p : in std_logic_vector (7 downto 0);
-        EF   : in std_logic_vector (7 downto 0);
-        RS   : in std_logic_vector (7 downto 0);
-        p    : in std_logic_vector (7 downto 0);
-        r    : in std_logic_vector (7 downto 0);
+        HW_p : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        RS   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        p    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- from sys ctrl
         pass_flag : in std_logic;
@@ -31,8 +31,8 @@ entity PE_CTR is
         PE_ARRAY_RF_write_start : in std_logic;
 
         -- PE_CTR signals
-        w_addr       : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
-        ifm_addr     : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
+        w_addr       : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
+        ifm_addr     : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
         w_we_rf      : out std_logic;
         ifm_we_rf    : out std_logic;
         reset_acc    : out std_logic;
@@ -76,54 +76,54 @@ architecture behavioral of PE_CTR is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal w_addr_write_reg, w_addr_write_next       : std_logic_vector (bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
-    signal ifm_addr_write_reg, ifm_addr_write_next   : std_logic_vector (bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
-    signal w_addr_read_reg, w_addr_read_next         : natural range 0 to (NUM_REGS_W_REG_FILE);
-    signal ifm_addr_read_reg, ifm_addr_read_next     : natural range 0 to (NUM_REGS_IFM_REG_FILE);
-    signal intra_w_p_reg, intra_w_p_next             : natural range 0 to 255;
-    signal intra_s_reg, intra_s_next                 : natural range 0 to 255;
-    signal intra_p_reg, intra_p_next                 : natural range 0 to 255;
-    signal inter_r_p_reg, inter_r_p_next             : natural range 0 to 255;
-    signal hold_cnt_reg, hold_cnt_next               : natural range 0 to 255;
-    signal j_cnt_reg, j_cnt_next                     : natural range 0 to 255;
-    signal stall_cnt_reg, stall_cnt_next             : natural range 0 to 255;
+    signal w_addr_write_reg, w_addr_write_next       : std_logic_vector (bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
+    signal ifm_addr_write_reg, ifm_addr_write_next   : std_logic_vector (bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
+    signal w_addr_read_reg, w_addr_read_next         : natural range 0 to (NUM_REGS_W_REG_FILE_PKG);
+    signal ifm_addr_read_reg, ifm_addr_read_next     : natural range 0 to (NUM_REGS_IFM_REG_FILE_PKG);
+    signal intra_w_p_reg, intra_w_p_next             : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal intra_s_reg, intra_s_next                 : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal intra_p_reg, intra_p_next                 : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal inter_r_p_reg, inter_r_p_next             : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal hold_cnt_reg, hold_cnt_next               : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal j_cnt_reg, j_cnt_next                     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal stall_cnt_reg, stall_cnt_next             : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
     signal ifm_PE_enable_tmp : std_logic;
     signal w_PE_enable_tmp   : std_logic;
-    signal HW_p_tmp          : natural range 0 to 255;
-    signal EF_tmp            : natural range 0 to 255;
-    signal RS_tmp            : natural range 0 to 255;
-    signal p_tmp             : natural range 0 to 255;
-    signal r_tmp             : natural range 0 to 255;
+    signal HW_p_tmp          : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal EF_tmp            : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal RS_tmp            : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal p_tmp             : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal r_tmp             : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- Functional Units Intermediate Signals
-    signal intra_s_out           : natural range 0 to 255;
-    signal intra_w_p_out         : natural range 0 to 255;
-    signal intra_w_p_out_tmp     : natural range 0 to 255;
-    signal intra_p_out           : natural range 0 to 255;
-    signal intra_p_out_tmp       : natural range 0 to 255;
-    signal w_addr_read_out       : natural range 0 to (NUM_REGS_W_REG_FILE);
-    signal w_addr_read_out_tmp   : natural range 0 to (NUM_REGS_W_REG_FILE);
-    signal ifm_addr_read_out     : natural range 0 to (NUM_REGS_IFM_REG_FILE);
-    signal ifm_addr_read_out_tmp : natural range 0 to (NUM_REGS_IFM_REG_FILE);
-    signal inter_r_p_out_1       : natural range 0 to 255;
-    signal inter_r_p_out_2       : natural range 0 to 255;
-    signal inter_r_p_out         : natural range 0 to 255;
-    signal hold_cnt_out          : natural range 0 to 255;
-    signal j_cnt_out             : natural range 0 to 255;
-    signal j_cnt_out_tmp         : natural range 0 to 255;
-    signal stall_cnt_out         : natural range 0 to 255;
+    signal intra_s_out           : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal intra_w_p_out         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal intra_w_p_out_tmp     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal intra_p_out           : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal intra_p_out_tmp       : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal w_addr_read_out       : natural range 0 to (NUM_REGS_W_REG_FILE_PKG);
+    signal w_addr_read_out_tmp   : natural range 0 to (NUM_REGS_W_REG_FILE_PKG);
+    signal ifm_addr_read_out     : natural range 0 to (NUM_REGS_IFM_REG_FILE_PKG);
+    signal ifm_addr_read_out_tmp : natural range 0 to (NUM_REGS_IFM_REG_FILE_PKG);
+    signal inter_r_p_out_1       : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal inter_r_p_out_2       : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal inter_r_p_out         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal hold_cnt_out          : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal j_cnt_out             : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal j_cnt_out_tmp         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal stall_cnt_out         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- Data Outputs
     signal ifm_we_rf_tmp : std_logic;
     signal w_we_rf_tmp   : std_logic;
-    signal ifm_addr_tmp  : std_logic_vector (bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
-    signal w_addr_tmp    : std_logic_vector (bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
+    signal ifm_addr_tmp  : std_logic_vector (bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
+    signal w_addr_tmp    : std_logic_vector (bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
 
     -- Intermediate Signals
-    signal ifm_addr_read_tmp : natural range 0 to (NUM_REGS_IFM_REG_FILE - 1);
-    signal w_addr_read_tmp   : natural range 0 to (NUM_REGS_W_REG_FILE - 1);
+    signal ifm_addr_read_tmp : natural range 0 to (NUM_REGS_IFM_REG_FILE_PKG - 1);
+    signal w_addr_read_tmp   : natural range 0 to (NUM_REGS_W_REG_FILE_PKG - 1);
 
     -- Other Signals
     constant RF_READ_LATENCY  : natural := 2; -- Register Files read latency, in clock cycles
@@ -213,10 +213,10 @@ begin
     re_rf_tmp        <= '0' when state_reg = s_idle_writing else '1';
 
     ifm_addr_tmp <= ifm_addr_write_reg when state_reg = s_idle_writing else
-        std_logic_vector(to_unsigned(ifm_addr_read_tmp, bit_size(NUM_REGS_IFM_REG_FILE))) when state_reg = s_intra_PE_acc else
+        std_logic_vector(to_unsigned(ifm_addr_read_tmp, bit_size(NUM_REGS_IFM_REG_FILE_PKG))) when state_reg = s_intra_PE_acc else
         (others => '0');
     w_addr_tmp <= w_addr_write_reg when state_reg = s_idle_writing else
-        std_logic_vector(to_unsigned(w_addr_read_tmp, bit_size(NUM_REGS_W_REG_FILE))) when state_reg = s_intra_PE_acc else
+        std_logic_vector(to_unsigned(w_addr_read_tmp, bit_size(NUM_REGS_W_REG_FILE_PKG))) when state_reg = s_intra_PE_acc else
         (others => '0');
 
     -- data path : data registers

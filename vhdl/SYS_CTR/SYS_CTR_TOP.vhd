@@ -32,6 +32,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SYS_CTR_TOP is
     port (
@@ -40,14 +41,14 @@ entity SYS_CTR_TOP is
         NL_start                  : in std_logic;
         NL_ready                  : out std_logic;
         NL_finished               : out std_logic;
-        c                         : out std_logic_vector (7 downto 0);
-        m                         : out std_logic_vector (7 downto 0);
-        rc                        : out std_logic_vector (7 downto 0);
-        r_p                       : out std_logic_vector (7 downto 0);
-        pm                        : out std_logic_vector (7 downto 0);
-        s                         : out std_logic_vector (7 downto 0);
-        w_p                       : out std_logic_vector (7 downto 0);
-        h_p                       : out std_logic_vector (7 downto 0);
+        c                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        m                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        rc                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r_p                       : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        pm                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        s                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        w_p                       : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        h_p                       : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         NoC_ACK_flag              : in std_logic;
         IFM_NL_ready              : out std_logic;
         IFM_NL_finished           : out std_logic;
@@ -59,26 +60,26 @@ entity SYS_CTR_TOP is
         shift_PISO                : in std_logic;
         OFM_NL_cnt_finished       : out std_logic;
         OFM_NL_NoC_m_cnt_finished : out std_logic;
-        NoC_c                     : out std_logic_vector (7 downto 0);
+        NoC_c                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         OFM_NL_Write              : out std_logic;
         OFM_NL_Read               : out std_logic;
-        NoC_pm_bias               : out std_logic_vector (7 downto 0);
-        NoC_pm                    : out std_logic_vector (7 downto 0);
-        NoC_f                     : out std_logic_vector (7 downto 0);
-        NoC_e                     : out std_logic_vector (7 downto 0);
+        NoC_pm_bias               : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_pm                    : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_f                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_e                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         READ_CFG                  : out std_logic;
-        cfg_in                    : in  std_logic_vector (7 downto 0);
-        M_cap                     : out std_logic_vector (7 downto 0);
-        C_cap                     : out std_logic_vector (7 downto 0);
-        HW                        : out std_logic_vector (7 downto 0);
-        HW_p                      : out std_logic_vector (7 downto 0);
-        RS                        : out std_logic_vector (7 downto 0);
-        EF                        : out std_logic_vector (7 downto 0);
-        r                         : out std_logic_vector (7 downto 0);
-        p                         : out std_logic_vector (7 downto 0);
-        EF_log2                   : out std_logic_vector (7 downto 0);
-        r_log2                    : out std_logic_vector (7 downto 0);
-        is_pooling                : out std_logic_vector (7 downto 0)
+        cfg_in                    : in  std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        M_cap                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        C_cap                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        HW                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        HW_p                      : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        RS                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        p                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF_log2                   : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r_log2                    : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        is_pooling                : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
     );
 end SYS_CTR_TOP;
 
@@ -92,13 +93,13 @@ architecture architectural of SYS_CTR_TOP is
             NL_start                  : in std_logic;
             NL_ready                  : out std_logic;
             NL_finished               : out std_logic;
-            M_cap                     : in std_logic_vector (7 downto 0);
-            C_cap                     : in std_logic_vector (7 downto 0);
-            r                         : in std_logic_vector (7 downto 0);
-            p                         : in std_logic_vector (7 downto 0);
-            c                         : out std_logic_vector (7 downto 0);
-            m                         : out std_logic_vector (7 downto 0);
-            rc                        : out std_logic_vector (7 downto 0);
+            M_cap                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            C_cap                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            p                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            c                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            m                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            rc                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             NoC_ACK_flag              : in std_logic;
             IFM_NL_ready              : in std_logic;
             IFM_NL_finished           : in std_logic;
@@ -113,7 +114,7 @@ architecture architectural of SYS_CTR_TOP is
             OFM_NL_NoC_m_cnt_finished : in std_logic;
             CFG_start                 : out std_logic;
             CFG_finished              : in std_logic;
-            L                         : in std_logic_vector (7 downto 0);
+            L                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             layer_finished            : out std_logic
         );
     end component;
@@ -126,12 +127,12 @@ architecture architectural of SYS_CTR_TOP is
             WB_NL_ready    : out std_logic;
             WB_NL_finished : out std_logic;
             WB_NL_busy     : out std_logic;
-            RS             : in std_logic_vector (7 downto 0);
-            p              : in std_logic_vector (7 downto 0);
-            m              : in std_logic_vector (7 downto 0);
-            r_p            : out std_logic_vector (7 downto 0);
-            pm             : out std_logic_vector (7 downto 0);
-            s              : out std_logic_vector (7 downto 0)
+            RS             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            p              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            m              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r_p            : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            pm             : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            s              : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
         );
     end component;
 
@@ -143,9 +144,9 @@ architecture architectural of SYS_CTR_TOP is
             IFM_NL_ready    : out std_logic;
             IFM_NL_finished : out std_logic;
             IFM_NL_busy     : out std_logic;
-            HW_p            : in std_logic_vector (7 downto 0);
-            h_p             : out std_logic_vector (7 downto 0);
-            w_p             : out std_logic_vector (7 downto 0)
+            HW_p            : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            h_p             : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            w_p             : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
         );
     end component;
 
@@ -155,8 +156,8 @@ architecture architectural of SYS_CTR_TOP is
             reset           : in std_logic;
             CFG_finished : in std_logic;
             layer_finished : in std_logic;
-            r               : in std_logic_vector (7 downto 0);
-            M_div_pt        : in std_logic_vector (7 downto 0);
+            r               : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            M_div_pt        : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             WB_NL_finished  : in std_logic;
             IFM_NL_finished : in std_logic;
             pass_flag       : out std_logic
@@ -172,19 +173,19 @@ architecture architectural of SYS_CTR_TOP is
             OFM_NL_finished           : out std_logic;
             OFM_NL_Write              : out std_logic;
             OFM_NL_Read               : out std_logic;
-            C_cap                     : in std_logic_vector (7 downto 0);
-            M_cap                     : in std_logic_vector (7 downto 0);
-            EF                        : in std_logic_vector (7 downto 0);
-            r                         : in std_logic_vector (7 downto 0);
-            p                         : in std_logic_vector (7 downto 0);
-            NoC_c                     : out std_logic_vector (7 downto 0);
-            NoC_pm                    : out std_logic_vector (7 downto 0);
-            NoC_f                     : out std_logic_vector (7 downto 0);
-            NoC_e                     : out std_logic_vector (7 downto 0);
+            C_cap                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            M_cap                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF                        : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            p                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_c                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_pm                    : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_f                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_e                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             shift_PISO                : in std_logic;
             OFM_NL_cnt_finished       : out std_logic;
             OFM_NL_NoC_m_cnt_finished : out std_logic;
-            NoC_pm_bias               : out std_logic_vector (7 downto 0)
+            NoC_pm_bias               : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
         );
     end component;
 
@@ -194,20 +195,20 @@ architecture architectural of SYS_CTR_TOP is
             reset        : in std_logic;
             CFG_start    : in std_logic;
             CFG_finished : out std_logic;
-            cfg          : in std_logic_vector (7 downto 0);
-            L            : out std_logic_vector (7 downto 0);
-            M_cap        : out std_logic_vector (7 downto 0);
-            C_cap        : out std_logic_vector (7 downto 0);
-            HW           : out std_logic_vector (7 downto 0);
-            HW_p         : out std_logic_vector (7 downto 0);
-            RS           : out std_logic_vector (7 downto 0);
-            EF           : out std_logic_vector (7 downto 0);
-            r            : out std_logic_vector (7 downto 0);
-            p            : out std_logic_vector (7 downto 0);
-            M_div_pt     : out std_logic_vector (7 downto 0);
-            EF_log2      : out std_logic_vector (7 downto 0);
-            r_log2       : out std_logic_vector (7 downto 0);
-            is_pooling   : out std_logic_vector (7 downto 0)
+            cfg          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            L            : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            M_cap        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            C_cap        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            HW           : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            HW_p         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            RS           : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF           : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r            : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            p            : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            M_div_pt     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF_log2      : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r_log2       : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            is_pooling   : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
         );
     end component;
 
@@ -224,19 +225,19 @@ architecture architectural of SYS_CTR_TOP is
     signal OFM_NL_finished_tmp : std_logic;
 
     -- SYS_CTR_MAIN_NL Intermediate Signals
-    signal m_tmp  : std_logic_vector (7 downto 0);
-    signal c_tmp  : std_logic_vector (7 downto 0);
-    signal rc_tmp : std_logic_vector (7 downto 0);
+    signal m_tmp  : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal c_tmp  : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal rc_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
     -- SYS_CTR_WB_NL Intermediate Signals
-    signal s_tmp           : std_logic_vector (7 downto 0);
-    signal pm_tmp          : std_logic_vector (7 downto 0);
-    signal r_p_tmp         : std_logic_vector (7 downto 0);
+    signal s_tmp           : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal pm_tmp          : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal r_p_tmp         : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal WB_NL_start_tmp : std_logic;
 
     -- SYS_CTR_IFM_NL Intermediate Signals
-    signal h_p_tmp          : std_logic_vector (7 downto 0);
-    signal w_p_tmp          : std_logic_vector (7 downto 0);
+    signal h_p_tmp          : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal w_p_tmp          : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal IFM_NL_start_tmp : std_logic;
 
     -- SYS_CTR_PASS_FLAG Intermediate Signals
@@ -244,29 +245,29 @@ architecture architectural of SYS_CTR_TOP is
     signal layer_finished_tmp : std_logic;
 
     -- SYS_CTR_OFM_NL Intermediate Signals
-    --    signal NoC_c_tmp        : std_logic_vector (7 downto 0);
-    signal NoC_pm_tmp                    : std_logic_vector (7 downto 0);
-    signal NoC_f_tmp                     : std_logic_vector (7 downto 0);
-    signal NoC_e_tmp                     : std_logic_vector (7 downto 0);
+    --    signal NoC_c_tmp        : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal NoC_pm_tmp                    : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal NoC_f_tmp                     : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal NoC_e_tmp                     : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal OFM_NL_start_tmp              : std_logic;
     signal OFM_NL_NoC_m_cnt_finished_tmp : std_logic;
 
     -- SYS_CTR_CFG Intermediate Signals
     signal CFG_start_tmp    : std_logic;
     signal CFG_finished_tmp : std_logic;
-    signal L_tmp : std_logic_vector (7 downto 0);         
-    signal M_cap_tmp : std_logic_vector (7 downto 0);     
-    signal C_cap_tmp : std_logic_vector (7 downto 0);     
-    signal HW_tmp : std_logic_vector (7 downto 0);        
-    signal HW_p_tmp : std_logic_vector (7 downto 0);      
-    signal RS_tmp : std_logic_vector (7 downto 0);        
-    signal EF_tmp : std_logic_vector (7 downto 0);        
-    signal r_tmp : std_logic_vector (7 downto 0);         
-    signal p_tmp : std_logic_vector (7 downto 0);         
-    signal M_div_pt_tmp : std_logic_vector (7 downto 0);  
-    signal EF_log2_tmp : std_logic_vector (7 downto 0);   
-    signal r_log2_tmp : std_logic_vector (7 downto 0);    
-    signal is_pooling_tmp : std_logic_vector (7 downto 0);
+    signal L_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);         
+    signal M_cap_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);     
+    signal C_cap_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);     
+    signal HW_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);        
+    signal HW_p_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);      
+    signal RS_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);        
+    signal EF_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);        
+    signal r_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);         
+    signal p_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);         
+    signal M_div_pt_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);  
+    signal EF_log2_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);   
+    signal r_log2_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);    
+    signal is_pooling_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     ----------------------------------------------
 
 begin

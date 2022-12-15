@@ -1,26 +1,3 @@
--------------------------------------------------------------------------------------------------------
--- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
--- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
--------------------------------------------------------------------------------------------------------
--- File           : SRAM_IFM_FRONT_END_READ.vhd
--- Author         : Sergio Castillo Mohedano
--- University     : Lund University
--- Department     : Electrical and Information Technology (EIT)
--- Created        : 2022-06-25
--- Standard       : VHDL-2008
--------------------------------------------------------------------------------------------------------
--- Description    : Input Features Map SRAM Front-End Read Interface
--------------------------------------------------------------------------------------------------------
--- Input Signals  :
---         * clk: clock
---         * reset: synchronous, active high.
---         * ...
--- Output Signals :
---         * ...
--------------------------------------------------------------------------------------------------------
--- Revisions      : NA (Git Control)
--------------------------------------------------------------------------------------------------------
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -28,10 +5,10 @@ use work.thesis_pkg.all;
 
 entity SRAM_IFM_FRONT_END_READ is
     port (
-        h_p             : in std_logic_vector (7 downto 0);
-        w_p             : in std_logic_vector (7 downto 0);
-        HW              : in std_logic_vector (7 downto 0);
-        RS              : in std_logic_vector (7 downto 0);
+        h_p             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        w_p             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        HW              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        RS              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         IFM_NL_ready    : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
         IFM_NL_finished : in std_logic; -- IFM NL has finished. Do not read SRAM anymore.
         ifm_out         : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -46,10 +23,10 @@ architecture dataflow of SRAM_IFM_FRONT_END_READ is
     signal IFM_NL_ready_tmp    : std_logic;
     signal IFM_NL_finished_tmp : std_logic;
 
-    signal h_p_tmp : natural range 0 to 255;
-    signal w_p_tmp : natural range 0 to 255;
-    signal HW_tmp  : natural range 0 to 255;
-    signal p       : natural range 0 to 255; -- p = padding = (-1+RS)/2.
+    signal h_p_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal w_p_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal HW_tmp  : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal p       : natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- p = padding = (-1+RS)/2.
     signal h_ctrl  : std_logic;
     signal w_ctrl  : std_logic;
 

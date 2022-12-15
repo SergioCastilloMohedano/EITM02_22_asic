@@ -7,13 +7,13 @@ use work.thesis_pkg.all;
 entity TOP is
     generic (
         -- HW Parameters, at synthesis time.
-        X                     : natural       := 32; -- Emax of network (conv0 and conv1)
-        Y                     : natural       := 3;
-        hw_log2_r             : integer_array := (0, 1, 2);
-        hw_log2_EF            : integer_array := (5, 4, 3);
-        NUM_REGS_IFM_REG_FILE : natural       := 34;             -- W' max (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24;             -- p*S = 8*3 = 24
-        ADDR_4K_CFG           : natural       := 4042            -- First Address of the reserved space for config. parameters.
+        X                     : natural       := X_PKG; -- Emax of network (conv0 and conv1)
+        Y                     : natural       := Y_PKG;
+        hw_log2_r             : integer_array := hw_log2_r_PKG;
+        hw_log2_EF            : integer_array := hw_log2_EF_PKG;
+        NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG;             -- W' max (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG;             -- p*S = 8*3 = 24
+        ADDR_4K_CFG           : natural       := ADDR_4K_CFG_PKG            -- First Address of the reserved space for config. parameters.
     );
     port (
         clk         : in std_logic;
@@ -30,14 +30,14 @@ architecture structural of TOP is
     -- SYS_CTR_TOP
     signal NL_ready_tmp        : std_logic;
     signal NL_finished_tmp     : std_logic;
-    signal c_tmp               : std_logic_vector (7 downto 0);
-    signal m_tmp               : std_logic_vector (7 downto 0);
-    signal rc_tmp              : std_logic_vector (7 downto 0);
-    signal r_p_tmp             : std_logic_vector (7 downto 0);
-    signal pm_tmp              : std_logic_vector (7 downto 0);
-    signal s_tmp               : std_logic_vector (7 downto 0);
-    signal w_p_tmp             : std_logic_vector (7 downto 0);
-    signal h_p_tmp             : std_logic_vector (7 downto 0);
+    signal c_tmp               : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal m_tmp               : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal rc_tmp              : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal r_p_tmp             : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal pm_tmp              : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal s_tmp               : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal w_p_tmp             : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal h_p_tmp             : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal IFM_NL_ready_tmp    : std_logic;
     signal IFM_NL_finished_tmp : std_logic;
     signal IFM_NL_busy_tmp     : std_logic;
@@ -45,39 +45,39 @@ architecture structural of TOP is
     signal WB_NL_finished_tmp  : std_logic;
     signal WB_NL_busy_tmp      : std_logic;
     signal pass_flag_tmp       : std_logic;
-    signal NoC_c               : std_logic_vector (7 downto 0);
+    signal NoC_c               : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal OFM_NL_Write_tmp    : std_logic;
     signal OFM_NL_Read_tmp     : std_logic;
-    signal NoC_pm_bias_tmp     : std_logic_vector (7 downto 0);
-    signal NoC_pm_tmp          : std_logic_vector (7 downto 0);
-    signal NoC_e_tmp           : std_logic_vector (7 downto 0);
-    signal NoC_f_tmp           : std_logic_vector (7 downto 0);
+    signal NoC_pm_bias_tmp     : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal NoC_pm_tmp          : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal NoC_e_tmp           : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal NoC_f_tmp           : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal READ_CFG_tmp        : std_logic;
     -- cfg -----------------------------------------
-    signal M_cap_tmp       : std_logic_vector (7 downto 0);
-    signal C_cap_tmp       : std_logic_vector (7 downto 0);
-    signal r_tmp           : std_logic_vector (7 downto 0);
-    signal p_tmp           : std_logic_vector (7 downto 0);
-    signal RS_tmp          : std_logic_vector (7 downto 0);
-    signal EF_tmp          : std_logic_vector (7 downto 0);
-    signal HW_p_tmp        : std_logic_vector (7 downto 0);
-    signal HW_tmp          : std_logic_vector (7 downto 0);
-    signal EF_log2_tmp     : std_logic_vector (7 downto 0);
-    signal r_log2_tmp      : std_logic_vector (7 downto 0);
-    signal is_pooling_tmp  : std_logic_vector (7 downto 0);
+    signal M_cap_tmp       : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal C_cap_tmp       : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal r_tmp           : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal p_tmp           : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal RS_tmp          : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal EF_tmp          : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal HW_p_tmp        : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal HW_tmp          : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal EF_log2_tmp     : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal r_log2_tmp      : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal is_pooling_tmp  : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     ------------------------------------------------
 
 
     -- SRAM_WB
     signal w_tmp   : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
     signal b_tmp   : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-    signal cfg_tmp : std_logic_vector (7 downto 0);
+    signal cfg_tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
     -- SRAM_IFM
     signal ifm_tmp : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
 
     -- PE ARRAY
-    signal ofmap_p                   : psum_array(0 to (X - 1));
+    signal ofmap_p                   : psum_array(0 to (X_PKG - 1));
     signal PISO_Buffer_start         : std_logic;
     signal NoC_ACK_flag              : std_logic;
     signal shift_PISO                : std_logic;
@@ -105,14 +105,14 @@ architecture structural of TOP is
             NL_start                  : in std_logic;
             NL_ready                  : out std_logic;
             NL_finished               : out std_logic;
-            c                         : out std_logic_vector (7 downto 0);
-            m                         : out std_logic_vector (7 downto 0);
-            rc                        : out std_logic_vector (7 downto 0);
-            r_p                       : out std_logic_vector (7 downto 0);
-            pm                        : out std_logic_vector (7 downto 0);
-            s                         : out std_logic_vector (7 downto 0);
-            w_p                       : out std_logic_vector (7 downto 0);
-            h_p                       : out std_logic_vector (7 downto 0);
+            c                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            m                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            rc                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r_p                       : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            pm                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            s                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            w_p                       : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            h_p                       : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             NoC_ACK_flag              : in std_logic;
             IFM_NL_ready              : out std_logic;
             IFM_NL_finished           : out std_logic;
@@ -124,45 +124,45 @@ architecture structural of TOP is
             shift_PISO                : in std_logic;
             OFM_NL_cnt_finished       : out std_logic;
             OFM_NL_NoC_m_cnt_finished : out std_logic;
-            NoC_c                     : out std_logic_vector (7 downto 0);
+            NoC_c                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             OFM_NL_Write              : out std_logic;
             OFM_NL_Read               : out std_logic;
-            NoC_pm_bias               : out std_logic_vector (7 downto 0); -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
-            NoC_pm                    : out std_logic_vector (7 downto 0);
-            NoC_f                     : out std_logic_vector (7 downto 0);
-            NoC_e                     : out std_logic_vector (7 downto 0);
+            NoC_pm_bias               : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0); -- same as NoC_c but taking the non-registered signal (1 cc earlier) so that I avoid 1cc read latency from reading the bias.
+            NoC_pm                    : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_f                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_e                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             READ_CFG                  : out std_logic;
-            cfg_in                    : in  std_logic_vector (7 downto 0);
-            M_cap                     : out std_logic_vector (7 downto 0);
-            C_cap                     : out std_logic_vector (7 downto 0);
-            HW                        : out std_logic_vector (7 downto 0);
-            HW_p                      : out std_logic_vector (7 downto 0);
-            RS                        : out std_logic_vector (7 downto 0);
-            EF                        : out std_logic_vector (7 downto 0);
-            r                         : out std_logic_vector (7 downto 0);
-            p                         : out std_logic_vector (7 downto 0);
-            EF_log2                   : out std_logic_vector (7 downto 0);
-            r_log2                    : out std_logic_vector (7 downto 0);
-            is_pooling                : out std_logic_vector (7 downto 0)
+            cfg_in                    : in  std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            M_cap                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            C_cap                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            HW                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            HW_p                      : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            RS                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            p                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF_log2                   : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r_log2                    : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            is_pooling                : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
         );
     end component;
 
     component SRAM_WB is
         generic (
-            ADDR_4K_CFG : natural := 4042           -- First Address of the reserved space for config. parameters.
+            ADDR_4K_CFG : natural := ADDR_4K_CFG_PKG           -- First Address of the reserved space for config. parameters.
         );
         port (
             clk            : in std_logic;
             reset          : in std_logic;
             WB_NL_ready    : in std_logic;
             WB_NL_finished : in std_logic;
-            NoC_c          : in std_logic_vector (7 downto 0);
-            NoC_pm_bias    : in std_logic_vector (7 downto 0);
+            NoC_c          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_pm_bias    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             OFM_NL_Write   : in std_logic;
             READ_CFG       : in std_logic;
             w_out          : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
             b_out          : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-            cfg_out        : out std_logic_vector (7 downto 0)
+            cfg_out        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
         );
     end component;
 
@@ -170,10 +170,10 @@ architecture structural of TOP is
         port (
             clk             : in std_logic;
             reset           : in std_logic;
-            h_p             : in std_logic_vector (7 downto 0);
-            w_p             : in std_logic_vector (7 downto 0);
-            HW              : in std_logic_vector (7 downto 0);
-            RS              : in std_logic_vector (7 downto 0);
+            h_p             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            w_p             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            HW              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            RS              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             IFM_NL_ready    : in std_logic;
             IFM_NL_finished : in std_logic;
             ifm_out         : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -190,7 +190,7 @@ architecture structural of TOP is
         port (
             clk                       : in std_logic;
             reset                     : in std_logic;
-            NoC_c                     : in std_logic_vector (7 downto 0);
+            NoC_c                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             OFM_NL_cnt_finished       : in std_logic;
             OFM_NL_NoC_m_cnt_finished : in std_logic;
             OFM_NL_Write              : in std_logic;
@@ -204,47 +204,47 @@ architecture structural of TOP is
 
     component NOC is
         generic (
-            X                     : natural       := X;
-            Y                     : natural       := Y;
-            hw_log2_r             : integer_array := hw_log2_r;
-            hw_log2_EF            : integer_array := hw_log2_EF;
-            NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE; -- W' max (conv0 and conv1)
-            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE    -- p*S = 8*3 = 24
+            X                     : natural       := X_PKG;
+            Y                     : natural       := Y_PKG;
+            hw_log2_r             : integer_array := hw_log2_r_PKG;
+            hw_log2_EF            : integer_array := hw_log2_EF_PKG;
+            NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG; -- W' max (conv0 and conv1)
+            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG    -- p*S = 8*3 = 24
         );
         port (
             clk               : in std_logic;
             reset             : in std_logic;
-            C_cap             : in std_logic_vector (7 downto 0);
-            HW_p              : in std_logic_vector (7 downto 0);
-            EF                : in std_logic_vector (7 downto 0);
-            EF_log2           : in std_logic_vector (7 downto 0);
-            r_log2            : in std_logic_vector (7 downto 0);
-            RS                : in std_logic_vector (7 downto 0);
-            p                 : in std_logic_vector (7 downto 0);
-            r                 : in std_logic_vector (7 downto 0);
-            h_p               : in std_logic_vector (7 downto 0);
-            rc                : in std_logic_vector (7 downto 0);
-            r_p               : in std_logic_vector (7 downto 0);
+            C_cap             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            HW_p              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF                : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF_log2           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r_log2            : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            RS                : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            p                 : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r                 : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            h_p               : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            rc                : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r_p               : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             WB_NL_busy        : in std_logic;
             IFM_NL_busy       : in std_logic;
             pass_flag         : in std_logic;
             ifm_sram          : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             w_sram            : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
-            ofmap_p           : out psum_array(0 to (X - 1));
+            ofmap_p           : out psum_array(0 to (X_PKG - 1));
             PISO_Buffer_start : out std_logic
         );
     end component;
 
     component ADDER_TREE_TOP is
         generic (
-            X : natural := X
+            X : natural := X_PKG
         );
         port (
             clk               : in std_logic;
             reset             : in std_logic;
-            r                 : in std_logic_vector (7 downto 0);
-            EF                : in std_logic_vector (7 downto 0);
-            ofmap_p           : in psum_array(0 to (X - 1));
+            r                 : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF                : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            ofmap_p           : in psum_array(0 to (X_PKG - 1));
             PISO_Buffer_start : in std_logic;
             ofmap             : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
             NoC_ACK_flag      : out std_logic;
@@ -261,16 +261,16 @@ architecture structural of TOP is
 
     component POOLING_TOP is
         generic (
-            X : natural := 32
+            X : natural := X_PKG
         );
         port (
             clk         : in std_logic;
             reset       : in std_logic;
-            M_cap       : in std_logic_vector (7 downto 0);
-            EF          : in std_logic_vector (7 downto 0);
-            NoC_pm      : in std_logic_vector (7 downto 0);
-            NoC_f       : in std_logic_vector (7 downto 0);
-            NoC_e       : in std_logic_vector (7 downto 0);
+            M_cap       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_pm      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_f       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_e       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             en_pooling  : in std_logic;
             value_in    : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             value_out   : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -333,7 +333,7 @@ begin
     -- SRAM_WB
     SRAM_WB_inst : SRAM_WB
     generic map(
-        ADDR_4K_CFG => ADDR_4K_CFG
+        ADDR_4K_CFG => ADDR_4K_CFG_PKG
     )
     port map(
         clk            => clk,
@@ -372,12 +372,12 @@ begin
     -- NOC
     NOC_inst : NOC
     generic map(
-        X                     => X,
-        Y                     => Y,
-        hw_log2_r             => hw_log2_r,
-        hw_log2_EF            => hw_log2_EF,
-        NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE,
-        NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE
+        X                     => X_PKG,
+        Y                     => Y_PKG,
+        hw_log2_r             => hw_log2_r_PKG,
+        hw_log2_EF            => hw_log2_EF_PKG,
+        NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE_PKG,
+        NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE_PKG
     )
     port map(
         clk               => clk,
@@ -405,7 +405,7 @@ begin
     -- ADDER TREE
     ADDER_TREE_TOP_inst : ADDER_TREE_TOP
     generic map(
-        X => X
+        X => X_PKG
     )
     port map(
         clk               => clk,
@@ -445,7 +445,7 @@ begin
     -- POOLING
     POOLING_inst : POOLING_TOP
     generic map(
-        X => X
+        X => X_PKG
     )
     port map(
         clk         => clk,

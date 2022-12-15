@@ -5,7 +5,7 @@ use work.thesis_pkg.all;
 
 entity POOLING is
     generic (
-        X : natural := 32
+        X : natural := X_PKG
     );
     port (
         clk   : in std_logic;
@@ -16,7 +16,7 @@ entity POOLING is
         value_out : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
 
         -- from pooling ctr
-        rf_addr   : in std_logic_vector(bit_size(X/2) - 1 downto 0);
+        rf_addr   : in std_logic_vector(bit_size(X_PKG/2) - 1 downto 0);
         we_rf     : in std_logic;
         re_rf     : in std_logic;
         r1_r2_ctr : in std_logic;
@@ -40,7 +40,7 @@ architecture dataflow of POOLING is
     component REG_FILE_ACT is
         generic (
             REGISTER_INPUTS : boolean := false;
-            NUM_REGS        : natural := X/2
+            NUM_REGS        : natural := X_PKG/2
         );
         port (
             clk         : in std_logic;
@@ -50,9 +50,7 @@ architecture dataflow of POOLING is
             we          : in std_logic;
             wr_data     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             re          : in std_logic;
-            rd_data     : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-            registers   : out act_array(0 to (NUM_REGS - 1));
-            reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
+            rd_data     : out std_logic_vector (ACT_BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -61,7 +59,7 @@ begin
     REG_FILE_pooling_inst : REG_FILE_ACT
     generic map(
         REGISTER_INPUTS => false,
-        NUM_REGS        => X/2 -- half of biggest E of layers' network
+        NUM_REGS        => X_PKG/2 -- half of biggest E of layers' network
     )
     port map(
         clk         => clk,
@@ -71,9 +69,7 @@ begin
         we          => we_rf,
         wr_data     => std_logic_vector(rf_in),
         re          => re_rf,
-        rd_data     => rd_data_tmp,
-        registers   => open,
-        reg_written => open
+        rd_data     => rd_data_tmp
     );
 
     data_regs : process (clk, reset)

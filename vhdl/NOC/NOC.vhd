@@ -6,31 +6,31 @@ use work.thesis_pkg.all;
 entity NOC is
     generic (
         -- HW Parameters, at synthesis time.
-        X                     : natural       := 32;
-        Y                     : natural       := 3;
-        hw_log2_r             : integer_array := (0, 1, 2);
-        hw_log2_EF            : integer_array := (5, 4, 3);
-        NUM_REGS_IFM_REG_FILE : natural       := 34; -- W' max (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
+        X                     : natural       := X_PKG;
+        Y                     : natural       := Y_PKG;
+        hw_log2_r             : integer_array := hw_log2_r_PKG;
+        hw_log2_EF            : integer_array := hw_log2_EF_PKG;
+        NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG; -- W' max (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG -- p*S = 8*3 = 24
     );
     port (
         clk   : in std_logic;
         reset : in std_logic;
 
         -- config. parameters
-        C_cap   : in std_logic_vector (7 downto 0);
-        HW_p    : in std_logic_vector (7 downto 0);
-        EF      : in std_logic_vector (7 downto 0);
-        EF_log2 : in std_logic_vector (7 downto 0);
-        r_log2  : in std_logic_vector (7 downto 0);
-        RS      : in std_logic_vector (7 downto 0);
-        p       : in std_logic_vector (7 downto 0);
-        r       : in std_logic_vector (7 downto 0);
+        C_cap   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        HW_p    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF_log2 : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r_log2  : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        RS      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        p       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- from sys ctrl
-        h_p         : in std_logic_vector (7 downto 0);
-        rc          : in std_logic_vector (7 downto 0);
-        r_p         : in std_logic_vector (7 downto 0);
+        h_p         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        rc          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r_p         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         WB_NL_busy  : in std_logic;
         IFM_NL_busy : in std_logic;
         pass_flag   : in std_logic;
@@ -40,7 +40,7 @@ entity NOC is
         w_sram   : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
 
         -- Ofmap Primitives Output Registers (To Adder Tree)
-        ofmap_p           : out psum_array(0 to (X - 1));
+        ofmap_p           : out psum_array(0 to (X_PKG - 1));
         PISO_Buffer_start : out std_logic
     );
 end NOC;
@@ -49,32 +49,32 @@ architecture structural of NOC is
 
     -- SIGNAL DEFINITIONS
     -- MC_Y to MC_X
-    signal ifm_enable_y_to_x : std_logic_array(0 to (Y - 1));
-    signal ifm_y_to_x        : act_array(0 to (Y - 1));
-    signal w_enable_y_to_x   : std_logic_array(0 to (Y - 1));
-    signal w_y_to_x          : weight_array(0 to (Y - 1));
+    signal ifm_enable_y_to_x : std_logic_array(0 to (Y_PKG - 1));
+    signal ifm_y_to_x        : act_array(0 to (Y_PKG - 1));
+    signal w_enable_y_to_x   : std_logic_array(0 to (Y_PKG - 1));
+    signal w_y_to_x          : weight_array(0 to (Y_PKG - 1));
 
     -- MC_X to PE
-    signal ifm_x_to_PE        : act_2D_array(0 to (X - 1))(0 to (Y - 1));
-    signal ifm_status_x_to_PE : std_logic_2D_array(0 to (X - 1))(0 to (Y - 1));
-    signal w_x_to_PE          : weight_2D_array(0 to (X - 1))(0 to (Y - 1));
-    signal w_status_x_to_PE   : std_logic_2D_array(0 to (X - 1))(0 to (Y - 1));
+    signal ifm_x_to_PE        : act_2D_array(0 to (X_PKG - 1))(0 to (Y_PKG - 1));
+    signal ifm_status_x_to_PE : std_logic_2D_array(0 to (X_PKG - 1))(0 to (Y_PKG - 1));
+    signal w_x_to_PE          : weight_2D_array(0 to (X_PKG - 1))(0 to (Y_PKG - 1));
+    signal w_status_x_to_PE   : std_logic_2D_array(0 to (X_PKG - 1))(0 to (Y_PKG - 1));
 
     -- MC_rr to MC_X
-    signal rr_tmp : std_logic_vector_array(0 to (X - 1));
+    signal rr_tmp : hyp_array(0 to (X_PKG - 1));
 
     -- Internal PE Array Signals
-    signal psum_inter_array : psum_2D_array(0 to (X - 1))(0 to (Y));
-    signal psum_out_array   : psum_array(0 to (X - 1));
+    signal psum_inter_array : psum_2D_array(0 to (X_PKG - 1))(0 to (Y_PKG));
+    signal psum_out_array   : psum_array(0 to (X_PKG - 1));
 
     -- PE to Adder Tree
-    signal ofmap_p_reg, ofmap_p_next : psum_array(0 to (X - 1));
-    signal ofmap_p_done_array        : std_logic_2D_array(0 to (X - 1))(0 to (Y - 1));
+    signal ofmap_p_reg, ofmap_p_next : psum_array(0 to (X_PKG - 1));
+    signal ofmap_p_done_array        : std_logic_2D_array(0 to (X_PKG - 1))(0 to (Y_PKG - 1));
 
     -- Delay Signals
-    signal h_p_reg         : std_logic_vector (7 downto 0);
-    signal r_p_reg         : std_logic_vector (7 downto 0);
-    signal rc_reg          : std_logic_vector (7 downto 0);
+    signal h_p_reg         : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal r_p_reg         : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal rc_reg          : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal IFM_NL_busy_reg : std_logic;
     signal WB_NL_busy_reg  : std_logic;
     signal pass_flag_reg   : std_logic;
@@ -88,21 +88,21 @@ architecture structural of NOC is
             -- HW Parameters, at synthesis time.
             Y_ID                  : natural       := 3;
             X_ID                  : natural       := 16;
-            Y                     : natural       := Y;
-            X                     : natural       := X;
-            NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE; -- Emax (conv0 and conv1)
-            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE -- p*S = 8*3 = 24
+            Y                     : natural       := Y_PKG;
+            X                     : natural       := X_PKG;
+            NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG; -- Emax (conv0 and conv1)
+            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG -- p*S = 8*3 = 24
         );
         port (
             clk   : in std_logic;
             reset : in std_logic;
 
             -- config. parameters
-            HW_p : in std_logic_vector (7 downto 0);
-            EF   : in std_logic_vector (7 downto 0);
-            RS   : in std_logic_vector (7 downto 0);
-            p    : in std_logic_vector (7 downto 0);
-            r    : in std_logic_vector (7 downto 0);
+            HW_p : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            RS   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            p    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
             -- from sys ctrl
             pass_flag : in std_logic;
@@ -128,12 +128,12 @@ architecture structural of NOC is
     component MC_Y is
         generic (
             Y_ID : natural := 1;
-            Y    : natural := Y
+            Y    : natural := Y_PKG
         );
         port (
-            HW_p         : in std_logic_vector (7 downto 0);
-            h_p          : in std_logic_vector (7 downto 0);
-            r_p          : in std_logic_vector (7 downto 0);
+            HW_p         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            h_p          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r_p          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             WB_NL_busy   : in std_logic;
             IFM_NL_busy  : in std_logic;
             ifm_y_in     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -149,16 +149,16 @@ architecture structural of NOC is
         generic (
             Y_ID      : natural       := 3;
             X_ID      : natural       := 16;
-            Y         : natural       := Y;
-            hw_log2_r : integer_array := hw_log2_r
+            Y         : natural       := Y_PKG;
+            hw_log2_r : integer_array := hw_log2_r_PKG
         );
         port (
-            EF_log2      : in std_logic_vector (7 downto 0);
-            C_cap        : in std_logic_vector (7 downto 0);
-            r_log2       : in std_logic_vector (7 downto 0);
-            h_p          : in std_logic_vector (7 downto 0);
-            rc           : in std_logic_vector (7 downto 0);
-            rr           : in std_logic_vector (7 downto 0);
+            EF_log2      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            C_cap        : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r_log2       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            h_p          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            rc           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            rr           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             ifm_x_enable : in std_logic;
             ifm_x_in     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             ifm_x_out    : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -173,27 +173,27 @@ architecture structural of NOC is
     component MC_rr is
         generic (
             X_ID       : natural       := 1;
-            hw_log2_EF : integer_array := hw_log2_EF
+            hw_log2_EF : integer_array := hw_log2_EF_PKG
         );
         port (
-            EF_log2 : in std_logic_vector (7 downto 0);
-            rr      : out std_logic_vector (7 downto 0)
+            EF_log2 : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            rr      : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
         );
     end component;
 
 begin
 
     -- PE ARRAY
-    PE_ARRAY_X_loop : for i in 0 to (X - 1) generate
-        PE_ARRAY_Y_loop : for k in 0 to (Y - 1) generate
+    PE_ARRAY_X_loop : for i in 0 to (X_PKG - 1) generate
+        PE_ARRAY_Y_loop : for k in 0 to (Y_PKG - 1) generate
             PE_inst : PE
             generic map(
                 Y_ID                  => k + 1,
                 X_ID                  => i + 1,
-                Y                     => Y,
-                X                     => X,
-                NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE,
-                NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE
+                Y                     => Y_PKG,
+                X                     => X_PKG,
+                NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE_PKG,
+                NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE_PKG
             )
             port map(
                 clk                     => clk,
@@ -208,13 +208,13 @@ begin
                 ifm_PE_enable           => ifm_status_x_to_PE(i)(k),
                 w_PE                    => w_x_to_PE(i)(k),
                 w_PE_enable             => w_status_x_to_PE(i)(k),
-                psum_in                 => psum_inter_array(i)(Y - 1 - k),
-                psum_out                => psum_inter_array(i)(Y - k),
+                psum_in                 => psum_inter_array(i)(Y_PKG - 1 - k),
+                psum_out                => psum_inter_array(i)(Y_PKG - k),
                 PE_ARRAY_RF_write_start => PE_ARRAY_RF_write_start,
                 ofmap_p_done            => ofmap_p_done_array(i)(k)
             );
         end generate PE_ARRAY_Y_loop;
-        psum_out_array(i)      <= psum_inter_array(i)(Y); -- Connect psum output of top PEs to the output of the PE Array.
+        psum_out_array(i)      <= psum_inter_array(i)(Y_PKG); -- Connect psum output of top PEs to the output of the PE Array.
         psum_inter_array(i)(0) <= (others => '0'); -- Connect psum input of bottom PEs to zero.
     end generate PE_ARRAY_X_loop;
 
@@ -227,14 +227,14 @@ begin
     -- end generate MC_FC_ROW_loop;
 
     -- MC ARRAY
-    MC_X_COLUMNS_loop : for i in 0 to (X - 1) generate
-        MC_X_ROWS_loop : for j in 0 to (Y - 1) generate
+    MC_X_COLUMNS_loop : for i in 0 to (X_PKG - 1) generate
+        MC_X_ROWS_loop : for j in 0 to (Y_PKG - 1) generate
             MC_X_inst : MC_X
             generic map(
                 Y_ID      => j + 1,
                 X_ID      => i + 1,
-                Y         => Y,
-                hw_log2_r => hw_log2_r
+                Y         => Y_PKG,
+                hw_log2_r => hw_log2_r_PKG
             )
             port map(
                 EF_log2      => EF_log2,
@@ -256,11 +256,11 @@ begin
     end generate MC_X_COLUMNS_loop;
 
     -- MC Y COLUMN
-    MC_Y_COLUMN_loop : for i in 0 to (Y - 1) generate
+    MC_Y_COLUMN_loop : for i in 0 to (Y_PKG - 1) generate
         MC_Y_inst : MC_Y
         generic map(
             Y_ID => i + 1,
-            Y    => Y
+            Y    => Y_PKG
         )
         port map(
             HW_p         => HW_p,
@@ -278,11 +278,11 @@ begin
     end generate MC_Y_COLUMN_loop;
 
     -- MC rr ROW
-    MC_rr_ROW_loop : for i in 0 to (X - 1) generate
+    MC_rr_ROW_loop : for i in 0 to (X_PKG - 1) generate
         MC_rr_inst : MC_rr
         generic map(
             X_ID       => i + 1,
-            hw_log2_EF => hw_log2_EF
+            hw_log2_EF => hw_log2_EF_PKG
         )
         port map(
             EF_log2 => EF_log2,
@@ -305,7 +305,7 @@ begin
     end process;
 
     -- Process te register ofmap primitives coming from the PE Array, to be send to the Adder Tree.
-    OFMAP_REG_GEN : for i in 0 to (X - 1) generate
+    OFMAP_REG_GEN : for i in 0 to (X_PKG - 1) generate
         OFMAP_REG_PROC : process (clk, reset)
         begin
             if rising_edge(clk) then

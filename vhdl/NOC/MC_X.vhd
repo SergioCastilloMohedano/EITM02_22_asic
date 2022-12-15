@@ -8,21 +8,21 @@ entity MC_X is
         -- HW Parameters, at synthesis time.
         Y_ID      : natural       := 3;
         X_ID      : natural       := 16;
-        Y         : natural       := 3;
-        hw_log2_r : integer_array := (0, 1, 2)
+        Y         : natural       := Y_PKG;
+        hw_log2_r : integer_array := hw_log2_r_PKG
     );
     port (
         -- config. parameters
-        EF_log2 : in std_logic_vector (7 downto 0);
-        C_cap   : in std_logic_vector (7 downto 0);
-        r_log2  : in std_logic_vector (7 downto 0);
+        EF_log2 : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        C_cap   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r_log2  : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- from sys ctrl
-        h_p : in std_logic_vector (7 downto 0);
-        rc  : in std_logic_vector (7 downto 0);
+        h_p : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        rc  : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- NoC Internal Signals
-        rr           : in std_logic_vector (7 downto 0);
+        rr           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         ifm_x_enable : in std_logic;
         ifm_x_in     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         ifm_x_out    : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -45,25 +45,25 @@ architecture dataflow of MC_X is
     signal ifm_x_ctrl_2nd     : std_logic;
     signal ifm_x_ctrl         : std_logic;
     signal ifm_x_ctrl_tmp     : integer;
-    signal w_ifm_x_ctrl_tmp_4 : std_logic_vector (7 downto 0);
+    signal w_ifm_x_ctrl_tmp_4 : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal w_ifm_x_ctrl_tmp_3 : integer;
     signal w_ifm_x_ctrl_tmp_2 : integer;
     signal w_ifm_x_ctrl_tmp   : integer;
-    signal C_cap_tmp          : natural range 0 to 255;
-    signal EF_log2_tmp        : natural range 0 to 255;
-    signal r_log2_tmp         : natural range 0 to 255;
+    signal C_cap_tmp          : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal EF_log2_tmp        : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal r_log2_tmp         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
-    signal h_p_tmp : natural range 0 to 255;
-    signal rc_tmp  : natural range 0 to 255;
-    signal rr_tmp  : natural range 0 to 255;
+    signal h_p_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal rc_tmp  : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal rr_tmp  : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
-    signal Y_tmp    : natural range 0 to 255;
-    signal Y_ID_tmp : natural range 0 to 255;
-    signal X_ID_tmp : natural range 0 to 255;
+    signal Y_tmp    : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal Y_ID_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal X_ID_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
-    signal mux_in  : std_logic_vector_array(0 to hw_log2_r'length - 1);
-    signal mux_out : std_logic_vector(7 downto 0);
-    signal mux_sel : natural range 0 to 255;
+    signal mux_in  : hyp_array(0 to hw_log2_r_PKG'length - 1);
+    signal mux_out : std_logic_vector((HYP_BITWIDTH - 1) downto 0);
+    signal mux_sel : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
 begin
 
@@ -75,10 +75,10 @@ begin
     w_ifm_x_ctrl_tmp_4 <= std_logic_vector(unsigned(rc) + to_unsigned(1, 8)); -- (c + 1)
 
     -- instantiate logic for dealing with all possible values of log2_r. r = (1, 2, 4) -> log2r = (0, 1, 2)
-    gen_CEIL_LOG2_DIV : for i in 0 to hw_log2_r'length - 1 generate
+    gen_CEIL_LOG2_DIV : for i in 0 to hw_log2_r_PKG'length - 1 generate
         inst_CEIL_LOG2_DIV : CEIL_LOG2_DIV
         generic map(
-            y => hw_log2_r(i) -- hw parameter, at synthesis time.
+            y => hw_log2_r_PKG(i) -- hw parameter, at synthesis time.
         )
         port map(
             x => w_ifm_x_ctrl_tmp_4,
@@ -89,17 +89,17 @@ begin
     p_mux_sel : process (r_log2_tmp)
     begin
         case r_log2_tmp is
-            when hw_log2_r(0) => mux_sel <= 0;
-            when hw_log2_r(1) => mux_sel <= 1;
-            when hw_log2_r(2) => mux_sel <= 2;
+            when hw_log2_r_PKG(0) => mux_sel <= 0;
+            when hw_log2_r_PKG(1) => mux_sel <= 1;
+            when hw_log2_r_PKG(2) => mux_sel <= 2;
             when others       => mux_sel <= 0;
         end case;
     end process p_mux_sel;
 
     p_mux : mux
     generic map(
-        LEN => 8,
-        NUM => hw_log2_r'length
+        LEN => HYP_BITWIDTH,
+        NUM => hw_log2_r_PKG'length
     )
     port map(
         mux_in  => mux_in,
@@ -136,7 +136,7 @@ begin
     h_p_tmp <= to_integer(unsigned(h_p));
     rc_tmp  <= to_integer(unsigned(rc));
 
-    Y_tmp    <= Y;
+    Y_tmp    <= Y_PKG;
     Y_ID_tmp <= Y_ID;
     X_ID_tmp <= X_ID;
 

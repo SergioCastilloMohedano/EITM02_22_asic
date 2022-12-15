@@ -39,6 +39,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SYS_CTR_PASS_FLAG is
     port (
@@ -46,8 +47,8 @@ entity SYS_CTR_PASS_FLAG is
         reset : in std_logic;
         CFG_finished : in std_logic;
         layer_finished : in std_logic;
-        r : in std_logic_vector (7 downto 0);
-        M_div_pt : in std_logic_vector (7 downto 0);
+        r : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        M_div_pt : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         WB_NL_finished : in std_logic;
         IFM_NL_finished : in std_logic;
         pass_flag : out std_logic
@@ -64,9 +65,9 @@ architecture behavioral of SYS_CTR_PASS_FLAG is
     ------------ CONTROL PATH SIGNALS ------------
     -------- INPUTS --------
     ---- Internal Status Signals from the Data Path
-    signal WB_NL_cnt_reg, WB_NL_cnt_next : natural range 0 to 255;          -- counts iterations of the weights NL.
-    signal IFM_NL_cnt_reg, IFM_NL_cnt_next : natural range 0 to 255;        -- counts iterations of the ifmaps NL.
-    signal IFM_pass_cnt_reg, IFM_pass_cnt_next : natural range 0 to 255;    -- counts how many passes are left until ifmaps NL is triggered again.
+    signal WB_NL_cnt_reg, WB_NL_cnt_next : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);          -- counts iterations of the weights NL.
+    signal IFM_NL_cnt_reg, IFM_NL_cnt_next : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);        -- counts iterations of the ifmaps NL.
+    signal IFM_pass_cnt_reg, IFM_pass_cnt_next : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);    -- counts how many passes are left until ifmaps NL is triggered again.
     signal IFM_flag_reg, IFM_flag_next : std_logic;                         -- indicates ifmaps NL has run enough times to fill up PE Array entirely.
  
     ---- External Command Signals to the FSMD
@@ -87,8 +88,8 @@ architecture behavioral of SYS_CTR_PASS_FLAG is
     ---- External Control Signals used to control Data Path Operation
     signal WB_NL_finished_tmp : std_logic;
     signal IFM_NL_finished_tmp : std_logic;
-    signal M_div_pt_tmp : natural range 0 to 255;
-    signal r_tmp : natural range 0 to 255;
+    signal M_div_pt_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal r_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- Functional Units Intermediate Signals
     -- ..
@@ -193,8 +194,8 @@ begin
     -- data path : mux routing
     data_mux : process(state_reg, WB_NL_finished_tmp , IFM_NL_finished_tmp , WB_NL_cnt_reg, IFM_NL_cnt_reg, IFM_pass_cnt_reg, r_tmp , M_div_pt_tmp , IFM_flag_reg)
 
-    variable WB_NL_cnt_var : natural range 0 to 255;
-    variable IFM_NL_cnt_var : natural range 0 to 255;
+    variable WB_NL_cnt_var : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    variable IFM_NL_cnt_var : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     begin
         case state_reg is

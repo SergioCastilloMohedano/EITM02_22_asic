@@ -1,26 +1,3 @@
--------------------------------------------------------------------------------------------------------
--- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
--- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
--------------------------------------------------------------------------------------------------------
--- File           : SRAM_IFM_BACK_END.vhd
--- Author         : Sergio Castillo Mohedano
--- University     : Lund University
--- Department     : Electrical and Information Technology (EIT)
--- Created        : 2022-06-25
--- Standard       : VHDL-2008
--------------------------------------------------------------------------------------------------------
--- Description    : Input Features Map SRAM BACK-End Interface
--------------------------------------------------------------------------------------------------------
--- Input Signals  :
---         * clk: clock
---         * reset: synchronous, active high.
---         * ...
--- Output Signals :
---         * ...
--------------------------------------------------------------------------------------------------------
--- Revisions      : NA (Git Control)
--------------------------------------------------------------------------------------------------------
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;

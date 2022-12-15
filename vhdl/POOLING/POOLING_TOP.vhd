@@ -5,16 +5,16 @@ use work.thesis_pkg.all;
 
 entity POOLING_TOP is
     generic (
-        X : natural := 32
+        X : natural := X_PKG
     );
     port (
         clk         : in std_logic;
         reset       : in std_logic;
-        M_cap       : in std_logic_vector (7 downto 0);
-        EF          : in std_logic_vector (7 downto 0);
-        NoC_pm      : in std_logic_vector (7 downto 0);
-        NoC_f       : in std_logic_vector (7 downto 0);
-        NoC_e       : in std_logic_vector (7 downto 0);
+        M_cap       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_pm      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_f       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_e       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         en_pooling  : in std_logic;
         value_in    : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
         value_out   : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -26,7 +26,7 @@ end POOLING_TOP;
 architecture structural of POOLING_TOP is
 
     -- SIGNAL DECLARATIONS
-    signal rf_addr        : std_logic_vector(bit_size(X/2) - 1 downto 0);
+    signal rf_addr        : std_logic_vector(bit_size(X_PKG/2) - 1 downto 0);
     signal we_rf          : std_logic;
     signal re_rf          : std_logic;
     signal r1_r2_ctr      : std_logic;
@@ -41,12 +41,12 @@ architecture structural of POOLING_TOP is
             clk        : in std_logic;
             reset      : in std_logic;
             en_pooling : in std_logic;
-            M_cap      : in std_logic_vector (7 downto 0);
-            EF         : in std_logic_vector (7 downto 0);
-            NoC_pm     : in std_logic_vector (7 downto 0);
-            NoC_f      : in std_logic_vector (7 downto 0);
-            NoC_e      : in std_logic_vector (7 downto 0);
-            rf_addr    : out std_logic_vector(bit_size(X/2) - 1 downto 0);
+            M_cap      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_pm     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_f      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            NoC_e      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            rf_addr    : out std_logic_vector(bit_size(X_PKG/2) - 1 downto 0);
             we_rf      : out std_logic;
             re_rf      : out std_logic;
             r1_r2_ctr  : out std_logic;
@@ -57,14 +57,14 @@ architecture structural of POOLING_TOP is
 
     component POOLING is
         generic (
-            X : natural := X
+            X : natural := X_PKG
         );
         port (
             clk       : in std_logic;
             reset     : in std_logic;
             value_in  : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             value_out : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
-            rf_addr   : in std_logic_vector(bit_size(X/2) - 1 downto 0);
+            rf_addr   : in std_logic_vector(bit_size(X_PKG/2) - 1 downto 0);
             we_rf     : in std_logic;
             re_rf     : in std_logic;
             r1_r2_ctr : in std_logic;
@@ -95,7 +95,7 @@ begin
 
     POOLING_inst : POOLING
     generic map(
-        X => X
+        X => X_PKG
     )
     port map(
         clk       => clk,

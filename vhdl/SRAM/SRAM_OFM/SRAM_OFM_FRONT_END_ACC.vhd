@@ -7,7 +7,7 @@ entity SRAM_OFM_FRONT_END_ACC is
     port (
         -- From Sys. Controller
         OFM_NL_Write : in std_logic;
-        NoC_c        : in std_logic_vector (7 downto 0);
+        NoC_c        : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         -- From PISO Buffer
         shift_PISO : in std_logic;
         ofm_in     : in std_logic_vector (OFMAP_P_BITWIDTH - 1 downto 0);

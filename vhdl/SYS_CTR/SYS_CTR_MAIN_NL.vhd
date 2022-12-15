@@ -1,37 +1,7 @@
--------------------------------------------------------------------------------------------------------
--- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
--- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
--------------------------------------------------------------------------------------------------------
--- File           : SYS_CTR_MAIN_NL.vhd
--- Author         : Sergio Castillo Mohedano
--- University     : Lund University
--- Department     : Electrical and Information Technology (EIT)
--- Created        : 2022-05-15
--- Standard       : VHDL-2008
--------------------------------------------------------------------------------------------------------
--- Description    : This block integrates the Nested Loops for both weights/biases and Input Features Map,
---                  triggers them so that corresponding values of both weights/biases and ifmaps
---                  can be retrieved from SRAM blocks concurrently and also be sent concurrently to the
---                  Multicast Controllers.
---               
---              TBD
---              It needs to be modified to hold for its state when pass is totally loaded into PE Array
---              and wait for computation to be finished. During this time, at some point, Nested Loop
---              for the ifmap outputs of next layer shall be triggered.
--------------------------------------------------------------------------------------------------------
--- Input Signals  :
---         * clk: clock
---         * reset: synchronous, active high.
---         * 
--- Output Signals :
---         * ...
--------------------------------------------------------------------------------------------------------
--- Revisions      : NA (Git Control)
--------------------------------------------------------------------------------------------------------
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SYS_CTR_MAIN_NL is
     port (
@@ -40,13 +10,13 @@ entity SYS_CTR_MAIN_NL is
         NL_start                  : in std_logic;
         NL_ready                  : out std_logic;
         NL_finished               : out std_logic;
-        M_cap                     : in std_logic_vector (7 downto 0);
-        C_cap                     : in std_logic_vector (7 downto 0);
-        r                         : in std_logic_vector (7 downto 0);
-        p                         : in std_logic_vector (7 downto 0);
-        c                         : out std_logic_vector (7 downto 0);
-        m                         : out std_logic_vector (7 downto 0);
-        rc                        : out std_logic_vector (7 downto 0);
+        M_cap                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        C_cap                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        p                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        c                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        m                         : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        rc                        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         NoC_ACK_flag              : in std_logic;
         IFM_NL_ready              : in std_logic;
         IFM_NL_finished           : in std_logic;
@@ -61,7 +31,7 @@ entity SYS_CTR_MAIN_NL is
         OFM_NL_NoC_m_cnt_finished : in std_logic;
         CFG_start                 : out std_logic;
         CFG_finished              : in std_logic;
-        L                         : in std_logic_vector (7 downto 0);
+        L                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         layer_finished            : out std_logic
     );
 end SYS_CTR_MAIN_NL;
@@ -98,24 +68,24 @@ architecture behavioral of SYS_CTR_MAIN_NL is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal rc_next, rc_reg       : natural range 0 to 255;
-    signal m_next, m_reg         : natural range 0 to 255;
-    signal c_next, c_reg         : natural range 0 to 255;
-    signal layer_reg, layer_next : natural range 0 to 255;
+    signal rc_next, rc_reg       : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal m_next, m_reg         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal c_next, c_reg         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal layer_reg, layer_next : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- External Control Signals used to control Data Path Operation
-    signal M_cap_tmp : natural range 0 to 255;
-    signal C_cap_tmp : natural range 0 to 255;
-    signal r_tmp     : natural range 0 to 255;
-    signal p_tmp     : natural range 0 to 255;
-    signal L_tmp     : natural range 0 to 255;
+    signal M_cap_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal C_cap_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal r_tmp     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal p_tmp     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal L_tmp     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- Functional Units Intermediate Signals
-    signal rc_out    : natural range 0 to 255;
-    signal m_out     : natural range 0 to 255;
-    signal m_out_tmp : natural range 0 to 255;
-    signal c_out     : natural range 0 to 255;
-    signal c_out_tmp : natural range 0 to 255;
+    signal rc_out    : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal m_out     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal m_out_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal c_out     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal c_out_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
     -- ******************************************
 
     ---------------- Data Outputs ----------------

@@ -6,23 +6,23 @@ use work.thesis_pkg.all;
 entity PISO_BUFFER_TOP is
     generic (
         -- HW Parameters, at synthesis time.
-        X : natural := 32
+        X : natural := X_PKG
     );
     port (
         clk   : in std_logic;
         reset : in std_logic;
 
         -- config. parameters
-        r  : in std_logic_vector (7 downto 0);
-        EF : in std_logic_vector (7 downto 0);
+        r  : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- From Adder Tree
         PISO_Buffer_start_1 : in std_logic;
         PISO_Buffer_start_2 : in std_logic;
         PISO_Buffer_start_4 : in std_logic;
-        ofmap_p_1           : in ofmap_p_array (0 to (X - 1));
-        ofmap_p_2           : in ofmap_p_array (0 to ((X/2) - 1));
-        ofmap_p_4           : in ofmap_p_array (0 to ((X/4) - 1));
+        ofmap_p_1           : in ofmap_p_array (0 to (X_PKG - 1));
+        ofmap_p_2           : in ofmap_p_array (0 to ((X_PKG/2) - 1));
+        ofmap_p_4           : in ofmap_p_array (0 to ((X_PKG/4) - 1));
 
         -- To OFMAP SRAM
         ofmap : out std_logic_vector((OFMAP_P_BITWIDTH - 1) downto 0);
@@ -39,25 +39,25 @@ architecture structural of PISO_BUFFER_TOP is
     -- PISO Buffer CTR to PISO BUFFER
     signal shift       : std_logic;
     signal parallel_in : std_logic;
-    signal j_tmp       : natural range 0 to 255;
+    signal j_tmp       : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     -- Other Signals
     constant RF_READ_LATENCY : natural := 2; -- Register Files read latency, in clock cycles
-    type j_array is array (0 to RF_READ_LATENCY - 1) of natural range 0 to 255;
+    type j_array is array (0 to RF_READ_LATENCY - 1) of natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
     signal j_delay : j_array;
 
     -- COMPONENT DECLARATIONS
     component PISO_BUFFER is
         generic (
-            X : natural := 32
+            X : natural := X_PKG
         );
         port (
             clk         : in std_logic;
             reset       : in std_logic;
-            ofmap_p_1   : in ofmap_p_array (0 to (X - 1));
-            ofmap_p_2   : in ofmap_p_array (0 to ((X/2) - 1));
-            ofmap_p_4   : in ofmap_p_array (0 to ((X/4) - 1));
-            r           : in std_logic_vector (7 downto 0);
+            ofmap_p_1   : in ofmap_p_array (0 to (X_PKG - 1));
+            ofmap_p_2   : in ofmap_p_array (0 to ((X_PKG/2) - 1));
+            ofmap_p_4   : in ofmap_p_array (0 to ((X_PKG/4) - 1));
+            r           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             shift       : in std_logic;
             parallel_in : in std_logic;
             j           : in natural;
@@ -67,19 +67,19 @@ architecture structural of PISO_BUFFER_TOP is
 
     component PISO_BUFFER_CTR is
         generic (
-            X : natural := 32
+            X : natural := X_PKG
         );
         port (
             clk                 : in std_logic;
             reset               : in std_logic;
-            r                   : in std_logic_vector (7 downto 0);
-            EF                  : in std_logic_vector (7 downto 0);
+            r                   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF                  : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             PISO_Buffer_start_1 : in std_logic;
             PISO_Buffer_start_2 : in std_logic;
             PISO_Buffer_start_4 : in std_logic;
             shift               : out std_logic;
             parallel_in         : out std_logic;
-            j                   : out natural range 0 to 255;
+            j                   : out natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
             buffer_empty        : out std_logic
         );
     end component;
@@ -89,7 +89,7 @@ begin
     -- PISO BUFFER
     PISO_BUFFER_inst : PISO_BUFFER
     generic map(
-        X => X
+        X => X_PKG
     )
     port map(
         clk         => clk,
@@ -107,7 +107,7 @@ begin
     -- PISO BUFFER CTR
     PISO_BUFFER_CTR_inst : PISO_BUFFER_CTR
     generic map(
-        X => X
+        X => X_PKG
     )
     port map(
         clk                 => clk,

@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SYS_CTR_OFM_NL is
     port (
@@ -11,19 +12,19 @@ entity SYS_CTR_OFM_NL is
         OFM_NL_finished           : out std_logic;
         OFM_NL_Write              : out std_logic;
         OFM_NL_Read               : out std_logic;
-        C_cap                     : in std_logic_vector (7 downto 0);
-        M_cap                     : in std_logic_vector (7 downto 0);
-        EF                        : in std_logic_vector (7 downto 0);
-        r                         : in std_logic_vector (7 downto 0);
-        p                         : in std_logic_vector (7 downto 0);
-        NoC_c                     : out std_logic_vector (7 downto 0);
-        NoC_pm                    : out std_logic_vector (7 downto 0);
-        NoC_f                     : out std_logic_vector (7 downto 0);
-        NoC_e                     : out std_logic_vector (7 downto 0);
+        C_cap                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        M_cap                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF                        : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        p                         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_c                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_pm                    : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_f                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_e                     : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         shift_PISO                : in std_logic;
         OFM_NL_cnt_finished       : out std_logic;
         OFM_NL_NoC_m_cnt_finished : out std_logic;
-        NoC_pm_bias               : out std_logic_vector (7 downto 0)
+        NoC_pm_bias               : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
     );
 end SYS_CTR_OFM_NL;
 
@@ -53,26 +54,26 @@ architecture behavioral of SYS_CTR_OFM_NL is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal NoC_c_next, NoC_c_reg   : natural range 0 to 255;
-    signal NoC_m_next, NoC_m_reg   : natural range 0 to 255;
-    signal NoC_pm_next, NoC_pm_reg : natural range 0 to 255;
-    signal NoC_f_next, NoC_f_reg   : natural range 0 to 255;
-    signal NoC_e_next, NoC_e_reg   : natural range 0 to 255;
+    signal NoC_c_next, NoC_c_reg   : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal NoC_m_next, NoC_m_reg   : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal NoC_pm_next, NoC_pm_reg : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal NoC_f_next, NoC_f_reg   : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal NoC_e_next, NoC_e_reg   : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
-    signal C_cap_tmp      : natural range 0 to 255;
-    signal M_cap_tmp      : natural range 0 to 255;
-    signal EF_tmp         : natural range 0 to 255;
-    signal r_tmp          : natural range 0 to 255;
-    signal p_tmp          : natural range 0 to 255;
+    signal C_cap_tmp      : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal M_cap_tmp      : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal EF_tmp         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal r_tmp          : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal p_tmp          : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
     signal shift_PISO_tmp : std_logic;
 
     ---- Functional Units Intermediate Signals
-    signal NoC_c_out, NoC_c_tmp   : natural range 0 to 255;
-    signal NoC_m_out, NoC_m_tmp   : natural range 0 to 255;
-    signal NoC_pm_out, NoC_pm_tmp : natural range 0 to 255;
-    signal NoC_f_out, NoC_f_tmp   : natural range 0 to 255;
-    signal NoC_e_out, NoC_e_tmp   : natural range 0 to 255;
+    signal NoC_c_out, NoC_c_tmp   : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal NoC_m_out, NoC_m_tmp   : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal NoC_pm_out, NoC_pm_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal NoC_f_out, NoC_f_tmp   : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal NoC_e_out, NoC_e_tmp   : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- Data Outputs
     signal OFM_NL_cnt_finished_tmp       : std_logic;

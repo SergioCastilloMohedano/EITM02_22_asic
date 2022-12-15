@@ -9,7 +9,7 @@ entity SRAM_OFM is
         reset : in std_logic;
 
         -- From Sys Controller
-        NoC_c                     : in std_logic_vector (7 downto 0);
+        NoC_c                     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         OFM_NL_cnt_finished       : in std_logic; -- reset address back to 0 when all ofmaps of current layer have been processed.
         OFM_NL_NoC_m_cnt_finished : in std_logic;
         OFM_NL_Write              : in std_logic;
@@ -59,7 +59,7 @@ architecture structural of SRAM_OFM is
         port (
             -- From Sys. Controller
             OFM_NL_Write : in std_logic;
-            NoC_c        : in std_logic_vector (7 downto 0);
+            NoC_c        : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             -- From PISO Buffer
             shift_PISO : in std_logic;
             ofm_in     : in std_logic_vector (OFMAP_P_BITWIDTH - 1 downto 0);

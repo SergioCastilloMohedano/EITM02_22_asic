@@ -6,14 +6,14 @@ use work.thesis_pkg.all;
 entity MC_Y is
     generic (
         Y_ID : natural := 1;
-        Y    : natural := 3
+        Y    : natural := Y_PKG
     );
     port (
         -- config. parameters
-        HW_p : in std_logic_vector (7 downto 0);
+        HW_p : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         -- from sys ctrl
-        h_p         : in std_logic_vector (7 downto 0);
-        r_p         : in std_logic_vector (7 downto 0);
+        h_p         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r_p         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         WB_NL_busy  : in std_logic;
         IFM_NL_busy : in std_logic;
 
@@ -34,11 +34,11 @@ architecture dataflow of MC_Y is
     signal ifm_y_status_tmp : std_logic;
     signal w_y_ctrl         : std_logic;
     signal ifm_y_ctrl       : std_logic;
-    signal HW_p_tmp       : natural range 0 to 255;
-    signal h_p_tmp        : natural range 0 to 255;
-    signal r_p_tmp        : natural range 0 to 255;
-    signal Y_tmp          : natural range 0 to 255;
-    signal Y_ID_tmp       : natural range 0 to 255;
+    signal HW_p_tmp       : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal h_p_tmp        : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal r_p_tmp        : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal Y_tmp          : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal Y_ID_tmp       : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
 begin
 
@@ -60,7 +60,7 @@ begin
     HW_p_tmp   <= to_integer(unsigned(HW_p));
     r_p_tmp    <= to_integer(unsigned(r_p));
     h_p_tmp    <= to_integer(unsigned(h_p));
-    Y_tmp      <= Y;
+    Y_tmp      <= Y_PKG;
     Y_ID_tmp   <= Y_ID;
 
 end architecture;

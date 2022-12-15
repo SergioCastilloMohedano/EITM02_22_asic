@@ -5,7 +5,7 @@ use work.thesis_pkg.all;
 
 entity POOLING_CTR is
     generic (
-        X : natural := 32
+        X : natural := X_PKG
     );
     port (
         clk   : in std_logic;
@@ -13,14 +13,14 @@ entity POOLING_CTR is
 
         -- From Sys. Controller
         en_pooling : in std_logic;
-        M_cap      : in std_logic_vector (7 downto 0);
-        EF         : in std_logic_vector (7 downto 0);
-        NoC_pm     : in std_logic_vector (7 downto 0);
-        NoC_f      : in std_logic_vector (7 downto 0);
-        NoC_e      : in std_logic_vector (7 downto 0);
+        M_cap      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_pm     : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_f      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_e      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- To Pooling Logic.
-        rf_addr   : out std_logic_vector(bit_size(X/2) - 1 downto 0);
+        rf_addr   : out std_logic_vector(bit_size(X_PKG/2) - 1 downto 0);
         we_rf     : out std_logic;
         re_rf     : out std_logic;
         r1_r2_ctr : out std_logic;
@@ -55,16 +55,16 @@ architecture behavioral of POOLING_CTR is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal e_cnt_reg, e_cnt_next     : natural range 0 to 255;
-    signal f_cnt_reg, f_cnt_next     : natural range 0 to 255;
-    signal m_cnt_reg, m_cnt_next     : natural range 0 to 255;
+    signal e_cnt_reg, e_cnt_next     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal f_cnt_reg, f_cnt_next     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal m_cnt_reg, m_cnt_next     : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
     signal we_rf_reg, we_rf_next     : std_logic;
     signal re_rf_reg, re_rf_next     : std_logic;
-    signal rf_addr_reg, rf_addr_next : std_logic_vector(bit_size(X/2) - 1 downto 0);
+    signal rf_addr_reg, rf_addr_next : std_logic_vector(bit_size(X_PKG/2) - 1 downto 0);
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
-    signal M_cap_tmp : natural range 0 to 255;
-    signal EF_tmp    : natural range 0 to 255;
+    signal M_cap_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal EF_tmp    : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- Functional Units Intermediate Signals
     -- ..

@@ -1,26 +1,3 @@
--------------------------------------------------------------------------------------------------------
--- Project        : Memory Efficient Hardware Accelerator for CNN Inference & Training
--- Program        : Master's Thesis in Embedded Electronics Engineering (EEE)
--------------------------------------------------------------------------------------------------------
--- File           : SRAM_WB_FRONT_END_READ.vhd
--- Author         : Sergio Castillo Mohedano
--- University     : Lund University
--- Department     : Electrical and Information Technology (EIT)
--- Created        : 2022-07-04
--- Standard       : VHDL-2008
--------------------------------------------------------------------------------------------------------
--- Description    : Weights & Biases SRAM Front-End Read Interface
--------------------------------------------------------------------------------------------------------
--- Input Signals  :
---         * clk: clock
---         * reset: synchronous, active high.
---         * ...
--- Output Signals :
---         * ...
--------------------------------------------------------------------------------------------------------
--- Revisions      : NA (Git Control)
--------------------------------------------------------------------------------------------------------
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -32,26 +9,26 @@ entity SRAM_WB_FRONT_END_READ is
         reset          : in std_logic;
         WB_NL_ready    : in std_logic; -- Reads SRAM exactly on those moments in which this signal is '0', when NL is not idle.
         WB_NL_finished : in std_logic; -- WB NL has finished. Do not read SRAM anymore.
-        NoC_c          : in std_logic_vector (7 downto 0);
-        NoC_pm_bias    : in std_logic_vector (7 downto 0);
+        NoC_c          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        NoC_pm_bias    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         OFM_NL_Write   : in std_logic;
         READ_CFG       : in std_logic;
         w_out          : out std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
         b_out          : out std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-        cfg_out        : out std_logic_vector (7 downto 0);
+        cfg_out        : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         -- Back-End (BE) Interface Ports
         wb_BE       : in std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
-        cfg_BE      : in std_logic_vector (7 downto 0);
+        cfg_BE      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         en_w_read   : out std_logic;
         en_b_read   : out std_logic;
         en_cfg_read : out std_logic;
-        NoC_pm_BE   : out std_logic_vector (7 downto 0)
+        NoC_pm_BE   : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
     );
 end SRAM_WB_FRONT_END_READ;
 
 architecture dataflow of SRAM_WB_FRONT_END_READ is
 
-    signal NoC_pm_BE_tmp      : std_logic_vector (7 downto 0);
+    signal NoC_pm_BE_tmp      : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal w_out_tmp          : std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
     signal b_out_tmp          : std_logic_vector (BIAS_BITWIDTH - 1 downto 0);
     signal WB_NL_ready_tmp    : std_logic;

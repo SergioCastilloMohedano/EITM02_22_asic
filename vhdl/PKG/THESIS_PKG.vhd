@@ -7,28 +7,35 @@ use ieee.numeric_std.all;
 
 package thesis_pkg is
 
+    -- HW Parameters, at synthesis time.
+    constant X_PKG                     : natural       := 32;
+    constant Y_PKG                     : natural       := 3;
+    type integer_array is array(natural range <>) of integer; -- Array Definition
+    constant hw_log2_r_PKG             : integer_array := (0, 1, 2);
+    constant hw_log2_EF_PKG            : integer_array := (5, 4, 3);
+    constant NUM_REGS_IFM_REG_FILE_PKG : natural       := 34;             -- W' max (conv0 and conv1)
+    constant NUM_REGS_W_REG_FILE_PKG   : natural       := 24;             -- p*S = 8*3 = 24
+    constant ADDR_4K_CFG_PKG           : natural       := 4042;            -- First Address of the reserved space for config. parameters.
+    constant NUM_OF_PARAMS_PKG         : natural       := 13;             -- Number of parameters to set for each layer (M, C, EF, RS, r, p, ...)
+
     -- **** TYPE DECLARATIONS ****
     constant ACT_BITWIDTH : natural := 16;
     constant WEIGHT_BITWIDTH : natural := 8;
     constant BIAS_BITWIDTH : natural := 16;
     constant PSUM_BITWIDTH  : natural := 28; -- determines bitwidth of the psum considering worst case scenario accumulations -> ceil(log2(R*S*2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH)) = ceil(27.17) = 28
-    constant OFMAP_P_BITWIDTH : natural := 30; -- Bitwidth of Adder Tree -> ceil(log2(r*R*S*(COMP_BITWIDTH^2))) -> r = 4 -> 28 + 2
-    constant OFMAP_BITWIDTH : natural := 34; -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario -> max(ceil(log2(Cconv*R*S*COMP_BITWIDTH^2) = 34 , ceil(log2(Cfc*COMP_BITWIDTH^2)))
-
-
-    constant COMP_BITWIDTH  : natural := 8; -- determines computing resolution of the accelerator
+    constant OFMAP_P_BITWIDTH : natural := 30; -- Bitwidth of Adder Tree -> ceil(log2(r*R*S*(2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH))) -> r = 4 -> 28 + 2
+    constant OFMAP_BITWIDTH : natural := 34; -- determines bitwidth of the ofmap, once all ofmap primitives have been accumulated, for worst case scenario -> max(ceil(log2(Cconv*R*S*2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH) = 34 , ceil(log2(Cfc*2^WEIGHT_BITWIDTH*2^ACT_BITWIDTH)))
+    constant HYP_BITWIDTH : natural := 8;
 
     type weight_array is array (natural range <>) of std_logic_vector(WEIGHT_BITWIDTH - 1 downto 0);
     type weight_2D_array is array (natural range <>) of weight_array;
     type act_array is array (natural range <>) of std_logic_vector(ACT_BITWIDTH - 1 downto 0);
     type act_2D_array is array (natural range <>) of act_array;
 
-    type std_logic_vector_array is array(natural range <>) of std_logic_vector(COMP_BITWIDTH - 1 downto 0);
-    type std_logic_vector_2D_array is array(natural range <>) of std_logic_vector_array;
+    type hyp_array is array(natural range <>) of std_logic_vector(HYP_BITWIDTH - 1 downto 0);
     
     type std_logic_array is array(natural range <>) of std_logic;
     type std_logic_2D_array is array(natural range <>) of std_logic_array;
-    type integer_array is array(natural range <>) of integer;
     type psum_array is array(natural range <>) of std_logic_vector(PSUM_BITWIDTH - 1 downto 0);
     type psum_2D_array is array(natural range <>) of psum_array;
     type ofmap_p_array is array (natural range <>) of std_logic_vector(OFMAP_P_BITWIDTH - 1 downto 0);
@@ -93,18 +100,18 @@ package thesis_pkg is
             y : integer range 0 to 8 := 1
         );
         port (
-            x : in std_logic_vector (7 downto 0);
-            z : out std_logic_vector (7 downto 0)
+            x : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            z : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
         );
     end component;
 
     component mux is
         generic (
-            LEN : natural := 8; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
+            LEN : natural := HYP_BITWIDTH; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
             NUM : natural -- Number of inputs
         );
         port (
-            mux_in  : in std_logic_vector_array(0 to NUM - 1);
+            mux_in  : in hyp_array(0 to NUM - 1);
             mux_sel : in natural range 0 to NUM - 1;
             mux_out : out std_logic_vector(LEN - 1 downto 0));
     end component;
@@ -207,14 +214,14 @@ entity CEIL_LOG2_DIV is
         y : integer range 0 to 8 := 1
     );
     port (
-        x : in std_logic_vector (7 downto 0);
-        z : out std_logic_vector (7 downto 0)
+        x : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        z : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
     );
 end CEIL_LOG2_DIV;
 
 architecture dataflow of CEIL_LOG2_DIV is
 
-    signal tmp : std_logic_vector (7 downto 0);
+    signal tmp : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
 begin
 
@@ -233,10 +240,10 @@ use work.thesis_pkg.all;
 
 entity mux is
     generic (
-        LEN : natural := 8; -- Bits in each input (must be 8 due to data type definition being constrained to 8).
+        LEN : natural := HYP_BITWIDTH;
         NUM : natural); -- Number of inputs
     port (
-        mux_in  : in std_logic_vector_array(0 to NUM - 1) := (others => (others => '0'));
+        mux_in  : in hyp_array(0 to NUM - 1) := (others => (others => '0'));
         mux_sel : in natural range 0 to NUM - 1;
         mux_out : out std_logic_vector(LEN - 1 downto 0));
 end entity;

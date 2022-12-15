@@ -8,21 +8,21 @@ entity PE is
         -- HW Parameters, at synthesis time.
         Y_ID                  : natural       := 3;
         X_ID                  : natural       := 16;
-        Y                     : natural       := 3;
-        X                     : natural       := 32;
-        NUM_REGS_IFM_REG_FILE : natural       := 34; -- W' max (conv0 and conv1)
-        NUM_REGS_W_REG_FILE   : natural       := 24 -- p*S = 8*3 = 24
+        Y                     : natural       := Y_PKG;
+        X                     : natural       := X_PKG;
+        NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG; -- W' max (conv0 and conv1)
+        NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG -- p*S = 8*3 = 24
     );
     port (
         clk   : in std_logic;
         reset : in std_logic;
 
         -- config. parameters
-        HW_p : in std_logic_vector (7 downto 0);
-        EF   : in std_logic_vector (7 downto 0);
-        RS   : in std_logic_vector (7 downto 0);
-        p    : in std_logic_vector (7 downto 0);
-        r    : in std_logic_vector (7 downto 0);
+        HW_p : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        EF   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        RS   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        p    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- from sys ctrl
         pass_flag : in std_logic;
@@ -43,12 +43,12 @@ architecture structural of PE is
 
     -- SIGNAL DEFINITIONS
     -- PE_CTR to REG_FILE_ifm
-    signal ifm_rf_addr : std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
+    signal ifm_rf_addr : std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
     signal ifm_we_rf   : std_logic;
     signal re_rf       : std_logic; -- it also connects to REG_FILE
 
     -- PE_CTR to REG_FILE
-    signal w_rf_addr : std_logic_vector(bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
+    signal w_rf_addr : std_logic_vector(bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
     signal w_we_rf   : std_logic;
 
     -- Multiplier Signals
@@ -75,8 +75,8 @@ architecture structural of PE is
     component REG_FILE_ACT is
         generic (
             REGISTER_INPUTS : boolean := true;
-            NUM_REGS        : natural := 34;
-            BITWIDTH        : natural := 16
+            NUM_REGS        : natural := NUM_REGS_IFM_REG_FILE_PKG;
+            BITWIDTH        : natural := ACT_BITWIDTH
         );
         port (
             clk         : in std_logic;
@@ -86,17 +86,15 @@ architecture structural of PE is
             we          : in std_logic;
             wr_data     : in std_logic_vector (BITWIDTH - 1 downto 0);
             re          : in std_logic;
-            rd_data     : out std_logic_vector (BITWIDTH - 1 downto 0);
-            registers   : out act_array(0 to (NUM_REGS - 1));
-            reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
+            rd_data     : out std_logic_vector (BITWIDTH - 1 downto 0)
         );
     end component;
 
     component REG_FILE_WEIGHT is
         generic (
             REGISTER_INPUTS : boolean := true;
-            NUM_REGS        : natural := 24;
-            BITWIDTH        : natural := 8
+            NUM_REGS        : natural := NUM_REGS_W_REG_FILE_PKG;
+            BITWIDTH        : natural := WEIGHT_BITWIDTH
         );
         port (
             clk         : in std_logic;
@@ -106,9 +104,7 @@ architecture structural of PE is
             we          : in std_logic;
             wr_data     : in std_logic_vector (BITWIDTH - 1 downto 0);
             re          : in std_logic;
-            rd_data     : out std_logic_vector (BITWIDTH - 1 downto 0);
-            registers   : out weight_array(0 to (NUM_REGS - 1));
-            reg_written : out std_logic_vector(0 to (NUM_REGS - 1))
+            rd_data     : out std_logic_vector (BITWIDTH - 1 downto 0)
         );
     end component;
 
@@ -117,20 +113,20 @@ architecture structural of PE is
         generic (
             -- HW Parameters, at synthesis time.
             Y_ID                  : natural       := Y_ID;
-            X                     : natural       := X;
-            NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE;
-            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE
+            X                     : natural       := X_PKG;
+            NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG;
+            NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG
         );
         port (
             clk   : in std_logic;
             reset : in std_logic;
 
             -- config. parameters
-            HW_p : in std_logic_vector (7 downto 0);
-            EF   : in std_logic_vector (7 downto 0);
-            RS   : in std_logic_vector (7 downto 0);
-            p    : in std_logic_vector (7 downto 0);
-            r    : in std_logic_vector (7 downto 0);
+            HW_p : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            EF   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            RS   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            p    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            r    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
             -- from sys ctrl
             pass_flag : in std_logic;
@@ -141,8 +137,8 @@ architecture structural of PE is
             PE_ARRAY_RF_write_start : in std_logic;
 
             -- PE_CTR signals
-            w_addr       : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE) - 1 downto 0);
-            ifm_addr     : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE) - 1 downto 0);
+            w_addr       : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
+            ifm_addr     : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
             w_we_rf      : out std_logic;
             ifm_we_rf    : out std_logic;
             reset_acc    : out std_logic;
@@ -156,7 +152,7 @@ begin
     REG_FILE_ifm_inst : REG_FILE_ACT
     generic map(
         REGISTER_INPUTS => true,
-        NUM_REGS        => NUM_REGS_IFM_REG_FILE, -- W' max (conv0 and conv1)
+        NUM_REGS        => NUM_REGS_IFM_REG_FILE_PKG, -- W' max (conv0 and conv1)
         BITWIDTH        => ACT_BITWIDTH
     )
     port map(
@@ -167,15 +163,13 @@ begin
         we          => ifm_we_rf,
         wr_data     => ifm_PE,
         re          => re_rf,
-        rd_data     => ifm_mult,
-        registers   => open,
-        reg_written => open
+        rd_data     => ifm_mult
     );
 
     REG_FILE_w_inst : REG_FILE_WEIGHT
     generic map(
         REGISTER_INPUTS => true,
-        NUM_REGS        => NUM_REGS_W_REG_FILE, -- p*S = 8*3 = 24
+        NUM_REGS        => NUM_REGS_W_REG_FILE_PKG, -- p*S = 8*3 = 24
         BITWIDTH        => WEIGHT_BITWIDTH
     )
     port map(
@@ -186,17 +180,15 @@ begin
         we          => w_we_rf,
         wr_data     => w_PE,
         re          => re_rf,
-        rd_data     => w_mult,
-        registers   => open,
-        reg_written => open
+        rd_data     => w_mult
     );
 
     PE_CTR_inst : PE_CTR
     generic map(
         Y_ID                  => Y_ID,
-        X                     => X,
-        NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE,
-        NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE
+        X                     => X_PKG,
+        NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE_PKG,
+        NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE_PKG
     )
     port map(
         clk                     => clk,

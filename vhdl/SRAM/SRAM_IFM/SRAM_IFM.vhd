@@ -8,10 +8,10 @@ entity SRAM_IFM is
         clk   : in std_logic;
         reset : in std_logic;
         -- To/From Front-End Read Interface
-        h_p             : in std_logic_vector (7 downto 0);
-        w_p             : in std_logic_vector (7 downto 0);
-        HW              : in std_logic_vector (7 downto 0);
-        RS              : in std_logic_vector (7 downto 0);
+        h_p             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        w_p             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        HW              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        RS              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         IFM_NL_ready    : in std_logic;
         IFM_NL_finished : in std_logic;
         ifm_out         : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -27,9 +27,9 @@ end SRAM_IFM;
 architecture structural of SRAM_IFM is
 
     -- SIGNAL DECLARATIONS
-    signal h_p_tmp             : std_logic_vector (7 downto 0);
-    signal w_p_tmp             : std_logic_vector (7 downto 0);
-    signal HW_tmp              : std_logic_vector (7 downto 0);
+    signal h_p_tmp             : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal w_p_tmp             : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+    signal HW_tmp              : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal IFM_NL_ready_tmp    : std_logic;
     signal IFM_NL_finished_tmp : std_logic;
     signal ifm_out_tmp         : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -48,10 +48,10 @@ architecture structural of SRAM_IFM is
     -- COMPONENT DECLARATIONS
     component SRAM_IFM_FRONT_END_READ is
         port (
-            h_p             : in std_logic_vector (7 downto 0);
-            w_p             : in std_logic_vector (7 downto 0);
-            HW              : in std_logic_vector (7 downto 0);
-            RS              : in std_logic_vector (7 downto 0);
+            h_p             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            w_p             : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            HW              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            RS              : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             IFM_NL_ready    : in std_logic;
             IFM_NL_finished : in std_logic;
             ifm_out         : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);

@@ -47,6 +47,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.thesis_pkg.all;
 
 entity SYS_CTR_WB_NL is
     port (
@@ -56,12 +57,12 @@ entity SYS_CTR_WB_NL is
         WB_NL_ready : out std_logic;
         WB_NL_finished : out std_logic;
         WB_NL_busy : out std_logic;
-        RS : in std_logic_vector (7 downto 0);
-        p : in std_logic_vector (7 downto 0);
-        m : in std_logic_vector (7 downto 0);
-        r_p : out std_logic_vector (7 downto 0);
-        pm : out std_logic_vector (7 downto 0);
-        s : out std_logic_vector (7 downto 0)
+        RS : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        p : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        m : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r_p : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        pm : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        s : out std_logic_vector ((HYP_BITWIDTH - 1) downto 0)
     );
 end SYS_CTR_WB_NL;
 
@@ -90,21 +91,21 @@ architecture behavioral of SYS_CTR_WB_NL is
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
-    signal r_p_next, r_p_reg : natural range 0 to 255;
-    signal pm_next, pm_reg : natural range 0 to 255;
-    signal s_next, s_reg : natural range 0 to 255;
+    signal r_p_next, r_p_reg : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal pm_next, pm_reg : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal s_next, s_reg : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- External Control Signals used to control Data Path Operation (they do NOT modify next state outcome)
-    signal RS_tmp : natural range 0 to 255;
-    signal p_tmp : natural range 0 to 255;
-    signal m_tmp : natural range 0 to 255;
+    signal RS_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal p_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal m_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- Functional Units Intermediate Signals
-    signal s_out : natural range 0 to 255;
-    signal pm_out : natural range 0 to 255;
-    signal pm_out_tmp : natural range 0 to 255;
-    signal r_p_out : natural range 0 to 255;
-    signal r_p_out_tmp : natural range 0 to 255;
+    signal s_out : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal pm_out : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal pm_out_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal r_p_out : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal r_p_out_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     ---- Data Outputs
     -- Out PORTs "r_p", "s" and "pm"

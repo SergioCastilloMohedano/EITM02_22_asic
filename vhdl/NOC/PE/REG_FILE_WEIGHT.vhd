@@ -6,8 +6,8 @@ use work.thesis_pkg.all;
 entity REG_FILE_WEIGHT is
     generic (
         REGISTER_INPUTS : boolean := true; -- Register the input ports when true
-        NUM_REGS        : natural := 8;
-        BITWIDTH        : natural := 8
+        NUM_REGS        : natural := NUM_REGS_W_REG_FILE_PKG;
+        BITWIDTH        : natural := WEIGHT_BITWIDTH
     );
     port (
         clk   : in std_logic;
@@ -20,16 +20,13 @@ entity REG_FILE_WEIGHT is
         we      : in std_logic; -- Write to selected register
         wr_data : in std_logic_vector (BITWIDTH - 1 downto 0); -- Write port
         re      : in std_logic; -- read enable
-        rd_data : out std_logic_vector (BITWIDTH - 1 downto 0); -- Read port
-
-        -- Internal file contents
-        registers   : out weight_array(0 to (NUM_REGS - 1)); -- Register file contents
-        reg_written : out std_logic_vector(0 to (NUM_REGS - 1)) -- Status flags indicating when each register is written
+        rd_data : out std_logic_vector (BITWIDTH - 1 downto 0) -- Read port
     );
 end entity;
 
 architecture rtl of REG_FILE_WEIGHT is
 
+    signal registers     : weight_array(0 to (NUM_REGS - 1)); -- Register file contents
     signal reg_sel_reg   : unsigned(reg_sel'range);
     signal we_reg        : std_logic;
     signal wr_data_reg   : std_logic_vector(wr_data'range);
@@ -71,7 +68,6 @@ begin
         if rising_edge(clk) then
             if reset = '1' then
                 registers_loc <= (others => (others => '0'));
-                reg_written   <= (reg_written'range => '0');
                 rd_data       <= (rd_data'range     => '0');
             else
 
@@ -84,10 +80,8 @@ begin
                     for i in registers'range loop
                         if we_reg = '1' and reg_sel_onehot(i) = '1' then
                             registers_loc(i) <= wr_data_reg;
-                            reg_written(i)   <= '1';
                         else -- Not writing
                             registers_loc(i) <= registers_loc(i);
-                            reg_written(i)   <= '0';
                         end if;
                     end loop;
                 end if;
