@@ -23,9 +23,9 @@ architecture dataflow of MC_rr is
     signal EF_log2_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
 
     signal mux_in  : hyp_array (0 to hw_log2_EF_PKG'length - 1);
-    signal rr_tmp  : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal mux_out : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
-    signal mux_sel : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
+    signal mux_sel : natural range 0 to (hw_log2_EF_PKG'length - 1);
+    signal rr_tmp  : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
 begin
 
