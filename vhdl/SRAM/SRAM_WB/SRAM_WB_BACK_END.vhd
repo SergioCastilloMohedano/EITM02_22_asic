@@ -330,7 +330,7 @@ begin
 
 
     -- data path : mux routing
-    data_mux : process (state_reg, addr_block_ctrl_w_reg, addr_block_w_reg, addr_8K_1_w_reg, addr_8K_2_w_reg, addr_4K_w_reg, addr_4K_b_reg, initn_reg, , initn_cnt_reg, addr_block_w_out, addr_8K_1_w_out, addr_8K_2_w_out, addr_4K_w_out, addr_4K_b_out, initn_cnt_out, initn_out, addr_4K_b_ctrl_reg, NoC_pm_reg, NoC_pm_next, en_b_read_tmp, addr_4K_cfg_ctrl_reg, addr_4K_cfg_reg, addr_4K_cfg_out)
+    data_mux : process (state_reg, addr_block_ctrl_w_reg, addr_block_w_reg, addr_8K_1_w_reg, addr_8K_2_w_reg, addr_4K_w_reg, addr_4K_b_reg, initn_reg, initn_cnt_reg, addr_block_w_out, addr_8K_1_w_out, addr_8K_2_w_out, addr_4K_w_out, addr_4K_b_out, initn_cnt_out, initn_out, addr_4K_b_ctrl_reg, NoC_pm_reg, NoC_pm_next, en_b_read_tmp, addr_4K_cfg_ctrl_reg, addr_4K_cfg_reg, addr_4K_cfg_out)
     begin
         case state_reg is
             when s_init =>
