@@ -97,7 +97,7 @@ architecture structural of SRAM_IFM is
         );
     end component;
 
-    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3
+    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
         port (
             A     : in std_logic_vector(12 downto 0);
             CK    : in std_logic;
@@ -159,7 +159,7 @@ begin
     );
 
     -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_3 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3
+    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_3 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
     port map(
         A     => A_tmp,
         CK    => clk,

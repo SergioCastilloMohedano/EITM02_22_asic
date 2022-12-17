@@ -186,10 +186,10 @@
 
 
 /*------------------------------------------------------------------------------------------
-            ST_SPHD_HIPERF_8192x32m16_Tlmr model for Verilog 
+            ST_SPHD_HIPERF_8192x32m16_Tlmr model for Verilog (inst 1)
 -------------------------------------------------------------------------------------------*/
 
-module ST_SPHD_HIPERF_8192x32m16_Tlmr (A, ATP, CK, CSN, D , IG, INITN , Q, SCTRLI,SCTRLO,SDLI,SDLO,SDRI,SDRO,SE,  STDBY ,TA,TBIST, TBYPASS ,TCSN,TED  ,TOD  , TWEN, WEN);
+module ST_SPHD_HIPERF_8192x32m16_Tlmr_1 (A, ATP, CK, CSN, D , IG, INITN , Q, SCTRLI,SCTRLO,SDLI,SDLO,SDRI,SDRO,SE,  STDBY ,TA,TBIST, TBYPASS ,TCSN,TED  ,TOD  , TWEN, WEN);
 
     
     parameter
@@ -214,9 +214,9 @@ module ST_SPHD_HIPERF_8192x32m16_Tlmr (A, ATP, CK, CSN, D , IG, INITN , Q, SCTRL
 
         Fault_file_name = "ST_SPHD_HIPERF_8192x32m16_Tlmr_faults.txt",
         max_faults = 8192+2,
-        MEM_INITIALIZE  = 1'b0,
-        BinaryInit = 1'b0,
-        InitFileName = "ST_SPHD_HIPERF_8192x32m16_Tlmr.cde",
+        MEM_INITIALIZE  = 1'b1,
+        BinaryInit = 1'b1,
+        InitFileName = "ST_SPHD_HIPERF_8192x32m16_Tlmr_1.cde",
         Debug_mode = "all_warning_mode",
         File_load_time=0,
         InstancePath = "ST_SPHD_HIPERF_8192x32m16_Tlmr",
@@ -4175,6 +4175,9 @@ assign Q_CORE = Qtemp;
 
 
 endmodule
+
+
+
 
 `undef st_delay_seq_taa
 `undef st_delay_seq_th

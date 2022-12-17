@@ -1,0 +1,61 @@
+set DESIGN CNN_top_LU_pads
+
+set RTL "/home/radiocad/se5616ca-s/thesis/WORK/EITM02_22/vhdl"
+
+set_attribute script_search_path $SYNT_SCRIPT /
+
+set_attribute init_hdl_search_path $RTL /
+
+set_attribute init_lib_search_path { \
+/usr/local-eit/cad2/cmpstm/stm065v536/CLOCK65LPHVT_3.1/libs \
+/usr/local-eit/cad2/cmpstm/stm065v536/CORE65LPHVT_5.1/libs \
+/usr/local-eit/cad2/cmpstm/mem2011/SPHD110420-48158@1.0/libs \
+/usr/local-eit/cad2/cmpstm/dicp18/LU_PADS_65nm \
+} / 
+
+###############################################################
+## Library setup
+###############################################################
+
+set_attribute library { \
+CLOCK65LPHVT_nom_1.20V_25C.lib \
+CORE65LPHVT_nom_1.20V_25C.lib\
+SPHD110420_nom_1.20V_25C.lib \
+Pads_Oct2012.lib} /
+
+set_attribute lef_library { \
+/usr/local-eit/cad2/cmpstm/stm065v536/EncounterTechnoKit_cmos065_7m4x0y2z_AP@5.3.1/TECH/cmos065_7m4x0y2z_AP_Worst.lef \
+/usr/local-eit/cad2/cmpstm/stm065v536/CLOCK65LPHVT_3.1/CADENCE/LEF/CLOCK65LPHVT_soc.lef \
+/usr/local-eit/cad2/cmpstm/stm065v536/CORE65LPHVT_5.1/CADENCE/LEF/CORE65LPHVT_soc.lef \
+/usr/local-eit/cad2/cmpstm/stm065v536/PRHS65_7.0.a/CADENCE/LEF/PRHS65_soc.lef \
+/usr/local-eit/cad2/cmpstm/mem2011/SPHD110420-48158@1.0/CADENCE/LEF/SPHD110420_soc.lef \
+/usr/local-eit/cad2/cmpstm/dicp18/LU_PADS_65nm/PADS_Jun2013.lef} /
+                                                                
+# put all your design files here(add FC later)
+set Design_Files "${RTL}/SPHD110420_COMPONENTS.vhd \
+                  ${RTL}/CNN_top_LU_pads.vhd \
+                  ${RTL}/CNN_top.vhd \
+                  ${RTL}/SRAM_SP_WRAPPER.vhd \
+                  ${RTL}/MLA_control_unit.vhd \
+                  ${RTL}/Local_Memory.vhd \             
+                  ${RTL}/MLA_InReg.vhd \
+                  ${RTL}/ram_write.vhd \ 
+                  ${RTL}/ram_read.vhd \
+                  ${RTL}/convolutional_block.vhd \
+                  ${RTL}/processing_element.vhd \
+                  ${RTL}/sram_interface.vhd"
+
+set SYN_EFF medium
+set MAP_EFF medium
+set OPT_EFF medium 
+
+
+set_attribute syn_generic_effort ${SYN_EFF};
+
+set_attribute syn_map_effort ${MAP_EFF};
+
+set_attribute syn_opt_effort ${OPT_EFF};
+
+set_attribute information_level 5
+
+

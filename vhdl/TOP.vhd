@@ -2,8 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.thesis_pkg.all;
--- testing change made on radiocad server
--- another change just to make sure I get it
+
 entity TOP is
     generic (
         -- HW Parameters, at synthesis time.
