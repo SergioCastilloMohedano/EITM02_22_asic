@@ -15,6 +15,7 @@ entity SRAM_IFM is
         IFM_NL_ready    : in std_logic;
         IFM_NL_finished : in std_logic;
         ifm_out         : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+        pad             : out natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- To MC_X
         -- To/From Front-End Write Interface
         is_pooling  : in std_logic;
         en_w_IFM    : in std_logic;
@@ -55,6 +56,7 @@ architecture structural of SRAM_IFM is
             IFM_NL_ready    : in std_logic;
             IFM_NL_finished : in std_logic;
             ifm_out         : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+            pad             : out natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- To MC_X
             -- Back-End (BE) Interface Ports
             ifm_BE_r : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             RE_BE    : out std_logic
@@ -121,6 +123,7 @@ begin
         IFM_NL_ready    => IFM_NL_ready_tmp,
         IFM_NL_finished => IFM_NL_finished_tmp,
         ifm_out         => ifm_out_tmp,
+        pad             => pad,
         -- Back-End (BE) Interface Ports
         ifm_BE_r => ifm_r_tmp,
         RE_BE    => RE_tmp

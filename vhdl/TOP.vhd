@@ -74,6 +74,7 @@ architecture structural of TOP is
 
     -- SRAM_IFM
     signal ifm_tmp : std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+    signal pad_tmp : natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- To MC_X
 
     -- PE ARRAY
     signal ofmap_p                   : psum_array(0 to (X_PKG - 1));
@@ -176,6 +177,7 @@ architecture structural of TOP is
             IFM_NL_ready    : in std_logic;
             IFM_NL_finished : in std_logic;
             ifm_out         : out std_logic_vector (ACT_BITWIDTH - 1 downto 0);
+            pad             : out natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- To MC_X
             is_pooling      : in std_logic;
             en_w_IFM        : in std_logic;
             pooling_ack     : in std_logic;
@@ -227,6 +229,7 @@ architecture structural of TOP is
             WB_NL_busy        : in std_logic;
             IFM_NL_busy       : in std_logic;
             pass_flag         : in std_logic;
+            pad               : in natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- To MC_X
             ifm_sram          : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             w_sram            : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
             ofmap_p           : out psum_array(0 to (X_PKG - 1));
@@ -360,6 +363,7 @@ begin
         IFM_NL_ready    => IFM_NL_ready_tmp,
         IFM_NL_finished => IFM_NL_finished_tmp,
         ifm_out         => ifm_tmp,
+        pad             => pad_tmp,
         is_pooling      => is_pooling_tmp(0),
         en_w_IFM        => en_w_IFM_tmp,
         pooling_ack     => pooling_ack_tmp,
@@ -395,6 +399,7 @@ begin
         WB_NL_busy        => WB_NL_busy_tmp,
         IFM_NL_busy       => IFM_NL_busy_tmp,
         pass_flag         => pass_flag_tmp,
+        pad               => pad_tmp,
         ifm_sram          => ifm_tmp,
         w_sram            => w_tmp,
         ofmap_p           => ofmap_p,

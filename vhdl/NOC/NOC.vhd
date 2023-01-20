@@ -34,6 +34,7 @@ entity NOC is
         WB_NL_busy  : in std_logic;
         IFM_NL_busy : in std_logic;
         pass_flag   : in std_logic;
+        pad         : in natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- To MC_X
 
         -- from SRAMs
         ifm_sram : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -127,11 +128,11 @@ architecture structural of NOC is
 
     component MC_Y is
         generic (
-            Y_ID : natural := 1;
-            Y    : natural := Y_PKG
+            Y_ID : natural := 1
         );
         port (
             HW_p         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            RS           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             h_p          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             r_p          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             WB_NL_busy   : in std_logic;
@@ -158,6 +159,7 @@ architecture structural of NOC is
             r_log2       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             h_p          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             rc           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+            pad          : in natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- padding (from IFMAP_FRONT_END_READ)
             rr           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             ifm_x_enable : in std_logic;
             ifm_x_in     : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -242,6 +244,7 @@ begin
                 r_log2       => r_log2,
                 h_p          => h_p_reg,
                 rc           => rc_reg,
+                pad          => pad,
                 rr           => rr_tmp(i),
                 ifm_x_enable => ifm_enable_y_to_x(j),
                 ifm_x_in     => ifm_y_to_x(j),
@@ -259,11 +262,11 @@ begin
     MC_Y_COLUMN_loop : for i in 0 to (Y_PKG - 1) generate
         MC_Y_inst : MC_Y
         generic map(
-            Y_ID => i + 1,
-            Y    => Y_PKG
+            Y_ID => i + 1
         )
         port map(
             HW_p         => HW_p,
+            RS           => RS,
             h_p          => h_p_reg,
             r_p          => r_p_reg,
             WB_NL_busy   => WB_NL_busy_reg,

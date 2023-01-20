@@ -13,13 +13,15 @@ entity MC_X is
     );
     port (
         -- config. parameters
+        RS      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);        
         EF_log2 : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         C_cap   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
         r_log2  : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- from sys ctrl
-        h_p : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
-        rc  : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        h_p   : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        rc    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        pad   : in natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- padding (from IFMAP_FRONT_END_READ)
 
         -- NoC Internal Signals
         rr           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
@@ -45,10 +47,12 @@ architecture dataflow of MC_X is
     signal ifm_x_ctrl_2nd     : std_logic;
     signal ifm_x_ctrl         : std_logic;
     signal ifm_x_ctrl_tmp     : integer;
+    signal ifm_x_ctrl_tmp_2     : integer;
     signal w_ifm_x_ctrl_tmp_4 : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
     signal w_ifm_x_ctrl_tmp_3 : integer;
     signal w_ifm_x_ctrl_tmp_2 : integer;
     signal w_ifm_x_ctrl_tmp   : integer;
+    signal RS_tmp          : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
     signal C_cap_tmp          : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
     signal EF_log2_tmp        : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
     signal r_log2_tmp         : natural range 0 to ((2 ** HYP_BITWIDTH) - 1);
@@ -67,9 +71,10 @@ architecture dataflow of MC_X is
 
 begin
 
-    -- 2nd condition for ifmaps
-    ifm_x_ctrl_tmp <= to_integer(shift_left(to_unsigned((rr_tmp - 1), 8), EF_log2_tmp));
-    ifm_x_ctrl_2nd <= '1' when (X_ID_tmp = (h_p_tmp + (Y_tmp - 1) - Y_ID_tmp + ifm_x_ctrl_tmp)) else '0';
+    -- 2nd condition for ifmaps (X_ID = h' + (R - (2*pad - 1)) - Y_ID + (rr - 1)*E)
+    ifm_x_ctrl_tmp   <= to_integer(shift_left(to_unsigned((rr_tmp - 1), HYP_BITWIDTH), EF_log2_tmp)); -- (rr - 1)*E
+    ifm_x_ctrl_tmp_2 <= to_integer(shift_left(to_unsigned((pad), HYP_BITWIDTH), 1)) - 1; -- (2*pad - 1)
+    ifm_x_ctrl_2nd   <= '1' when (X_ID_tmp = (h_p_tmp + (RS_tmp - ifm_x_ctrl_tmp_2) - Y_ID_tmp + ifm_x_ctrl_tmp)) else '0';
 
     -- 3rd condition for ifmaps / 2nd condition for weights ------------
     w_ifm_x_ctrl_tmp_4 <= std_logic_vector(unsigned(rc) + to_unsigned(1, 8)); -- (c + 1)
@@ -128,6 +133,7 @@ begin
     ifm_x_out    <= ifm_x_tmp;
     ifm_x_status <= ifm_x_status_tmp;
 
+    RS_tmp      <= to_integer(unsigned(RS));
     EF_log2_tmp <= to_integer(unsigned(EF_log2));
     C_cap_tmp   <= to_integer(unsigned(C_cap));
     rr_tmp      <= to_integer(unsigned(rr));
