@@ -25,7 +25,8 @@ entity PE is
         r    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- from sys ctrl
-        pass_flag : in std_logic;
+        pass_flag   : in std_logic;
+        OFM_NL_Read : in std_logic;
 
         -- NoC Internal Signals
         ifm_PE                  : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -35,7 +36,8 @@ entity PE is
         psum_in                 : in std_logic_vector (PSUM_BITWIDTH - 1 downto 0); -- ceil(log2(R*S*2^8*2^16)) = 27.17 = 28
         psum_out                : out std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
         PE_ARRAY_RF_write_start : in std_logic;
-        ofmap_p_done            : out std_logic -- control signal that acknowledges the ofmap is already computed (ONLY to be used when Y_ID = 1, else leave it "open").
+        ofmap_p_done            : out std_logic; -- control signal that acknowledges the ofmap is already computed (ONLY to be used when Y_ID = 1, else leave it "open").
+        PISO_Buffer_start       : out std_logic -- 040323
     );
 end PE;
 
@@ -68,8 +70,17 @@ architecture structural of PE is
     signal reset_acc    : std_logic;
 
     -- psum registers Signals
-    signal in_psum_reg                       : signed(PSUM_BITWIDTH - 1 downto 0);
-    signal accumulator_reg, accumulator_next : signed(PSUM_BITWIDTH - 1 downto 0);
+    signal in_psum_reg      : signed(PSUM_BITWIDTH - 1 downto 0);
+    signal accumulator_reg  : signed(PSUM_BITWIDTH - 1 downto 0);
+    signal accumulator_next : signed(PSUM_BITWIDTH - 1 downto 0);
+
+    -- Clock Gating
+    signal is_stalling_tmp : std_logic;
+    signal enable_cg       : std_logic;
+    signal clk_cg          : std_logic;
+
+    -- To PISO Buffer
+    signal PISO_Buffer_start_tmp : std_logic; -- 040323
 
     -- COMPONENT DECLARATIONS
     component REG_FILE_ACT is
@@ -113,7 +124,7 @@ architecture structural of PE is
         generic (
             -- HW Parameters, at synthesis time.
             Y_ID                  : natural       := Y_ID;
-            X                     : natural       := X_PKG;
+            X_ID                  : natural       := X_ID;
             NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG;
             NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG
         );
@@ -137,13 +148,25 @@ architecture structural of PE is
             PE_ARRAY_RF_write_start : in std_logic;
 
             -- PE_CTR signals
-            w_addr       : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
-            ifm_addr     : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
-            w_we_rf      : out std_logic;
-            ifm_we_rf    : out std_logic;
-            reset_acc    : out std_logic;
-            inter_PE_acc : out std_logic;
-            re_rf        : out std_logic
+            w_addr            : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
+            ifm_addr          : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
+            w_we_rf           : out std_logic;
+            ifm_we_rf         : out std_logic;
+            reset_acc         : out std_logic;
+            inter_PE_acc      : out std_logic;
+            re_rf             : out std_logic;
+            PISO_Buffer_start : out std_logic;
+
+            -- Clock Gating
+            is_stalling  : out std_logic
+        );
+    end component;
+
+    component my_CG_MOD is
+    port (
+        ck_in  : in std_logic;
+        enable : in std_logic;
+        ck_out : out std_logic
         );
     end component;
 
@@ -156,7 +179,8 @@ begin
         BITWIDTH        => ACT_BITWIDTH
     )
     port map(
-        clk         => clk,
+--        clk         => clk,
+        clk         => clk_cg,
         reset       => reset,
         clear       => '0',
         reg_sel     => unsigned(ifm_rf_addr),
@@ -173,7 +197,8 @@ begin
         BITWIDTH        => WEIGHT_BITWIDTH
     )
     port map(
-        clk         => clk,
+--        clk         => clk,
+        clk         => clk_cg,
         reset       => reset,
         clear       => '0',
         reg_sel     => unsigned(w_rf_addr),
@@ -186,7 +211,7 @@ begin
     PE_CTR_inst : PE_CTR
     generic map(
         Y_ID                  => Y_ID,
-        X                     => X_PKG,
+        X_ID                  => X_ID,
         NUM_REGS_IFM_REG_FILE => NUM_REGS_IFM_REG_FILE_PKG,
         NUM_REGS_W_REG_FILE   => NUM_REGS_W_REG_FILE_PKG
     )
@@ -208,22 +233,72 @@ begin
         ifm_we_rf               => ifm_we_rf,
         reset_acc               => reset_acc,
         inter_PE_acc            => inter_PE_acc,
-        re_rf                   => re_rf
+        re_rf                   => re_rf,
+        PISO_Buffer_start       => PISO_Buffer_start_tmp, -- 040323
+        is_stalling             => is_stalling_tmp
+    );
+
+    -- Clock Gating
+    enable_cg_proc : process (OFM_NL_Read, is_stalling_tmp)
+    begin
+        if ((OFM_NL_Read = '0') and (is_stalling_tmp = '0')) then
+            enable_cg <= '1';
+        else
+            enable_cg <= '0';
+        end if;
+    end process;
+--    enable_cg <= not(not(OFM_NL_Read) and not(is_stalling_tmp));
+
+    my_CG_MOD_inst : my_CG_MOD
+    port map(
+        ck_in  => clk,
+        enable => enable_cg,
+        ck_out => clk_cg
     );
 
     -- MAC Registers
-    REG_PROC : process (clk, reset)
+--    REG_PROC : process (clk, reset)
+--    begin
+--        if rising_edge(clk) then
+--            if (reset = '1') then
+--                accumulator_reg <= (others => '0');
+--                in_psum_reg     <= (others => '0');
+--            else
+--                accumulator_reg <= accumulator_next; -- Acc. reg.
+--                in_psum_reg     <= signed(psum_in); -- In psum reg.
+--            end if;
+--        end if;
+--    end process;
+
+    ACC_REG_PROC : process (clk, reset)
     begin
         if rising_edge(clk) then
             if (reset = '1') then
                 accumulator_reg <= (others => '0');
-                in_psum_reg     <= (others => '0');
             else
                 accumulator_reg <= accumulator_next; -- Acc. reg.
-                in_psum_reg     <= signed(psum_in); -- In psum reg.
             end if;
         end if;
     end process;
+
+-- ****** PSUM REGS (NO REG IN BOTTOM PE) *********
+    gen_psum_regs : if (Y_ID /= 3) generate
+        PSUM_REG_PROC_REGS : process (clk, reset)
+        begin
+            if rising_edge(clk) then
+                if (reset = '1') then
+                    in_psum_reg     <= (others => '0');
+                else
+                    in_psum_reg     <= signed(psum_in); -- In psum reg.
+                end if;
+            end if;
+        end process;
+    end generate;
+
+    gen_psum_Y_ID_3 : if (Y_ID = 3) generate
+        in_psum_reg     <= signed(psum_in); -- In psum reg.
+    end generate;
+-- ************************************************
 
     -- Combinational Logic --
     -- Multiplier
@@ -243,7 +318,8 @@ begin
     -------------------------
 
     -- PORTS Assignations
-    psum_out <= std_logic_vector(accumulator_reg) when (Y_ID = 1) else std_logic_vector(adder_out); -- registers output only when Y_ID = 1. Instead of creating a new register, use acc_reg.
-    ofmap_p_done <= reset_acc;
+    psum_out          <= std_logic_vector(accumulator_reg) when (Y_ID = 1) else std_logic_vector(adder_out); -- registers output only when Y_ID = 1. Instead of creating a new register, use acc_reg.
+    ofmap_p_done      <= reset_acc;
+    PISO_Buffer_start <= PISO_Buffer_start_tmp; -- 040323
 
 end architecture;

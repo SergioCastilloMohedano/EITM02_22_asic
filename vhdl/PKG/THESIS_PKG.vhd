@@ -86,6 +86,15 @@ package thesis_pkg is
     -- **** COMPONENT DECLARATIONS ****
 
 
+    -- Clock Gating
+--    component my_CG_MOD is
+--        port (
+--            ck_in  : in std_logic;
+--            enable : in std_logic;
+--            ck_out : out std_logic
+--        );
+--    end component;
+
     -- Ceil of log2 div
     --------------------------------------------------------------------------------------
     -- Inputs "x", an integer number as std_logic_vector and divides it by 2^y. Being "y"
@@ -200,6 +209,42 @@ package body thesis_pkg is
     end function ceil_log2div;
 end thesis_pkg;
 
+
+------------------------------------------------------------------------------
+-- Clock Gating
+------------------------------------------------------------------------------
+--library ieee;
+--use ieee.std_logic_1164.all;
+--use ieee.numeric_std.all;
+--use work.thesis_pkg.all;
+
+--entity my_CG_MOD is
+--    port (
+--        ck_in  : in std_logic;
+--        enable : in std_logic;
+--        ck_out : out std_logic
+--    );
+--end my_CG_MOD;
+
+--architecture behavioral of my_CG_MOD is
+
+--    signal clk_in_n     : std_logic;
+--    signal enable_latch : std_logic;
+
+--begin
+
+--    clk_in_n <= not ck_in;
+
+--    process (clk_in_n, enable) is
+--    begin
+--        if (clk_in_n = '1') then
+--            enable_latch <= enable;
+--        end if;
+--    end process;
+
+--    ck_out <= ck_in and enable_latch;
+
+--end architecture;
 
 ------------------------------------------------------------------------------
 -- Ceil of log 2 div

@@ -89,7 +89,8 @@ begin
                 -- Read control
                 for i in registers'range loop
                     if re_reg = '0' then
-                        rd_data <= (rd_data'range => '0');
+--                        rd_data <= (rd_data'range => '0');
+                        rd_data <= (others => '0');
                     else
                         if reg_sel_onehot(i) = '1' then
                             rd_data <= registers_loc(i);

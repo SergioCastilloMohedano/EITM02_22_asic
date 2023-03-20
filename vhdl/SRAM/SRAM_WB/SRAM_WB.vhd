@@ -59,6 +59,14 @@ architecture structural of SRAM_WB is
     signal WEN_4K_tmp   : std_logic;
     signal INITN_tmp    : std_logic;
 
+    -- *****************************
+    -- *** GATE-LEVEL SIMULATION ***
+    signal A_8K_1_buff_tmp : std_logic_vector(12 downto 0);
+    signal A_8K_2_buff_tmp : std_logic_vector(12 downto 0);
+    signal A_4K_buff_tmp   : std_logic_vector(11 downto 0);
+    -- *****************************
+    -- *****************************
+
     -- COMPONENT DECLARATIONS
     component SRAM_WB_FRONT_END_READ is
         port (
@@ -117,6 +125,27 @@ architecture structural of SRAM_WB is
             INITN    : out std_logic
         );
     end component;
+
+    -- *****************************************************
+    -- *************** GATE-LEVEL SIMULATION ***************
+    component SRAM_WB_BUFFER is
+        port (
+            -- From Back-End
+            A_8K_1   : in std_logic_vector(12 downto 0);
+            A_8K_2   : in std_logic_vector(12 downto 0);
+            A_4K     : in std_logic_vector(11 downto 0);
+            -- To WRAPPER
+            A_8K_1_buff   : out std_logic_vector(12 downto 0);
+            A_8K_2_buff   : out std_logic_vector(12 downto 0);
+            A_4K_buff     : out std_logic_vector(11 downto 0)
+        );
+    end component;
+
+--    attribute preserve : boolean;
+--    attribute preserve of SRAM_WB_BUFFER : component is true;
+
+    -- *****************************************************
+    -- *****************************************************
 
     component SRAM_WB_WRAPPER_BLOCK is
         port (
@@ -197,21 +226,42 @@ begin
         INITN     => INITN_tmp
     );
 
+    -- *****************************************************
+    -- *************** GATE-LEVEL SIMULATION ***************
+    SRAM_WB_BUFFER_inst : SRAM_WB_BUFFER
+    port map(
+        A_8K_1      => A_8K_1_tmp,
+        A_8K_2      => A_8K_2_tmp,
+        A_4K        => A_4K_tmp,
+        A_8K_1_buff => A_8K_1_buff_tmp,
+        A_8K_2_buff => A_8K_2_buff_tmp,
+        A_4K_buff   => A_4K_buff_tmp
+    );
+    -- *****************************************************
+    -- *****************************************************
+
     -- SRAM_WB_WRAPPER_BLOCK
     SRAM_WB_WRAPPER_BLOCK_inst : SRAM_WB_WRAPPER_BLOCK
     port map(
         clk      => clk,
-        A_8K_1   => A_8K_1_tmp,
+    -- *****************************
+    -- *** GATE-LEVEL SIMULATION ***
+        A_8K_1 => A_8K_1_buff_tmp,
+        A_8K_2 => A_8K_2_buff_tmp,
+        A_4K   => A_4K_buff_tmp,
+    -- *****************************
+    -- *****************************
+--        A_8K_1   => A_8K_1_tmp,
         CSN_8K_1 => CSN_8K_1_tmp,
         D_8K_1   => (others => '0'), --D_8K_1_tmp,
         Q_8K_1   => Q_8K_1_tmp,
         WEN_8K_1 => '1', --WEN_8K_1_tmp,
-        A_8K_2   => A_8K_2_tmp,
+--        A_8K_2   => A_8K_2_tmp,
         CSN_8K_2 => CSN_8K_2_tmp,
         D_8K_2   => (others => '0'), --D_8K_2_tmp,
         Q_8K_2   => Q_8K_2_tmp,
         WEN_8K_2 => '1', --WEN_8K_2_tmp,
-        A_4K     => A_4K_tmp,
+--        A_4K     => A_4K_tmp,
         CSN_4K   => CSN_4K_tmp,
         D_4K     => (others => '0'), --D_4K_tmp,
         Q_4K     => Q_4K_tmp,

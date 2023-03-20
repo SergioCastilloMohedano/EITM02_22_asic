@@ -189,7 +189,7 @@
             ST_SPHD_HIPERF_8192x32m16_Tlmr model for Verilog (inst 3)
 -------------------------------------------------------------------------------------------*/
 
-module ST_SPHD_HIPERF_8192x32m16_Tlmr_2 (A, ATP, CK, CSN, D , IG, INITN , Q, SCTRLI,SCTRLO,SDLI,SDLO,SDRI,SDRO,SE,  STDBY ,TA,TBIST, TBYPASS ,TCSN,TED  ,TOD  , TWEN, WEN);
+module ST_SPHD_HIPERF_8192x32m16_Tlmr_3 (A, ATP, CK, CSN, D , IG, INITN , Q, SCTRLI,SCTRLO,SDLI,SDLO,SDRI,SDRO,SE,  STDBY ,TA,TBIST, TBYPASS ,TCSN,TED  ,TOD  , TWEN, WEN);
 
     
     parameter

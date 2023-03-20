@@ -46,6 +46,15 @@ architecture structural of SRAM_IFM is
     signal Q_tmp               : std_logic_vector (31 downto 0);
     signal WEN_tmp             : std_logic;
 
+    -- *****************************
+    -- *** GATE-LEVEL SIMULATION ***
+    signal A_buff_tmp   : std_logic_vector(12 downto 0);
+    signal CSN_buff_tmp : std_logic;
+    signal D_buff_tmp   : std_logic_vector (31 downto 0);
+    signal WEN_buff_tmp : std_logic;
+    -- *****************************
+    -- *****************************
+
     -- COMPONENT DECLARATIONS
     component SRAM_IFM_FRONT_END_READ is
         port (
@@ -99,6 +108,30 @@ architecture structural of SRAM_IFM is
         );
     end component;
 
+    -- *****************************************************
+    -- *************** GATE-LEVEL SIMULATION ***************
+    component SRAM_IFM_BUFFER is
+        port (
+            -- From Back-End
+            A   : in std_logic_vector(12 downto 0);
+            CSN : in std_logic;
+            D   : in std_logic_vector (31 downto 0);
+            WEN : in std_logic;
+            -- To WRAPPER
+            A_buff   : out std_logic_vector(12 downto 0);
+            CSN_buff : out std_logic;
+            D_buff   : out std_logic_vector (31 downto 0);
+            WEN_buff : out std_logic
+        );
+    end component;
+
+    attribute preserve : boolean;
+    attribute preserve of SRAM_IFM_BUFFER : component is true;
+
+    -- *****************************************************
+    -- *****************************************************
+
+--    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3
     component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
         port (
             A     : in std_logic_vector(12 downto 0);
@@ -161,16 +194,41 @@ begin
         WEN      => WEN_tmp
     );
 
-    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_3 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+    -- *****************************************************
+    -- *************** GATE-LEVEL SIMULATION ***************
+    SRAM_IFM_BUFFER_inst : SRAM_IFM_BUFFER
     port map(
-        A     => A_tmp,
+        A        => A_tmp,
+        CSN      => CSN_tmp,
+        D        => D_tmp,
+        WEN      => WEN_tmp,
+        A_buff   => A_buff_tmp,
+        CSN_buff => CSN_buff_tmp,
+        D_buff   => D_buff_tmp,
+        WEN_buff => WEN_buff_tmp
+    );
+    -- *****************************************************
+    -- *****************************************************
+
+    -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3
+--    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_3 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_3 -- (to allow separate .cde read)
+    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_3 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper -- (for post-synthesis sim -will be wrong- and power calculations)
+    port map(
         CK    => clk,
-        CSN   => CSN_tmp,
-        D     => D_tmp,
+    -- *****************************
+    -- *** GATE-LEVEL SIMULATION ***
+        A     => A_buff_tmp,
+        CSN   => CSN_buff_tmp,
+        D     => D_buff_tmp,
+        WEN   => WEN_buff_tmp,
+    -- *****************************
+    -- *****************************
+--        A     => A_tmp,
+--        CSN   => CSN_tmp,
+--        D     => D_tmp,
         INITN => INITN_tmp,
-        Q     => Q_tmp,
-        WEN   => WEN_tmp
+        Q     => Q_tmp
+--        WEN   => WEN_tmp
     );
 
     -- PORT ASSIGNATIONS

@@ -97,6 +97,10 @@ architecture structural of TOP is
     signal en_w_IFM_tmp    : std_logic;
     signal p_en_w_IFM_tmp  : std_logic;
 
+    -- Clock Gating
+--    signal clk_cg    : std_logic;
+--    signal enable_cg : std_logic;
+
     -- COMPONENT DECLARATIONS
     component SYS_CTR_TOP is
         port (
@@ -203,6 +207,14 @@ architecture structural of TOP is
         );
     end component;
 
+--    component my_CG_MOD is
+--    port (
+--        ck_in  : in std_logic;
+--        enable : in std_logic;
+--        ck_out : out std_logic
+--        );
+--    end component;
+
     component NOC is
         generic (
             X                     : natural       := X_PKG;
@@ -233,7 +245,8 @@ architecture structural of TOP is
             ifm_sram          : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
             w_sram            : in std_logic_vector (WEIGHT_BITWIDTH - 1 downto 0);
             ofmap_p           : out psum_array(0 to (X_PKG - 1));
-            PISO_Buffer_start : out std_logic
+            PISO_Buffer_start : out std_logic;
+            OFM_NL_Read       : in std_logic
         );
     end component;
 
@@ -372,6 +385,17 @@ begin
 
     );
 
+    -- Clock Gating
+--    enable_cg <= not(OFM_NL_Read_tmp);
+
+--    my_CG_MOD_inst : my_CG_MOD
+--    port map(
+--        ck_in  => clk,
+--        enable => enable_cg,
+--        ck_out => clk_cg
+--    );
+
+
     -- NOC
     NOC_inst : NOC
     generic map(
@@ -384,6 +408,7 @@ begin
     )
     port map(
         clk               => clk,
+--        clk               => clk_cg,
         reset             => reset,
         C_cap             => C_cap_tmp,
         HW_p              => HW_p_tmp,
@@ -403,7 +428,8 @@ begin
         ifm_sram          => ifm_tmp,
         w_sram            => w_tmp,
         ofmap_p           => ofmap_p,
-        PISO_Buffer_start => PISO_Buffer_start
+        PISO_Buffer_start => PISO_Buffer_start,
+        OFM_NL_Read       => OFM_NL_Read_tmp
     );
 
     -- ADDER TREE

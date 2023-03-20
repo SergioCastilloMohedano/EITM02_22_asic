@@ -28,13 +28,13 @@ entity NOC is
         r       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
         -- from sys ctrl
-        h_p         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
-        rc          : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
-        r_p         : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
-        WB_NL_busy  : in std_logic;
-        IFM_NL_busy : in std_logic;
-        pass_flag   : in std_logic;
-        pad         : in natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- To MC_X
+        h_p           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        rc            : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        r_p           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
+        WB_NL_busy    : in std_logic;
+        IFM_NL_busy   : in std_logic;
+        pass_flag     : in std_logic;
+        pad           : in natural range 0 to ((2 ** HYP_BITWIDTH) - 1); -- To MC_X
 
         -- from SRAMs
         ifm_sram : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -42,7 +42,10 @@ entity NOC is
 
         -- Ofmap Primitives Output Registers (To Adder Tree)
         ofmap_p           : out psum_array(0 to (X_PKG - 1));
-        PISO_Buffer_start : out std_logic
+        PISO_Buffer_start : out std_logic;
+
+        -- Clock Gating
+        OFM_NL_Read     : in std_logic
     );
 end NOC;
 
@@ -71,6 +74,7 @@ architecture structural of NOC is
     -- PE to Adder Tree
     signal ofmap_p_reg, ofmap_p_next : psum_array(0 to (X_PKG - 1));
     signal ofmap_p_done_array        : std_logic_2D_array(0 to (X_PKG - 1))(0 to (Y_PKG - 1));
+    signal PISO_Buffer_start_array   : std_logic_2D_array(0 to (X_PKG - 1))(0 to (Y_PKG - 1));
 
     -- Delay Signals
     signal h_p_reg         : std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
@@ -82,6 +86,9 @@ architecture structural of NOC is
 
     -- Other Signals
     signal PE_ARRAY_RF_write_start : std_logic; -- triggers writing state within all PEs.
+
+    -- Clock Gating
+    signal OFM_NL_Read_reg : std_logic;
 
     -- COMPONENT DECLARATIONS
     component PE is
@@ -106,7 +113,9 @@ architecture structural of NOC is
             r    : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
 
             -- from sys ctrl
-            pass_flag : in std_logic;
+            pass_flag     : in std_logic;
+            OFM_NL_Read   : in std_logic;
+
 
             -- NoC Internal Signals
             ifm_PE                  : in std_logic_vector (ACT_BITWIDTH - 1 downto 0);
@@ -116,7 +125,8 @@ architecture structural of NOC is
             psum_in                 : in std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
             psum_out                : out std_logic_vector (PSUM_BITWIDTH - 1 downto 0);
             PE_ARRAY_RF_write_start : in std_logic;
-            ofmap_p_done            : out std_logic
+            ofmap_p_done            : out std_logic;
+            PISO_Buffer_start       : out std_logic -- 040323
         );
     end component;
 
@@ -154,6 +164,7 @@ architecture structural of NOC is
             hw_log2_r : integer_array := hw_log2_r_PKG
         );
         port (
+            RS           : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             EF_log2      : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             C_cap        : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
             r_log2       : in std_logic_vector ((HYP_BITWIDTH - 1) downto 0);
@@ -206,6 +217,7 @@ begin
                 p                       => p,
                 r                       => r,
                 pass_flag               => pass_flag_reg,
+                OFM_NL_Read             => OFM_NL_Read_reg,
                 ifm_PE                  => ifm_x_to_PE(i)(k),
                 ifm_PE_enable           => ifm_status_x_to_PE(i)(k),
                 w_PE                    => w_x_to_PE(i)(k),
@@ -213,7 +225,8 @@ begin
                 psum_in                 => psum_inter_array(i)(Y_PKG - 1 - k),
                 psum_out                => psum_inter_array(i)(Y_PKG - k),
                 PE_ARRAY_RF_write_start => PE_ARRAY_RF_write_start,
-                ofmap_p_done            => ofmap_p_done_array(i)(k)
+                ofmap_p_done            => ofmap_p_done_array(i)(k),
+                PISO_Buffer_start       => PISO_Buffer_start_array(i)(k) -- 040323
             );
         end generate PE_ARRAY_Y_loop;
         psum_out_array(i)      <= psum_inter_array(i)(Y_PKG); -- Connect psum output of top PEs to the output of the PE Array.
@@ -239,6 +252,7 @@ begin
                 hw_log2_r => hw_log2_r_PKG
             )
             port map(
+                RS           => RS,
                 EF_log2      => EF_log2,
                 C_cap        => C_cap,
                 r_log2       => r_log2,
@@ -304,10 +318,11 @@ begin
             IFM_NL_busy_reg <= IFM_NL_busy;
             WB_NL_busy_reg  <= WB_NL_busy;
             pass_flag_reg   <= pass_flag;
+            OFM_NL_Read_reg <= OFM_NL_Read;
         end if;
     end process;
 
-    -- Process te register ofmap primitives coming from the PE Array, to be send to the Adder Tree.
+    -- Process to register ofmap primitives coming from the PE Array, to be send to the Adder Tree.
     OFMAP_REG_GEN : for i in 0 to (X_PKG - 1) generate
         OFMAP_REG_PROC : process (clk, reset)
         begin
@@ -318,15 +333,26 @@ begin
                     if (ofmap_p_done_array(i)(0) = '1') then -- ofmap_p_done of PE(i,1) acts as clock enable of ofmap_p reg.
                         ofmap_p_reg(i) <= ofmap_p_next(i);
                     end if;
+--                    ofmap_p_reg(i) <= ofmap_p_next(i);
                 end if;
             end if;
         end process;
+
+--        OFMAP_NEXT_PROC : process (ofmap_p_done_array(i)(0))
+--        begin
+--            if (ofmap_p_done_array(i)(0) = '1') then
+--                ofmap_p_next(i) <= psum_out_array(i);
+--            else
+--                ofmap_p_next(i) <= (others => '0');
+--            end if;
+--        end process;
     end generate OFMAP_REG_GEN;
 
     -- PORT Assignations
     PE_ARRAY_RF_write_start <= '1' when ((IFM_NL_busy_reg = '1') or (WB_NL_busy_reg = '1')) else '0'; -- triggers writing state within all PEs.
     ofmap_p_next            <= psum_out_array; -- register ofmap primitives from the PE Array.
     ofmap_p                 <= ofmap_p_reg;
-    PISO_Buffer_start       <= ofmap_p_done_array(0)(0); -- triggers parallel input.
+--    PISO_Buffer_start       <= ofmap_p_done_array(0)(0); -- triggers parallel input.
+    PISO_Buffer_start       <= PISO_Buffer_start_array(0)(0); -- triggers parallel input. 040323
 
 end architecture;

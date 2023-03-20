@@ -43,6 +43,7 @@ architecture structural of SRAM_WB_WRAPPER_BLOCK is
     signal WEN_8K_2_tmp : std_logic;
     signal WEN_4K_tmp   : std_logic;
 
+--    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_1
     component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
         port (
             A     : in std_logic_vector(12 downto 0);
@@ -55,17 +56,17 @@ architecture structural of SRAM_WB_WRAPPER_BLOCK is
         );
     end component;
 
-    -- component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_2
-        -- port (
-            -- A     : in std_logic_vector(12 downto 0);
-            -- CK    : in std_logic;
-            -- CSN   : in std_logic;
-            -- D     : in std_logic_vector (31 downto 0);
-            -- INITN : in std_logic;
-            -- Q     : out std_logic_vector (31 downto 0);
-            -- WEN   : in std_logic
-        -- );
-    -- end component;
+--    component ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_2
+--        port (
+--            A     : in std_logic_vector(12 downto 0);
+--            CK    : in std_logic;
+--            CSN   : in std_logic;
+--            D     : in std_logic_vector (31 downto 0);
+--            INITN : in std_logic;
+--            Q     : out std_logic_vector (31 downto 0);
+--            WEN   : in std_logic
+--        );
+--    end component;
 
     component ST_SPHD_HIPERF_4096x32m8_Tlmr_HIPERF_CUT_wrapper
         port (
@@ -82,7 +83,8 @@ architecture structural of SRAM_WB_WRAPPER_BLOCK is
 begin
 
     -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_1
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_1 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+--    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_1 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_1 -- (to allow separate .cde read)
+    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_1 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper -- (for post-synthesis sim -will be wrong- and power calculations)
     port map(
         A     => A_8K_1,
         CK    => clk,
@@ -94,7 +96,8 @@ begin
     );
 
     -- ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_2
-    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_2 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper
+--    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_2 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_2 -- (to allow separate .cde read)
+    ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper_inst_2 : ST_SPHD_HIPERF_8192x32m16_Tlmr_wrapper -- (for post-synthesis sim -will be wrong- and power calculations)
     port map(
         A     => A_8K_2,
         CK    => clk,

@@ -7,7 +7,7 @@ entity PE_CTR is
     generic (
         -- HW Parameters, at synthesis time.
         Y_ID                  : natural       := 1;
-        X                     : natural       := X_PKG;
+        X_ID                  : natural       := 1;
         NUM_REGS_IFM_REG_FILE : natural       := NUM_REGS_IFM_REG_FILE_PKG;  -- W' max (conv0 and conv1)
         NUM_REGS_W_REG_FILE   : natural       := NUM_REGS_W_REG_FILE_PKG -- p*S = 8*3 = 24
     );
@@ -31,13 +31,17 @@ entity PE_CTR is
         PE_ARRAY_RF_write_start : in std_logic;
 
         -- PE_CTR signals
-        w_addr       : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
-        ifm_addr     : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
-        w_we_rf      : out std_logic;
-        ifm_we_rf    : out std_logic;
-        reset_acc    : out std_logic;
-        inter_PE_acc : out std_logic;
-        re_rf        : out std_logic
+        w_addr            : out std_logic_vector(bit_size(NUM_REGS_W_REG_FILE_PKG) - 1 downto 0);
+        ifm_addr          : out std_logic_vector(bit_size(NUM_REGS_IFM_REG_FILE_PKG) - 1 downto 0);
+        w_we_rf           : out std_logic;
+        ifm_we_rf         : out std_logic;
+        reset_acc         : out std_logic;
+        inter_PE_acc      : out std_logic;
+        re_rf             : out std_logic;
+        PISO_Buffer_start : out std_logic;
+
+        -- Clock Gating
+        is_stalling  : out std_logic
     );
 end PE_CTR;
 
@@ -70,9 +74,10 @@ architecture behavioral of PE_CTR is
     -- ..
 
     ---- External Status Signals to indicate status of the FSMD
-    signal reset_acc_tmp    : std_logic;
-    signal inter_PE_acc_tmp : std_logic;
-    signal re_rf_tmp        : std_logic; -- avoids reading from RF when they are being writen.
+    signal reset_acc_tmp         : std_logic;
+    signal inter_PE_acc_tmp      : std_logic;
+    signal re_rf_tmp             : std_logic; -- avoids reading from RF when they are being writen.
+    signal PISO_BUffer_start_tmp : std_logic; -- 040323
 
     ------------ DATA PATH SIGNALS ------------
     ---- Data Registers Signals
@@ -126,9 +131,13 @@ architecture behavioral of PE_CTR is
     signal w_addr_read_tmp   : natural range 0 to (NUM_REGS_W_REG_FILE_PKG - 1);
 
     -- Other Signals
-    constant RF_READ_LATENCY  : natural := 2; -- Register Files read latency, in clock cycles
-    signal reset_acc_delay    : std_logic_vector(0 to RF_READ_LATENCY - 1);
-    signal inter_PE_acc_delay : std_logic_vector(0 to RF_READ_LATENCY - 1);
+    constant RF_READ_LATENCY       : natural := 2; -- Register Files read latency, in clock cycles
+    signal reset_acc_delay         : std_logic_vector(0 to RF_READ_LATENCY - 1);
+    signal inter_PE_acc_delay      : std_logic_vector(0 to RF_READ_LATENCY - 1);
+    signal PISO_BUffer_start_delay : std_logic_vector(0 to RF_READ_LATENCY - 1); -- 040323
+
+    -- Clock Gating
+    signal is_stalling_tmp : std_logic;
 
 begin
     -- control path : state register
@@ -149,18 +158,21 @@ begin
         case state_reg is
             when s_init =>
                 state_next <= s_idle_writing;
+                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when s_idle_writing =>
                 if pass_flag_tmp = '1' then
                     state_next <= s_intra_PE_acc;
                 else
                     state_next <= s_idle_writing;
                 end if;
+                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when s_intra_PE_acc =>
                 if (intra_s_reg = (RS_tmp - 1)) then
                     state_next <= s_inter_PE_acc;
                 else
                     state_next <= s_intra_PE_acc;
                 end if;
+                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when s_inter_PE_acc =>
                 if (inter_cnt_done = '1') then
                     if (Y_ID = 1) then
@@ -171,21 +183,27 @@ begin
                 else
                     state_next <= s_inter_PE_acc;
                 end if;
+                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when s_hold =>
                 if (hold_cnt_done = '1') then
                     if (j_cnt_done = '1') then
                         state_next <= s_stall;
+                        is_stalling_tmp  <= '1'; -- Clock Gating Control
                     else
                         state_next <= s_intra_PE_acc;
+                        is_stalling_tmp  <= '0'; -- Clock Gating Control
                     end if;
                 else
                     state_next <= s_hold;
+                    is_stalling_tmp  <= '0'; -- Clock Gating Control
                 end if;
             when s_reset_acc =>
                 if (j_cnt_done = '1') then
                     state_next <= s_stall;
+                    is_stalling_tmp  <= '1'; -- Clock Gating Control
                 else
                     state_next <= s_intra_PE_acc;
+                    is_stalling_tmp  <= '0'; -- Clock Gating Control
                 end if;
             when s_stall =>
                 if (stall_cnt_done = '1') then
@@ -194,13 +212,17 @@ begin
                     else
                         state_next <= s_intra_PE_acc;
                     end if;
+                    is_stalling_tmp  <= '0'; -- Clock Gating Control
                 else
                     state_next <= s_stall;
+                    is_stalling_tmp  <= '1'; -- Clock Gating Control
                 end if;
             when s_finished =>
                 state_next <= s_idle_writing;
+                is_stalling_tmp  <= '0'; -- Clock Gating Control
             when others =>
                 state_next <= s_init;
+                is_stalling_tmp  <= '0'; -- Clock Gating Control
         end case;
     end process;
 
@@ -208,9 +230,14 @@ begin
     stall_cnt <= (EF_tmp - 1) - RS_tmp - RS_tmp + 1;
 
     -- control path : output logic
-    reset_acc_tmp    <= '1' when ((state_reg = s_reset_acc) or ((state_reg = s_inter_PE_acc) and (Y_ID /= 1))) else '0';
-    inter_PE_acc_tmp <= '1' when state_reg = s_inter_PE_acc else '0';
-    re_rf_tmp        <= '0' when state_reg = s_idle_writing else '1';
+--    reset_acc_tmp    <= '1' when ((state_reg = s_reset_acc) or ((state_reg = s_inter_PE_acc) and (Y_ID /= 1))) else '0';
+--    inter_PE_acc_tmp <= '1' when (state_reg = s_inter_PE_acc) else '0';
+    -- ** Clock Gating **
+--    is_stalling_tmp  <= '1' when state_reg = s_stall else '0';
+    PISO_BUffer_start_tmp <= '1' when ((state_reg = s_reset_acc) and (Y_ID = 1) and (X_ID = 1)) else '0'; -- 040323
+    reset_acc_tmp         <= '1' when ((state_reg = s_reset_acc) or (state_reg = s_init) or (state_reg = s_idle_writing) or ((state_reg = s_inter_PE_acc) and (Y_ID /= 1))) else '0';
+    inter_PE_acc_tmp      <= '1' when ((state_reg = s_inter_PE_acc) or (state_reg = s_idle_writing) or (state_reg = s_init)) else '0';
+    re_rf_tmp             <= '0' when state_reg = s_idle_writing else '1';
 
     ifm_addr_tmp <= ifm_addr_write_reg when state_reg = s_idle_writing else
         std_logic_vector(to_unsigned(ifm_addr_read_tmp, bit_size(NUM_REGS_IFM_REG_FILE_PKG))) when state_reg = s_intra_PE_acc else
@@ -551,14 +578,23 @@ begin
     inter_PE_acc                <= inter_PE_acc_delay(inter_PE_acc_delay'high);
     reset_acc                   <= reset_acc_delay(reset_acc_delay'high);
     re_rf                       <= re_rf_tmp;
+    is_stalling                 <= is_stalling_tmp;
+    PISO_Buffer_start           <= PISO_Buffer_start_delay(PISO_Buffer_start_delay'high); -- 040323
 
     -- Other Logic
     -- Introduces 2cc delay to the PE control signals, to synchronize them w.r.t. RFs read latency.
-    process (clk) is
+    process (clk, reset) is
     begin
         if rising_edge(clk) then
-            inter_PE_acc_delay <= inter_PE_acc_tmp & inter_PE_acc_delay(0 to inter_PE_acc_delay'high - 1); -- Shift right
-            reset_acc_delay    <= reset_acc_tmp & reset_acc_delay(0 to reset_acc_delay'high - 1); -- Shift right
+            if (reset = '1') then
+                inter_PE_acc_delay      <= (others => '0');
+                reset_acc_delay         <= (others => '0');
+                PISO_BUffer_start_delay <= (others => '0');
+            else
+                inter_PE_acc_delay      <= inter_PE_acc_tmp & inter_PE_acc_delay(0 to inter_PE_acc_delay'high - 1); -- Shift right
+                reset_acc_delay         <= reset_acc_tmp & reset_acc_delay(0 to reset_acc_delay'high - 1); -- Shift right
+                PISO_Buffer_start_delay <= PISO_Buffer_start_tmp & PISO_Buffer_start_delay(0 to PISO_Buffer_start_delay'high - 1); -- Shift right 040323
+            end if;
         end if;
     end process;
 
